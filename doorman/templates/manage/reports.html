@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+
+                <h1>osquery coverage report</h1>
+
+
+                <table class="table table-striped table-condensed">
+
+                    <thead>
+                        <th>id</th>
+                        <th>node</th>
+                        <th>packs included (#)</th>
+                        <th>pack coverage (%)</th>
+                        <th>queries included (#)</th>
+                        <th>query coverage (%)</th>
+                    </thead>
+
+                    <tbody>
+
+                        {% for node in Node.query %}
+                        {% set report = get_coverage_report_for_node(node) %}
+                        <tr>
+                            <td>{{ node.id }}</td>
+                            <td>
+                                <a href="{{ url_for('manage.get_node', node_id=node.id) }}">
+                                {{ node.host_identifier }}
+                            </a>
+                            </td>
+                            <td>{{ report.packs }}</td>
+                            <td>{{ report.packs_percent | round() }}</td>
+                            <td>{{ report.effective_queries }}</td>
+                            <td>{{ report.effective_queries_percent | round() }}</td>
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

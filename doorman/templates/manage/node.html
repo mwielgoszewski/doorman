@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>{{ node.host_identifier }} - {{ node.node_key }}</h1>
+
+                <table class="table table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Host Identifier</th>
+                            <th>Node Key</th>
+                            <th>Enrolled Date</th>
+                            <th>Last Check-in Date</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('.get_node', node_id=node.id) }}">{{ node.host_identifier }}</a>
+                            </td>
+                            <td>{{ node.node_key }}</td>
+                            <td>{{ node.enrolled_on }}</td>
+                            <td>{{ node.last_checkin }}</td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+                <h2>Recent Activity (past 7 days)</h2>
+
+                {% if node.get_recent().count() %}
+                {% include "manage/_activity.html" %}
+                {% endif %}
+
+                <h2>Packs</h2>
+
+                {% if packs is not defined %}
+                {% set packs = node.packs.all() %}
+                {% endif %}
+
+                {% if packs %}
+                {% include "manage/tables/packs.html" %}
+                {% else %}
+
+                <p>No packs currently associated with this node. Use the tag functionality to associate nodes with packs.</p>
+
+                {% endif %}
+
+                <h2>Queries</h2>
+
+                {% if queries is not defined %}
+                {% set queries = node.queries.all() %}
+                {% endif %}
+
+                {% if queries %}
+                {% include "manage/tables/queries.html" %}
+                {% else %}
+
+                <p>No queries currently associated with this node. Use the tag functionality to associate nodes with queries.</p>
+
+                {% endif %}
+
+                <h2>File Integrity Monitoring</h2>
+
+                {% if file_paths is not defined %}
+                {% set file_paths = node.file_paths.all() %}
+                {% endif %}
+
+                {% if file_paths %}
+                <ul>
+                    {% for file_path in file_paths %}
+                    <li>{{ file_path.category }}</li>
+                    <ul>
+                        {% for path in file_path.get_paths() %}
+                        <li>{{ path }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endfor %}
+                </ul>
+                {% else %}
+
+                <p>No files currently being monitored on this node. Use the tag functionality to associate nodes with file paths to monitor.</p>
+
+                {% endif %}
+
+                <h2>Tags</h2>
+
+                <select multiple class="tagsinput" data-uri="{{ url_for('.tag_node', node_id=node.id) }}">
+                    {% for tag in node.tags %}
+                    <option value="{{ tag.value }}">{{ tag.value }}</option>
+                    {% endfor %}
+                </select>
+
+            </div><!--./col-md-12-->
+        </div><!--./row-->
+    </div><!--./body-content-->
+
+{% endblock %}

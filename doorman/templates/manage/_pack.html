@@ -1,0 +1,21 @@
+
+            {% if pack.platform %}
+            <dt>Platform</dt>
+            <dd>{{ pack.platform }}</dd>
+            {% endif %}
+            {% if pack.version %}
+            <dt>Version</dt>
+            <dd>{{ pack.version }}</dd>
+            {% endif %}
+            {% if pack.description %}
+            <dt>Description</dt>
+            <dd>{{ pack.description }}</dd>
+            {% endif %}
+            {% if pack.shard %}
+            <dt>Shard</dt>
+            <dd>{{ pack.shard }}</dd>
+            {% endif %}
+
+            {% for query in pack.queries %}
+                {% include "manage/_query.html" %}
+            {% endfor %}

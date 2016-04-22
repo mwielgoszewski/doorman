@@ -1,0 +1,68 @@
+            <div class="panel panel-default" id="{{ pack.name + '-' if pack is defined }}{{ query.name }}">
+                <h4 class="panel-heading">
+                    <a href="{{ url_for('manage.query', query_id=query.id) }}">{{ query.name }}</a> - {{ query.description }}
+                </h4>
+
+                <table class="table table-striped table-condensed">
+
+                    <tbody>
+
+                        <tr>
+                            <th width="15%">Query</th>
+                            <td width="85%"><code>{{ query.sql }}</code></td>
+                        </tr>
+
+                        <tr>
+                            <th width="15%">Interval</th>
+                            <td width="85%"><code>{{ query.interval }}</code></td>
+                        </tr>
+
+                        <tr>
+                            <th width="15%">Platform</th>
+                            <td width="85%">{{ query.platform or 'all' }}</td>
+                        </tr>
+
+                        {% if query.version %}
+                        <tr>
+                            <th width="15%">Version</th>
+                            <td width="85%">{{ query.version or '' }}</td>
+                        </tr>
+                        {% endif %}
+
+                        {% if query.value %}
+                        <tr>
+                            <th width="15%">Value</th>
+                            <td width="85%">{{ query.value or '' }}</td>
+                        </tr>
+                        {% endif %}
+
+                        <tr>
+                            <th width="15%">Packs</th>
+                            <td width="85%">
+                                {% for _pack in query.packs %}
+                                <span class="label">
+                                    <a href="{{ url_for('manage.packs') }}#{{ _pack.name }}">{{ _pack.name }}</a>
+                                </span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th width="15%">Tags</th>
+                            <td width="85%">
+                                <select multiple class="tagsinput" data-uri="{{ url_for('.tag_query', query_id=query.id ) }}">
+                                {% for tag in query.tags %}
+                                    <option value="{{ tag.value }}">{{ tag.value }}</option>
+                                <span class="label">
+                                    <a href="{{ url_for('.get_tag', tag_value=tag.value) }}">{{ tag.value }}</a>
+                                </span>
+                                {% endfor %}
+                                </select>
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+                
+            </div>

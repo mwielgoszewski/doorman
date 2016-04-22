@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-9">
+                <h1>packs</h1>
+
+                {% if packs %}
+                {% for pack in packs %}
+                <h2 id="{{ pack.name }}">{{ pack.name }}</h2>
+                <p>
+                    <select multiple class="tagsinput" data-uri="{{ url_for('.tag_pack', pack_name=pack.name) }}">
+                        {% for tag in pack.tags %}
+                        <option value="{{ tag.value }}">{{ tag.value }}</option>
+                        {% endfor %}
+                    </select>
+                </p>
+                {% include "manage/_pack.html" %}
+                {% endfor %}
+                {% else %}
+                <p>No packs uploaded. You may upload a new pack <a href="{{ url_for('.add_pack') }}">here</a>.<p>
+                {% endif %}
+            </div>
+
+            <div class="col-md-3">
+                <div id="toc">
+            </div>
+            
+        </div>
+    </div>
+
+{% endblock %}

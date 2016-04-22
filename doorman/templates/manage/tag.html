@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                {% if tag is defined %}
+                
+                <h2>nodes tagged <strong>{{ tag.value }}</strong></h2>
+
+                {% set nodes = tag.nodes %}
+                {% if nodes %}
+                {% include "manage/tables/nodes.html" %}
+                {% else %}
+                <p>No nodes.</p>
+                {% endif %}
+
+                <h2>Packs tagged <strong>{{ tag.value }}</strong></h2>
+
+                {% set packs = tag.packs %}
+                {% if packs %}
+                {% include "manage/tables/packs.html" %}
+                {% else %}
+                <p>No packs.</p>
+                {% endif %}
+
+                <h2>Queries tagged <strong>{{ tag.value }}</strong></h2>
+
+                {% set queries = tag.queries %}
+                {% if queries %}
+                {% include "manage/tables/queries.html" %}
+                {% else %}
+                <p>No queries.</p>
+                {% endif %}
+
+                {% else %}
+
+                <div class="col-md-8">
+                    <form class="form-horizontal" method="POST">
+                        <fieldset>
+                            <legend>add tags</legend>
+                            {{ form.csrf_token() }}
+
+                            <div class="form-group">
+                                {{ form.value.label(class_="col-md-2 control-label") }}
+                                <div class="col-md-10">
+                                    {{ form.value(placeholder="Enter tags here, one tag per line", class_="form-control") }}
+                                </div>
+                            </div>
+
+                            <div class="form-group"> 
+                                <div class="col-md-10 col-md-offset-2">
+                                    <p><input class="btn-small btn-default btn-submit" type="submit" value="Add Tag"></p>
+                                </div>
+                            </div>
+
+                        </fieldset>
+                    </form>
+
+                </div><!--./col-md-8-->
+                {% endif %}
+
+            </div><!--./col-md-12-->
+        </div><!--./row-->
+    </div><!--./body-content-->
+
+{% endblock %}

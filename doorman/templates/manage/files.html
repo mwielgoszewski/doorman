@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>files</h1>
+
+                {% if file_paths %}
+
+                {% for file_path in file_paths %}
+                <h2>{{ file_path.category }}</h2>
+
+                <ul>
+                    {% for path in file_path.get_paths() %}
+                    <li>{{ path }}</li>
+                    {% endfor %}
+                </ul>
+
+                <select multiple class="tagsinput" data-uri="{{ url_for('.tag_file', file_path_id=file_path.id) }}">
+                    {% for tag in file_path.tags %}
+                    <option value="{{ tag.value }}">{{ tag.value }}</option>
+                    {% endfor %}
+                </select>
+
+                {% endfor %}
+
+                {% else %}
+                <p>No file paths defined. Add some to use osquery's file integrity monitoring.</p>
+                {% endif %}
+
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

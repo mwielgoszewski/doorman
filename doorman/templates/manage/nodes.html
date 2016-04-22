@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>nodes</h1>
+                
+                {% if nodes %}
+                {% include "manage/tables/nodes.html" %}
+                {% elif request.endpoint == url_for('manage.nodes') %}
+                <p>No nodes have enrolled yet!</p>
+                {% endif %}
+
+            </div><!--./col-md-12-->
+        </div><!--./row-->
+    </div><!--./body-content-->
+
+{% endblock %}

@@ -12,7 +12,7 @@ from doorman.forms import (
 )
 from doorman.database import db
 from doorman.models import FilePath, Node, Pack, Query, Tag
-from doorman.utils import create_query_pack_from_upload
+from doorman.utils import create_query_pack_from_upload, validate_osquery_query
 
 
 blueprint = Blueprint('manage', __name__,
@@ -110,7 +110,7 @@ def add_query():
 
     if form.validate_on_submit():
         if not validate_osquery_query(form.sql.data):
-            flash(u'Invalid osquery query', 'error')
+            flash(u'Invalid osquery query: "{}"'.format(form.sql.data), 'danger')
             return render_template('query.html', form=form)
 
         query = Query(name=form.name.data,

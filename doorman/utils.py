@@ -12,7 +12,7 @@ from flask import current_app, flash
 schema = pkg_resources.resource_string('doorman', 'osquery_schema.sql')
 
 # Create mock database with these statements
-osquery_mock_db = sqlite3.connect(':memory:')
+osquery_mock_db = sqlite3.connect(':memory:', check_same_thread=False)
 for ddl in schema.strip().split('\n'):
     # Skip comments
     if ddl.startswith('--'):

@@ -7,7 +7,6 @@ from flask import Blueprint, current_app, jsonify, request
 
 from doorman.database import db
 from doorman.models import Node, Pack, Query, Tag, ResultLog, StatusLog
-from doorman.utils import validate_osquery_query
 
 
 blueprint = Blueprint('api', __name__)

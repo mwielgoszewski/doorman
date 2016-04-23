@@ -118,6 +118,7 @@ def get_node_health(node):
     else:
         return ''
 
+
 def validate_osquery_query(query):
     try:
         osquery_mock_db.execute(query)

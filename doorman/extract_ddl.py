@@ -41,8 +41,7 @@ def schema(schema):
     current_spec['schema'] = real_schema
 
 
-def do_nothing(*args, **kwargs):
-    return None
+do_nothing = lambda *args, **kwargs: None
 
 
 def extract_schema(filename):

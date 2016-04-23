@@ -110,7 +110,7 @@ def add_query():
 
     if form.validate_on_submit():
         if not validate_osquery_query(form.sql.data):
-            flash(u'Invalid osquery query: "{}"'.format(form.sql.data), 'danger')
+            flash(u'Invalid osquery query: "{0}"'.format(form.sql.data), 'danger')
             return render_template('query.html', form=form)
 
         query = Query(name=form.name.data,

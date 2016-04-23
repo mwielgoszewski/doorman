@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from os.path import abspath, basename, dirname, join, splitext
+import glob
 import json
 
 from flask_migrate import MigrateCommand
@@ -38,6 +39,23 @@ def test():
     test_path = join(abspath(dirname(__file__)), 'tests')
     exit_code = pytest.main([test_path, '--verbose'])
     return exit_code
+
+
+@manager.command
+def extract_ddl(specs_dir):
+    """Extracts CREATE TABLE statements from osquery's table specifications"""
+    from doorman.extract_ddl import extract_schema
+
+    spec_files = []
+    spec_files.extend(glob.glob(join(specs_dir, '*.table')))
+    spec_files.extend(glob.glob(join(specs_dir, '**', '*.table')))
+
+    ddl = sorted([extract_schema(f) for f in spec_files])
+
+    opath = join(dirname(__file__), 'doorman', 'osquery_schema.sql')
+    with open(opath, 'wb') as f:
+        f.write('-- This file is generated using "python manage.py extract_ddl" - do not edit manually\n')
+        f.write('\n'.join(ddl))
 
 
 if __name__ == '__main__':

@@ -2,8 +2,23 @@
 from os.path import basename, splitext
 import datetime as dt
 import json
+import pkg_resources
+import sqlite3
 
 from flask import current_app, flash
+
+
+# Read DDL statements from our package
+schema = pkg_resources.resource_string('doorman', 'osquery_schema.sql')
+
+# Create mock database with these statements
+osquery_mock_db = sqlite3.connect(':memory:')
+for ddl in schema.strip().split('\n'):
+    # Skip comments
+    if ddl.startswith('--'):
+        continue
+
+    osquery_mock_db.execute(ddl)
 
 
 def assemble_configuration(node):
@@ -102,3 +117,11 @@ def get_node_health(node):
         return u'danger'
     else:
         return ''
+
+def validate_osquery_query(query):
+    try:
+        osquery_mock_db.execute(query)
+    except sqlite3.Error:
+        return False
+
+    return True

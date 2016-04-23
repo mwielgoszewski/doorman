@@ -81,6 +81,10 @@ def create_query_pack_from_upload(upload):
         pack = Pack.create(name=name, **data)
 
     for query_name, query in data['queries'].iteritems():
+        if not validate_osquery_query(query['query']):
+            flash('Invalid osquery query: "{0}"'.format(query), 'danger')
+            return None
+
         q = Query.query.filter(Query.name == query_name).first()
 
         if not q:

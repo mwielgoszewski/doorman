@@ -378,7 +378,7 @@ class TestCreateQueryPackFromUpload:
         assert resp.status_int == 200
 
     def test_pack_does_not_exist_but_query_does(self, testapp, db):
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+        query = QueryFactory(name='foobar', sql='select * from osquery_info;')
 
         packdata = deepcopy(SAMPLE_PACK)
         packdata['queries']['foobar'] = query.to_dict()
@@ -412,7 +412,7 @@ class TestCreateQueryPackFromUpload:
         pack = PackFactory(name='foo')
         assert not pack.queries
 
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+        query = QueryFactory(name='foobar', sql='select * from osquery_info;')
         assert query not in pack.queries
 
         packdata = deepcopy(SAMPLE_PACK)
@@ -432,7 +432,7 @@ class TestCreateQueryPackFromUpload:
         pack = PackFactory(name='foo')
         assert not pack.queries
 
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+        query = QueryFactory(name='foobar', sql='select * from osquery_info;')
         assert query not in pack.queries
 
         packdata = deepcopy(SAMPLE_PACK)

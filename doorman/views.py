@@ -79,9 +79,12 @@ def packs():
 def add_pack():
     form = UploadPackForm()
     if form.validate_on_submit():
-        # TODO(andrew-d): validate that the SQL in this query pack is valid
         pack = create_query_pack_from_upload(form.pack)
-        return redirect(url_for('.packs', _anchor=pack.name))
+
+        # Only redirect back to the pack list if everything was successful
+        if pack is not None:
+            return redirect(url_for('.packs', _anchor=pack.name))
+
     return render_template('pack.html', form=form)
 
 

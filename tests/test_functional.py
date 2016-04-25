@@ -245,7 +245,7 @@ class TestLogging:
         assert resp.json == {'node_invalid': True}
 
     def test_status_log_created_for_node(self, node, testapp):
-        log = {
+        data = {
             'line': 1, 
             'message': 'This is a test of the emergency broadcast system.', 
             'severity': 1,
@@ -256,15 +256,15 @@ class TestLogging:
 
         resp = testapp.post_json(url_for('api.logger'), {
             'node_key': node.node_key,
-            'data': [log],
+            'data': [data],
             'log_type': 'status',
         })
 
         assert node.status_logs.count()
-        assert node.status_logs[0].line == log['line']
-        assert node.status_logs[0].message == log['message']
-        assert node.status_logs[0].severity == log['severity']
-        assert node.status_logs[0].filename == log['filename']
+        assert node.status_logs[0].line == data['line']
+        assert node.status_logs[0].message == data['message']
+        assert node.status_logs[0].severity == data['severity']
+        assert node.status_logs[0].filename == data['filename']
 
     def test_no_status_log_created_when_data_is_empty(self, node, testapp):
         assert not node.status_logs.count()
@@ -280,46 +280,28 @@ class TestLogging:
     def test_result_log_created_for_node(self, node, testapp):
         now = dt.datetime.utcnow()
 
-        log = [
+        data = [
             {
-              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
-              "unixTime": now.strftime('%s'),
-              "name": "pack/osquery-monitoring/osquery_info",
               "diffResults": {
-                "removed": [
-                  {
-                    "build_platform": "darwin",
-                    "system_time": "5235",
-                    "start_time": "1461286939",
-                    "build_distro": "10.11",
-                    "counter": "9",
-                    "pid": "29325",
-                    "resident_size": "15523840",
-                    "version": "1.7.3",
-                    "extensions": "active",
-                    "config_valid": "1",
-                    "config_hash": "fe8f76397e127c841e4c94173205dc41",
-                    "user_time": "18336"
-                  }
-                ],
                 "added": [
                   {
-                    "build_platform": "darwin",
-                    "system_time": "5250",
-                    "start_time": "1461286939",
-                    "build_distro": "10.11",
-                    "counter": "10",
-                    "pid": "29325",
-                    "resident_size": "15544320",
-                    "version": "1.7.3",
-                    "extensions": "active",
-                    "config_valid": "1",
-                    "config_hash": "fe8f76397e127c841e4c94173205dc41",
-                    "user_time": "18416"
+                    "name": "osqueryd",
+                    "path": "/usr/local/bin/osqueryd",
+                    "pid": "97830"
+                  }
+                ],
+                "removed": [
+                  {
+                    "name": "osqueryd",
+                    "path": "/usr/local/bin/osqueryd",
+                    "pid": "97650"
                   }
                 ]
               },
-              "hostIdentifier": node.host_identifier,
+              "name": "processes",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s')
             }
         ]
 
@@ -327,7 +309,7 @@ class TestLogging:
 
         resp = testapp.post_json(url_for('api.logger'), {
             'node_key': node.node_key,
-            'data': log,
+            'data': data,
             'log_type': 'result',
         })
 
@@ -336,9 +318,9 @@ class TestLogging:
         result = node.result_logs.first()
 
         assert result.timestamp == now.replace(microsecond=0)
-        assert result.name == log[0]['name']
-        assert result.added == log[0]['diffResults']['added']
-        assert result.removed == log[0]['diffResults']['removed']
+        assert result.name == data[0]['name']
+        assert result.added == data[0]['diffResults']['added']
+        assert result.removed == data[0]['diffResults']['removed']
 
     def test_no_result_log_created_when_data_is_empty(self, node, testapp):
         assert not node.result_logs.count()
@@ -350,6 +332,79 @@ class TestLogging:
         })
 
         assert not node.result_logs.count()
+
+    def test_result_event_format(self, node, testapp):
+        now = dt.datetime.utcnow()
+        calendarTime = "%s %s" % (now.ctime(), "UTC")
+        unixTime = now.strftime('%s')
+
+        data = [
+            {
+              "action": "added",
+              "columns": {
+                "name": "osqueryd",
+                "path": "/usr/local/bin/osqueryd",
+                "pid": "97830"
+              },
+              "name": "osquery",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+            },
+            {
+              "action": "removed",
+              "columns": {
+                "name": "osqueryd",
+                "path": "/usr/local/bin/osqueryd",
+                "pid": "97830"
+              },
+              "name": "osquery",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+            },
+            {
+              "action": "added",
+              "columns": {
+                "name": "osqueryd",
+                "path": "/usr/local/bin/osqueryd",
+                "pid": "97830"
+              },
+              "name": "processes",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+            },
+            {
+              "action": "removed",
+              "columns": {
+                "name": "osqueryd",
+                "path": "/usr/local/bin/osqueryd",
+                "pid": "97830"
+              },
+              "name": "processes",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+            },
+        ]
+
+        assert not node.result_logs.count()
+
+        resp = testapp.post_json(url_for('api.logger'), {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        })
+
+        assert node.result_logs.count() == 2
+
+        result = node.result_logs.first()
+
+        assert result.timestamp == now.replace(microsecond=0)
+        assert result.name == data[0]['name']
+        assert result.added == [data[0]['columns']]
+        assert result.removed == [data[1]['columns']]
 
 
 class TestDistributedRead:

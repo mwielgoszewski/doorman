@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from itertools import groupby
+from operator import itemgetter
 from os.path import basename, join, splitext
 import datetime as dt
 import json
@@ -7,6 +9,9 @@ import sqlite3
 import threading
 
 from flask import current_app, flash
+
+from doorman.database import db
+from doorman.models import ResultLog
 
 
 # Read DDL statements from our package
@@ -141,3 +146,51 @@ def validate_osquery_query(query):
         return False
 
     return True
+
+
+def process_result(result, node):
+    if not result['data']:
+        current_app.logger.error("No results to process from %s", node)
+        return
+
+    if 'columns' in result['data'][0]:
+        process_event(result, node)
+    elif 'diffResults' in result['data'][0]:
+        process_batch(result, node)
+    return
+
+
+def process_event(event, node):
+    orderby = itemgetter('unixTime', 'name', 'calendarTime', 'hostIdentifier')
+
+    data = sorted(event['data'], key=orderby)
+
+    for (_, name, caltime, _), items in groupby(data, orderby):
+        timestamp = dt.datetime.strptime(caltime,
+                                         '%a %b %d %H:%M:%S %Y UTC')
+        result = ResultLog(node=node, name=name, timestamp=timestamp,
+                           added=[], removed=[])
+        for item in items:
+            if item['action'] == 'added':
+                result.added.append(item['columns'])
+            elif item['action'] == 'removed':
+                result.removed.append(item['columns'])
+        db.session.add(result)
+    else:
+        db.session.commit()
+    return
+
+
+def process_batch(batch, node):
+    for item in batch['data']:
+        timestamp = dt.datetime.strptime(item['calendarTime'],
+                                         '%a %b %d %H:%M:%S %Y UTC')
+        result_log = ResultLog(node=node,
+                               name=item['name'],
+                               timestamp=timestamp,
+                               added=item['diffResults']['added'],
+                               removed=item['diffResults']['removed'])
+        db.session.add(result_log)
+    else:
+        db.session.commit()
+    return

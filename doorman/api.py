@@ -6,7 +6,8 @@ import json
 from flask import Blueprint, current_app, jsonify, request
 
 from doorman.database import db
-from doorman.models import Node, Pack, Query, Tag, ResultLog, StatusLog
+from doorman.models import Node, Pack, Query, Tag, StatusLog
+from doorman.utils import process_result
 
 
 blueprint = Blueprint('api', __name__)
@@ -156,18 +157,11 @@ def logger(node=None):
             db.session.commit()
 
     elif log_type == 'result':
-        for item in data.get('data', []):
+        process_result(data, node)
 
-            timestamp = dt.datetime.strptime(item['calendarTime'],
-                                             '%a %b %d %H:%M:%S %Y UTC')
-            result_log = ResultLog(node=node,
-                                   name=item['name'],
-                                   timestamp=timestamp,
-                                   added=item['diffResults']['added'],
-                                   removed=item['diffResults']['removed'])
-            db.session.add(result_log)
-        else:
-            db.session.commit()
+    else:
+        current_app.logger.error("Unknown log_type %r", log_type)
+        current_app.logger.info(json.dumps(data))
 
     return jsonify(node_invalid=False)
 

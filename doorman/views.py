@@ -12,7 +12,7 @@ from doorman.forms import (
 )
 from doorman.database import db
 from doorman.models import FilePath, Node, Pack, Query, Tag
-from doorman.utils import create_query_pack_from_upload
+from doorman.utils import create_query_pack_from_upload, validate_osquery_query
 
 
 blueprint = Blueprint('manage', __name__,
@@ -80,7 +80,11 @@ def add_pack():
     form = UploadPackForm()
     if form.validate_on_submit():
         pack = create_query_pack_from_upload(form.pack)
-        return redirect(url_for('.packs', _anchor=pack.name))
+
+        # Only redirect back to the pack list if everything was successful
+        if pack is not None:
+            return redirect(url_for('.packs', _anchor=pack.name))
+
     return render_template('pack.html', form=form)
 
 
@@ -108,6 +112,10 @@ def add_query():
     form.set_choices()
 
     if form.validate_on_submit():
+        if not validate_osquery_query(form.sql.data):
+            flash(u'Invalid osquery query: "{0}"'.format(form.sql.data), 'danger')
+            return render_template('query.html', form=form)
+
         query = Query(name=form.name.data,
                       sql=form.sql.data,
                       interval=form.interval.data,

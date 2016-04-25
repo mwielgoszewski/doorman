@@ -377,8 +377,30 @@ class TestCreateQueryPackFromUpload:
 
         assert resp.status_int == 200
 
+    def test_pack_upload_invalid(self, testapp, db):
+        bad_query = 'SELECT * FROM invalid_table;'
+
+        packdata = deepcopy(SAMPLE_PACK)
+        packdata['queries']['schedule']['query'] = bad_query
+
+        resp = testapp.post(url_for('manage.add_pack'), upload_files=[
+            ('pack', 'foo.conf', json.dumps(packdata)),
+        ])
+
+        # This won't be a redirect, since it's an error.
+        assert resp.status_int == 200
+
+        body = resp.html
+        flashes = body.select('.alert.alert-danger')
+
+        assert len(flashes) == 1
+
+        msg = 'Invalid osquery query: "{0}"'.format(bad_query)
+        innerText = ''.join(flashes[0].findAll(text=True, recursive=False))
+        assert innerText.strip() == msg
+
     def test_pack_does_not_exist_but_query_does(self, testapp, db):
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+        query = QueryFactory(name='foobar', sql='select * from osquery_info;')
 
         packdata = deepcopy(SAMPLE_PACK)
         packdata['queries']['foobar'] = query.to_dict()
@@ -412,7 +434,7 @@ class TestCreateQueryPackFromUpload:
         pack = PackFactory(name='foo')
         assert not pack.queries
 
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+        query = QueryFactory(name='foobar', sql='select * from osquery_info;')
         assert query not in pack.queries
 
         packdata = deepcopy(SAMPLE_PACK)
@@ -432,7 +454,7 @@ class TestCreateQueryPackFromUpload:
         pack = PackFactory(name='foo')
         assert not pack.queries
 
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+        query = QueryFactory(name='foobar', sql='select * from osquery_info;')
         assert query not in pack.queries
 
         packdata = deepcopy(SAMPLE_PACK)

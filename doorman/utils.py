@@ -4,21 +4,19 @@ import datetime as dt
 import json
 import pkg_resources
 import sqlite3
+import threading
 
 from flask import current_app, flash
 
 
 # Read DDL statements from our package
 schema = pkg_resources.resource_string('doorman', join('resources', 'osquery_schema.sql'))
+schema = [x for x in schema.strip().split('\n') if not x.startswith('--')]
 
-# Create mock database with these statements
-osquery_mock_db = sqlite3.connect(':memory:', check_same_thread=False)
-for ddl in schema.strip().split('\n'):
-    # Skip comments
-    if ddl.startswith('--'):
-        continue
+# SQLite in Python will complain if you try to use it from multiple threads.
+# We create a threadlocal variable that contains the DB, lazily initialized.
+osquery_mock_db = threading.local()
 
-    osquery_mock_db.execute(ddl)
 
 
 def assemble_configuration(node):
@@ -123,9 +121,22 @@ def get_node_health(node):
         return ''
 
 
+def create_mock_db():
+    mock_db = sqlite3.connect(':memory:')
+    for ddl in schema:
+        mock_db.execute(ddl)
+    return mock_db
+
+
 def validate_osquery_query(query):
+    # Check if this thread has an instance of the SQLite database
+    db = getattr(osquery_mock_db, 'db', None)
+    if db is None:
+        db = create_mock_db()
+        osquery_mock_db.db = db
+
     try:
-        osquery_mock_db.execute(query)
+        db.execute(query)
     except sqlite3.Error:
         return False
 

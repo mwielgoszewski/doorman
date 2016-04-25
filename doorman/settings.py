@@ -14,6 +14,7 @@ class Config(object):
 
     DB_NAME = 'osquery.db'
     DB_PATH = None
+    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # When osquery is configured to start with the command-line flag
@@ -39,7 +40,8 @@ class DevConfig(Config):
     DB_NAME = 'dev.db'
     # Put the db file in project root
     DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
+    #SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
+    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:6432/doorman'
 
     DOORMAN_ENROLL_SECRET = [
         'secret',

@@ -41,9 +41,6 @@ def schema(schema):
     current_spec['schema'] = real_schema
 
 
-do_nothing = lambda *args, **kwargs: None
-
-
 def extract_schema(filename):
     namespace = {
         'Column': Column,
@@ -54,7 +51,7 @@ def extract_schema(filename):
     }
 
     for fn in DUMMY_FUNCTIONS:
-        namespace[fn] = do_nothing
+        namespace[fn] = lambda *args, **kwargs: None
 
     for ty in SQL_TYPES:
         namespace[ty] = ty

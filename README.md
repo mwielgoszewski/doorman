@@ -72,6 +72,12 @@ POST   | /distributed/write | `--distributed_tls_write_endpoint`
     openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout private.key -out certificate.crt
     ~~~
 
+1. Install Javascript dependencies with `bower`:
+
+    ~~~
+    bower install
+    ~~~
+
 1. Start doorman by running:
 
     ~~~

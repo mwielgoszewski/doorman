@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from os.path import basename, splitext
+from os.path import basename, join, splitext
 import datetime as dt
 import json
 import pkg_resources
@@ -9,7 +9,7 @@ from flask import current_app, flash
 
 
 # Read DDL statements from our package
-schema = pkg_resources.resource_string('doorman', 'osquery_schema.sql')
+schema = pkg_resources.resource_string('doorman', join('resources', 'osquery_schema.sql'))
 
 # Create mock database with these statements
 osquery_mock_db = sqlite3.connect(':memory:', check_same_thread=False)

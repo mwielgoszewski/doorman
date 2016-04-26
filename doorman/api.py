@@ -151,27 +151,20 @@ def logger(node=None):
         current_app.logger.debug(json.dumps(data, indent=2))
 
     if log_type == 'status':
-        logs = []
+        log_plugins.handle_status(data, host_identifier=node.host_identifier)
         for item in data.get('data', []):
             status_log = StatusLog(node=node, **item)
-            logs.append(status_log)
             db.session.add(status_log)
         else:
             db.session.commit()
 
-        for log in logs:
-            log_plugins.handle_status(log)
-
     elif log_type == 'result':
-        logs = process_result(data, node)
-
-        for log in logs:
-            log_plugins.handle_result(log)
+        log_plugins.handle_result(data, host_identifier=node.host_identifier)
+        process_result(data, node)
 
     else:
         current_app.logger.error("Unknown log_type %r", log_type)
         current_app.logger.info(json.dumps(data))
-        logs = []
 
     return jsonify(node_invalid=False)
 

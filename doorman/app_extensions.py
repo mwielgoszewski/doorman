@@ -27,10 +27,10 @@ class LogPluginsExtension(object):
                 raise ValueError('{0} is not a subclass of AbstractLogsPlugin'.format(name))
             self.plugins.append(klass(app.config))
 
-    def handle_status(self, log):
+    def handle_status(self, data, **kwargs):
         for plugin in self.plugins:
-            plugin.handle_status(log)
+            plugin.handle_status(data, **kwargs)
 
-    def handle_result(self, log):
+    def handle_result(self, data, **kwargs):
         for plugin in self.plugins:
-            plugin.handle_result(log)
+            plugin.handle_result(data, **kwargs)

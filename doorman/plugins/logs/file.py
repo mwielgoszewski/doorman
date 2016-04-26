@@ -1,7 +1,7 @@
 from copy import copy
 import time
 
-from doorman.utils import quote
+from doorman.utils import quote, extract_results
 from doorman.plugins.logs.base import AbstractLogsPlugin
 
 
@@ -30,11 +30,7 @@ class LogPlugin(AbstractLogsPlugin):
     def name(self):
         return "file"
 
-    def _node_fields(self, node):
-        """Returns an node fields that we want to log."""
-        return 'host_identifier={0}'.format(node.host_identifier)
-
-    def _join_fields(self, fields):
+    def join_fields(self, fields):
         parts = []
         for name, val in fields.items():
             if not isinstance(val, str):
@@ -43,40 +39,50 @@ class LogPlugin(AbstractLogsPlugin):
 
         return ', '.join(parts)
 
-    def handle_status(self, log):
+    def handle_status(self, data, **kwargs):
         if self.status is None:
             return
 
-        fields = {
-            'line':     log.line,
-            'message':  log.message,
-            'severity': log.severity,
-            'filename': log.filename,
-            'created':  time.mktime(log.created.timetuple()),
-        }
+        # Write each status log on a different line
+        for item in data.get('data', []):
+            fields = {}
+            fields.update(kwargs)
+            fields.update({
+                'line':     item['line'],
+                'message':  item['message'],
+                'severity': item['severity'],
+                'filename': item['filename'],
+                'created':  time.mktime(item['created'].timetuple()),
+            })
 
-        self.status.write(self._node_fields(log.node) + ', ' + self._join_fields(fields) + '\n')
+            self.status.write(self.join_fields(fields) + '\n')
 
-    def handle_result(self, log):
+    def handle_result(self, data, **kwargs):
         if self.result is None:
             return
 
-        fields = {
-            'name':      log.name,
-            'timestamp': time.mktime(log.timestamp.timetuple()),
-        }
-        base = self._node_fields(log.node) + ', ' + self._join_fields(fields)
+        # Process each result individually
+        for item in extract_results(data):
+            fields = {}
+            fields.update(kwargs)
+            fields.update({
+                'name':      item['name'],
+                'timestamp': time.mktime(item['timestamp'].timetuple()),
+            })
 
-        for entry in log.added:
-            curr_fields = {'result_type': 'added'}
-            for key, val in entry.items():
-                curr_fields['added_' + key] = val
+            base = self.join_fields(fields)
 
-            self.result.write(base + ', ' + self._join_fields(curr_fields) + '\n')
+            # Write each added/removed entry on a different line
+            for entry in item['added']:
+                curr_fields = {'result_type': 'added'}
+                for key, val in entry.items():
+                    curr_fields['added_' + key] = val
 
-        for entry in log.removed:
-            curr_fields = {'result_type': 'removed'}
-            for key, val in entry.items():
-                curr_fields['removed_' + key] = val
+                self.result.write(base + ', ' + self._join_fields(curr_fields) + '\n')
 
-            self.result.write(base + ', ' + self._join_fields(curr_fields) + '\n')
+            for entry in item['removed']:
+                curr_fields = {'result_type': 'removed'}
+                for key, val in entry.items():
+                    curr_fields['removed_' + key] = val
+
+                self.result.write(base + ', ' + self._join_fields(curr_fields) + '\n')

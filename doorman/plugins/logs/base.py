@@ -9,9 +9,9 @@ class AbstractLogsPlugin(with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def handle_status(self, log):
+    def handle_status(self, data, **kwargs):
         pass
 
     @abstractmethod
-    def handle_result(self, log):
+    def handle_result(self, data, **kwargs):
         pass

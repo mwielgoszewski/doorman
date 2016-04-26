@@ -276,7 +276,7 @@ class FilePath(SurrogatePK, Model):
     def __init__(self, category=None, target_paths=None, *args, **kwargs):
         self.category = category
 
-        print target_paths
+        print(target_paths)
 
         if target_paths is not None:
             self.target_paths = '!!'.join(target_paths)

@@ -33,7 +33,7 @@ class Config(object):
     # You can specify a set of custom logger plugins here.  These plugins will
     # be called for every status or result log that is received, and can
     # do what they wish with them.
-    #DOORMAN_LOG_PLUGINS = ['doorman.plugins.logs.file']
+    #DOORMAN_LOG_PLUGINS = ['doorman.plugins.logs.file.LogPlugin']
 
     # These are the configuration variables for the example logger plugin given
     # above.  Uncomment these to start logging results or status logs to the

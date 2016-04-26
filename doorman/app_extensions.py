@@ -17,11 +17,14 @@ class LogPluginsExtension(object):
 
         self.plugins = []
         for name in plugin_names:
-            mod = import_module(name)
+            package, classname = name.rsplit('.', 1)
+            mod = import_module(package)
 
-            klass = mod.LogPlugin
+            klass = getattr(mod, classname, None)
+            if klass is None:
+                raise ValueError('Could not find a class named "{0}" in package "{1}"'.format(classname, package))
             if not issubclass(klass, AbstractLogsPlugin):
-                raise ValueError("{0}.LogPlugin is not a subclass of AbstractLogsPlugin".format(name))
+                raise ValueError('{0} is not a subclass of AbstractLogsPlugin'.format(name))
             self.plugins.append(klass(app.config))
 
     def handle_status(self, log):

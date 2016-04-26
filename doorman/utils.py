@@ -178,13 +178,14 @@ def validate_osquery_query(query):
 def process_result(result, node):
     if not result['data']:
         current_app.logger.error("No results to process from %s", node)
-        return
+        return []
 
     if 'columns' in result['data'][0]:
-        process_event(result, node)
+        return process_event(result, node)
     elif 'diffResults' in result['data'][0]:
-        process_batch(result, node)
-    return
+        return process_batch(result, node)
+
+    return []
 
 
 def process_event(event, node):
@@ -192,6 +193,7 @@ def process_event(event, node):
 
     data = sorted(event['data'], key=orderby)
 
+    logs = []
     for (_, name, caltime, _), items in groupby(data, orderby):
         timestamp = dt.datetime.strptime(caltime,
                                          '%a %b %d %H:%M:%S %Y UTC')
@@ -202,13 +204,17 @@ def process_event(event, node):
                 result.added.append(item['columns'])
             elif item['action'] == 'removed':
                 result.removed.append(item['columns'])
+
+        logs.append(result)
         db.session.add(result)
     else:
         db.session.commit()
-    return
+
+    return logs
 
 
 def process_batch(batch, node):
+    logs = []
     for item in batch['data']:
         timestamp = dt.datetime.strptime(item['calendarTime'],
                                          '%a %b %d %H:%M:%S %Y UTC')
@@ -217,7 +223,9 @@ def process_batch(batch, node):
                                timestamp=timestamp,
                                added=item['diffResults']['added'],
                                removed=item['diffResults']['removed'])
+        logs.append(result_log)
         db.session.add(result_log)
     else:
         db.session.commit()
-    return
+
+    return logs

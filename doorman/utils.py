@@ -6,6 +6,7 @@ import datetime as dt
 import json
 import pkg_resources
 import sqlite3
+import string
 import threading
 
 from flask import current_app, flash
@@ -124,6 +125,32 @@ def get_node_health(node):
         return u'danger'
     else:
         return ''
+
+
+# Since 'string.printable' includes control characters
+PRINTABLE = string.ascii_letters + string.digits + string.punctuation + ' '
+
+def quote(s, quote='"'):
+    buf = [quote]
+    for ch in s:
+        if ch == quote or ch == '\\':
+            buf.append('\\')
+            buf.append(ch)
+        elif ch == '\n':
+            buf.append('\\n')
+        elif ch == '\r':
+            buf.append('\\r')
+        elif ch == '\t':
+            buf.append('\\t')
+        elif ch in PRINTABLE:
+            buf.append(ch)
+        else:
+            # Hex escape
+            buf.append('\\x')
+            buf.append(hex(ord(ch))[2:])
+
+    buf.append(quote)
+    return ''.join(buf)
 
 
 def create_mock_db():

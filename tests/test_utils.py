@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from doorman.utils import validate_osquery_query
+from doorman.utils import quote, validate_osquery_query
 
 
 class TestValidate:
@@ -22,3 +22,21 @@ class TestValidate:
     def test_bad_table(self):
         query = 'SELECT * FROM a_table_that_does_not_exist;'
         assert validate_osquery_query(query) is False
+
+
+class TestQuote:
+
+    def test_will_quote_string(self):
+        assert quote('foobar') == '"foobar"'
+        assert quote('foo bar baz') == '"foo bar baz"'
+        assert quote('foobar', quote='`') == '`foobar`'
+
+    def test_will_escape(self):
+        assert quote(r'foo"bar') == r'"foo\"bar"'
+        assert quote(r'foo\bar') == r'"foo\\bar"'
+
+    def test_quote_control_characters(self):
+        assert quote("\r\n\t") == r'"\r\n\t"'
+
+    def test_quote_unprintable_chars(self):
+        assert quote('\x8Ffoo\xA3bar').lower() == r'"\x8Ffoo\xA3bar"'.lower()

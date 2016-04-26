@@ -3,6 +3,8 @@ from importlib import import_module
 from flask import current_app
 from flask import _app_ctx_stack as stack
 
+from doorman.plugins.logs.base import AbstractLogsPlugin
+
 
 class LogPluginsExtension(object):
     def __init__(self, app=None):
@@ -15,8 +17,12 @@ class LogPluginsExtension(object):
 
         self.plugins = []
         for name in plugin_names:
-            mod = import_module('doorman.plugins.logs.{0}'.format(name))
-            self.plugins.append(mod.Plugin(app.config))
+            mod = import_module(name)
+
+            klass = mod.LogPlugin
+            if not issubclass(klass, AbstractLogsPlugin):
+                raise ValueError("{0}.LogPlugin is not a subclass of AbstractLogsPlugin".format(name))
+            self.plugins.append(klass(app.config))
 
     def handle_status(self, log):
         for plugin in self.plugins:

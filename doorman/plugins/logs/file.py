@@ -5,7 +5,7 @@ from doorman.utils import quote
 from doorman.plugins.logs.base import AbstractLogsPlugin
 
 
-class Plugin(AbstractLogsPlugin):
+class LogPlugin(AbstractLogsPlugin):
     def __init__(self, config):
         append = config.setdefault('DOORMAN_LOG_FILE_PLUGIN_APPEND', True)
         status_path = config.get('DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG')

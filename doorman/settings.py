@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 
-from doorman.plugins.logs.file import Plugin as FileLogsPlugin
-
 
 class Config(object):
     SECRET_KEY = 'secret'
@@ -32,7 +30,7 @@ class Config(object):
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
 
-    DOORMAN_LOG_PLUGINS = ['file']
+    DOORMAN_LOG_PLUGINS = ['doorman.plugins.logs.file']
 
     #DOORMAN_LOG_FILE_PLUGIN_APPEND = True
     DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG = '/tmp/status.log'

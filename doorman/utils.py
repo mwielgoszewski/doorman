@@ -195,6 +195,9 @@ def process_result(result, node):
 
 
 def extract_results(result):
+    if not result['data']:
+        return
+
     if 'columns' in result['data'][0]:
         gen = extract_events(result)
     elif 'diffResults' in result['data'][0]:

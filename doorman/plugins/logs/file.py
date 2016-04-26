@@ -1,5 +1,6 @@
 from copy import copy
 import time
+import datetime as dt
 
 from doorman.utils import quote, extract_results
 from doorman.plugins.logs.base import AbstractLogsPlugin
@@ -48,12 +49,16 @@ class LogPlugin(AbstractLogsPlugin):
             fields = {}
             fields.update(kwargs)
             fields.update({
-                'line':     item['line'],
-                'message':  item['message'],
-                'severity': item['severity'],
-                'filename': item['filename'],
-                'created':  time.mktime(item['created'].timetuple()),
+                'line':     item.get('line', ''),
+                'message':  item.get('message', ''),
+                'severity': item.get('severity', ''),
+                'filename': item.get('filename', ''),
             })
+
+            if 'created' in item:
+                fields['created'] = time.mktime(item['created'].timetuple())
+            else:
+                fields['created'] = time.mktime(dt.datetime.utcnow().timetuple())
 
             self.status.write(self.join_fields(fields) + '\n')
 
@@ -66,9 +71,13 @@ class LogPlugin(AbstractLogsPlugin):
             fields = {}
             fields.update(kwargs)
             fields.update({
-                'name':      item['name'],
-                'timestamp': time.mktime(item['timestamp'].timetuple()),
+                'name': item.get('name', ''),
             })
+
+            if 'timestamp' in item:
+                fields['timestamp'] = time.mktime(item['timestamp'].timetuple())
+            else:
+                fields['timestamp'] = time.mktime(dt.datetime.utcnow().timetuple())
 
             base = self.join_fields(fields)
 
@@ -78,11 +87,11 @@ class LogPlugin(AbstractLogsPlugin):
                 for key, val in entry.items():
                     curr_fields['added_' + key] = val
 
-                self.result.write(base + ', ' + self._join_fields(curr_fields) + '\n')
+                self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')
 
             for entry in item['removed']:
                 curr_fields = {'result_type': 'removed'}
                 for key, val in entry.items():
                     curr_fields['removed_' + key] = val
 
-                self.result.write(base + ', ' + self._join_fields(curr_fields) + '\n')
+                self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')

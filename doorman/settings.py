@@ -30,11 +30,17 @@ class Config(object):
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
 
-    DOORMAN_LOG_PLUGINS = ['doorman.plugins.logs.file']
+    # You can specify a set of custom logger plugins here.  These plugins will
+    # be called for every status or result log that is received, and can
+    # do what they wish with them.
+    #DOORMAN_LOG_PLUGINS = ['doorman.plugins.logs.file']
 
-    #DOORMAN_LOG_FILE_PLUGIN_APPEND = True
-    DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG = '/tmp/status.log'
-    DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'
+    # These are the configuration variables for the example logger plugin given
+    # above.  Uncomment these to start logging results or status logs to the
+    # given file.
+    #DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG = '/tmp/status.log'     # Default: do not log status logs
+    #DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'     # Default: do not log results
+    #DOORMAN_LOG_FILE_PLUGIN_APPEND = True                      # Default: True
 
 
 class DevConfig(Config):

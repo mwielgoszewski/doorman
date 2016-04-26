@@ -5,7 +5,10 @@ from sqlalchemy import and_
 import datetime as dt
 
 import json
-import urlparse
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 from doorman.models import Node, Pack, Query, Tag, FilePath
 from doorman.settings import TestConfig
@@ -158,10 +161,10 @@ class TestConfiguration:
         assert resp.json['node_invalid'] is False
 
         assert pack.name in resp.json['packs']
-        assert resp.json['packs'].keys() == [pack.name] # should be the only key
+        assert list(resp.json['packs'].keys()) == [pack.name] # should be the only key
 
         assert query.name in resp.json['packs'][pack.name]['queries']
-        assert resp.json['packs'][pack.name]['queries'].keys() == [query.name]
+        assert list(resp.json['packs'][pack.name]['queries'].keys()) == [query.name]
 
         assert 'schedule' in resp.json
         assert 'file_paths' in resp.json
@@ -421,10 +424,10 @@ class TestCreateQueryPackFromUpload:
         # resp = testapp.get(url_for('manage.add_pack'))
         # form = resp.forms[]
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK)),
+            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK).encode('latin1')),
         ])
 
-        location = urlparse.urlparse(resp.headers['Location'])
+        location = urlparse(resp.headers['Location'])
         locationhash = '#'.join((location.path, location.fragment))
         assert locationhash == url_for('manage.packs', _anchor='foo')
 
@@ -439,7 +442,7 @@ class TestCreateQueryPackFromUpload:
         packdata['queries']['schedule']['query'] = bad_query
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata)),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
         ])
 
         # This won't be a redirect, since it's an error.
@@ -464,7 +467,7 @@ class TestCreateQueryPackFromUpload:
         assert not pack
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata)),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
         ])
 
         resp = resp.follow()
@@ -478,7 +481,7 @@ class TestCreateQueryPackFromUpload:
         assert not pack.queries
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK)),
+            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK).encode('latin1')),
         ])
 
         resp = resp.follow()
@@ -496,7 +499,7 @@ class TestCreateQueryPackFromUpload:
         packdata['queries']['foobar'] = query.to_dict()
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata)),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
         ])
 
         resp = resp.follow()
@@ -519,7 +522,7 @@ class TestCreateQueryPackFromUpload:
         query.update(sql='select * from foo;')
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata)),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
         ])
 
         resp = resp.follow()

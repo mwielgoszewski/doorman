@@ -8,6 +8,7 @@ import pkg_resources
 import sqlite3
 import threading
 
+import six
 from flask import current_app, flash
 
 from doorman.database import db
@@ -16,6 +17,7 @@ from doorman.models import ResultLog
 
 # Read DDL statements from our package
 schema = pkg_resources.resource_string('doorman', join('resources', 'osquery_schema.sql'))
+schema = schema.decode('utf-8')
 schema = [x for x in schema.strip().split('\n') if not x.startswith('--')]
 
 # SQLite in Python will complain if you try to use it from multiple threads.
@@ -75,7 +77,13 @@ def create_query_pack_from_upload(upload):
     '''
     from doorman.models import Pack, Query
 
-    data = json.load(upload.data)
+    # The json package on Python 3 expects a `str` input, so we're going to
+    # read the body and possibly convert to the right type
+    body = upload.data.read()
+    if not isinstance(body, six.string_types):
+        body = body.decode('utf-8')
+
+    data = json.loads(body)
     name = splitext(basename(upload.data.filename))[0]
     pack = Pack.query.filter(Pack.name == name).first()
 
@@ -83,7 +91,7 @@ def create_query_pack_from_upload(upload):
         current_app.logger.debug("Creating pack %s", name)
         pack = Pack.create(name=name, **data)
 
-    for query_name, query in data['queries'].iteritems():
+    for query_name, query in data['queries'].items():
         if not validate_osquery_query(query['query']):
             flash('Invalid osquery query: "{0}"'.format(query['query']), 'danger')
             return None

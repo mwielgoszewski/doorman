@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import namedtuple
 from itertools import groupby
 from operator import itemgetter
 from os.path import basename, join, splitext
@@ -14,6 +15,9 @@ from flask import current_app, flash
 
 from doorman.database import db
 from doorman.models import ResultLog
+
+
+Field = namedtuple('Field', ['name', 'timestamp', 'added', 'removed'])
 
 
 # Read DDL statements from our package
@@ -208,13 +212,12 @@ def process_result(result, node):
         current_app.logger.error("No results to process from %s", node)
         return
 
-    for log in extract_results(result):
-        result = ResultLog(
-            node=node,
-            name=log['name'],
-            timestamp=log['timestamp'],
-            added=log['added'],
-            removed=log['removed']
+    for name, timestamp, added, removed in extract_results(result):
+        result = ResultLog(node=node,
+                           name=name,
+                           timestamp=timestamp,
+                           added=added,
+                           removed=removed
         )
         db.session.add(result)
     else:
@@ -247,24 +250,21 @@ def extract_events(event):
         timestamp = dt.datetime.strptime(caltime,
                                          '%a %b %d %H:%M:%S %Y UTC')
 
-        fields = {'name': name, 'timestamp': timestamp, 'added': [], 'removed': []}
+        field = Field(name, timestamp, [], [])
         for item in items:
             if item['action'] == 'added':
-                fields['added'].append(item['columns'])
+                field.added.append(item['columns'])
             elif item['action'] == 'removed':
-                fields['removed'].append(item['columns'])
+                field.removed.append(item['columns'])
 
-        yield fields
+        yield field
 
 
 def extract_batch(batch):
     for item in batch['data']:
         timestamp = dt.datetime.strptime(item['calendarTime'],
                                          '%a %b %d %H:%M:%S %Y UTC')
-        fields = {
-            'name': item['name'],
-            'timestamp': timestamp,
-            'added': item['diffResults']['added'],
-            'removed': item['diffResults']['removed'],
-        }
-        yield fields
+        yield Field(item['name'],
+                    timestamp,
+                    item['diffResults']['added'],
+                    item['diffResults']['removed'])

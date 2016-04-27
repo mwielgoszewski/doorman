@@ -1,9 +1,9 @@
-from copy import copy
+# -*- coding: utf-8 -*-
 import time
 import datetime as dt
 
-from doorman.utils import quote, extract_results
-from doorman.plugins.logs.base import AbstractLogsPlugin
+from doorman.plugins import AbstractLogsPlugin
+from doorman.utils import extract_results, quote
 
 
 class LogPlugin(AbstractLogsPlugin):
@@ -70,26 +70,25 @@ class LogPlugin(AbstractLogsPlugin):
         for item in extract_results(data):
             fields = {}
             fields.update(kwargs)
-            fields.update({
-                'name': item.get('name', ''),
-            })
 
-            if 'timestamp' in item:
-                fields['timestamp'] = time.mktime(item['timestamp'].timetuple())
+            if item.timestamp:
+                timestamp = time.mktime(item.timestamp.timetuple())
             else:
-                fields['timestamp'] = time.mktime(dt.datetime.utcnow().timetuple())
+                timestamp = time.mktime(dt.datetime.utcnow.timetuple())
+
+            fields.update(name=item.name, timestamp=timestamp)
 
             base = self.join_fields(fields)
 
             # Write each added/removed entry on a different line
-            for entry in item['added']:
+            for entry in item.added:
                 curr_fields = {'result_type': 'added'}
                 for key, val in entry.items():
                     curr_fields['added_' + key] = val
 
                 self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')
 
-            for entry in item['removed']:
+            for entry in item.removed:
                 curr_fields = {'result_type': 'removed'}
                 for key, val in entry.items():
                     curr_fields['removed_' + key] = val

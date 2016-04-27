@@ -183,16 +183,10 @@ def distributed_read(node=None):
                             node)
     queries = node.get_new_queries()
     node.update(last_checkin=dt.datetime.utcnow(), commit=False)
+    db.session.add(node)
+    db.session.commit()
 
-    try:
-        return jsonify(queries=queries, node_invalid=False)
-    finally:
-        try:
-            db.session.commit()
-        except Exception:
-            current_app.logger.exception("Could not return distributed queries"
-                                         " to %s, rolling back", node)
-            db.session.rollback()
+    return jsonify(queries=queries, node_invalid=False)
 
 
 @blueprint.route('/distributed/write', methods=['POST'])

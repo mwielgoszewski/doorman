@@ -65,6 +65,13 @@ def assemble_packs(node):
 
 
 def assemble_distributed_queries(node):
+    '''
+    Retrieve all distributed queries assigned to a particular node
+    in the NEW state. This function will change the state of the
+    distributed query to PENDING, however will not commit the change.
+    It is the responsibility of the caller to commit or rollback on the
+    current database session.
+    '''
     from doorman.models import DistributedQuery
     queries = {}
     for query in node.distributed_queries.filter(

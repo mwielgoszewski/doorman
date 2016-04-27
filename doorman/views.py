@@ -122,7 +122,8 @@ def add_query():
                       platform=form.platform.data,
                       version=form.version.data,
                       description=form.description.data,
-                      value=form.value.data)
+                      value=form.value.data,
+                      removed=form.removed.data)
         query.tags = create_tags(*form.tags.data.splitlines())
         query.save()
 
@@ -156,7 +157,8 @@ def query(query_id):
                              platform=form.platform.data,
                              version=form.version.data,
                              description=form.description.data,
-                             value=form.value.data)
+                             value=form.value.data,
+                             removed=form.removed.data)
         return redirect(url_for('.query', query_id=query.id))
 
     form = UpdateQueryForm(request.form, obj=query)

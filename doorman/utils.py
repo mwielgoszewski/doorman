@@ -268,3 +268,13 @@ def extract_batch(batch):
                     timestamp,
                     item['diffResults']['added'],
                     item['diffResults']['removed'])
+
+
+def flash_errors(form):
+    '''http://flask.pocoo.org/snippets/12/'''
+    for field, errors in form.errors.items():
+        for error in errors:
+            flash(u"Error in the %s field - %s" % (
+                getattr(form, field).label.text,
+                error
+            ))

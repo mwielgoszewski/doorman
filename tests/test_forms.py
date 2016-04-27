@@ -7,6 +7,8 @@ from doorman.forms import (
     CreateTagForm,
 )
 
+from .factories import QueryFactory
+
 
 class TestCreateTagForm:
 
@@ -20,8 +22,46 @@ class TestCreateTagForm:
 
 
 class TestCreateQueryForm:
-    pass
+
+    def test_sql_validate_failure(self, testapp, db):
+        form = CreateQueryForm(
+            name='foobar',
+            sql='select * from foobar;'
+        )
+        assert form.validate() is False
+        assert 'sql' in form.errors
+        assert 'name' not in form.errors
+
+    def test_sql_validate_success(self, testapp, db):
+        form = CreateQueryForm(
+            name='foobar',
+            sql='select * from osquery_info;',
+        )
+        assert form.validate() is True
 
 
 class TestUpdateQueryForm:
-    pass
+
+    def test_sql_validate_failure(self, testapp, db):
+        query = QueryFactory(
+            name='foobar',
+            sql='select * from osquery_info;'
+        )
+        form = UpdateQueryForm(
+            name=query.name,
+            sql='select * from foobar;'
+        )
+        assert form.validate() is False
+        assert 'sql' in form.errors
+        assert 'name' not in form.errors
+
+    def test_sql_validate_success(self, testapp, db):
+        query = QueryFactory(
+            name='foobar',
+            sql='select * from osquery_info;'
+        )
+        form = UpdateQueryForm(
+            name=query.name,
+            sql='select * from platform_info;'
+        )
+        assert form.validate() is True

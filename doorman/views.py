@@ -12,7 +12,7 @@ from doorman.forms import (
 )
 from doorman.database import db
 from doorman.models import FilePath, Node, Pack, Query, Tag
-from doorman.utils import create_query_pack_from_upload, validate_osquery_query
+from doorman.utils import create_query_pack_from_upload, flash_errors
 
 
 blueprint = Blueprint('manage', __name__,
@@ -85,6 +85,7 @@ def add_pack():
         if pack is not None:
             return redirect(url_for('.packs', _anchor=pack.name))
 
+    flash_errors(form)
     return render_template('pack.html', form=form)
 
 
@@ -112,10 +113,6 @@ def add_query():
     form.set_choices()
 
     if form.validate_on_submit():
-        if not validate_osquery_query(form.sql.data):
-            flash(u'Invalid osquery query: "{0}"'.format(form.sql.data), 'danger')
-            return render_template('query.html', form=form)
-
         query = Query(name=form.name.data,
                       sql=form.sql.data,
                       interval=form.interval.data,
@@ -128,6 +125,7 @@ def add_query():
 
         return redirect(url_for('.query', query_id=query.id))
 
+    flash_errors(form)
     return render_template('query.html', form=form)
 
 
@@ -160,6 +158,7 @@ def query(query_id):
         return redirect(url_for('.query', query_id=query.id))
 
     form = UpdateQueryForm(request.form, obj=query)
+    flash_errors(form)
     return render_template('query.html', form=form, query=query)
 
 
@@ -189,6 +188,7 @@ def add_file():
                         target_paths=form.target_paths.data.splitlines())
         return redirect(url_for('.files'))
 
+    flash_errors(form)
     return render_template('file.html', form=form)
 
 
@@ -217,6 +217,8 @@ def add_tag():
     if form.validate_on_submit():
         create_tags(*form.value.data.splitlines())
         return redirect(url_for('.tags'))
+
+    flash_errors(form)
     return render_template('tag.html', form=form)
 
 

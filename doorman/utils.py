@@ -26,7 +26,6 @@ schema = [x for x in schema.strip().split('\n') if not x.startswith('--')]
 osquery_mock_db = threading.local()
 
 
-
 def assemble_configuration(node):
     configuration = {}
     configuration['options'] = assemble_options(node)
@@ -63,6 +62,27 @@ def assemble_packs(node):
     for pack in node.packs:
         packs[pack.name] = pack.to_dict()
     return packs
+
+
+def assemble_distributed_queries(node):
+    '''
+    Retrieve all distributed queries assigned to a particular node
+    in the NEW state. This function will change the state of the
+    distributed query to PENDING, however will not commit the change.
+    It is the responsibility of the caller to commit or rollback on the
+    current database session.
+    '''
+    from doorman.models import DistributedQuery
+    queries = {}
+    for query in node.distributed_queries.filter(
+        DistributedQuery.status == DistributedQuery.NEW):
+        queries[query.guid] = query.sql
+        query.status = DistributedQuery.PENDING
+        # add this query to the session, but don't commit until we're
+        # as sure as we possibly can be that it's been received by the
+        # osqueryd client. unfortunately, there are no guarantees though.
+        db.session.add(query)
+    return queries
 
 
 def create_query_pack_from_upload(upload):

@@ -228,8 +228,11 @@ class Node(SurrogatePK, Model):
 
     def get_config(self, **kwargs):
         from doorman.utils import assemble_configuration
-        configuration = assemble_configuration(self)
-        return configuration
+        return assemble_configuration(self)
+
+    def get_new_queries(self, **kwargs):
+        from doorman.utils import assemble_distributed_queries
+        return assemble_distributed_queries(self)
 
     @property
     def packs(self):
@@ -256,7 +259,7 @@ class Node(SurrogatePK, Model):
         now = dt.datetime.utcnow()
         when = now - dt.timedelta(days=days, minutes=minutes, seconds=seconds)
         return self.result_logs.filter(ResultLog.timestamp > when) \
-            .order_by(ResultLog.timestamp.desc())#.limit(5)
+            .order_by(ResultLog.timestamp.desc())
 
 
 
@@ -293,6 +296,7 @@ class FilePath(SurrogatePK, Model):
 
 
 class ResultLog(SurrogatePK, Model):
+
     name = Column(db.String, nullable=False)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
     added = Column(JSONBType)
@@ -335,3 +339,45 @@ class StatusLog(SurrogatePK, Model):
         self.filename = filename
         self.created = created
         self.node = node
+
+
+class DistributedQuery(SurrogatePK, Model):
+
+    NEW = 0
+    PENDING = 1
+    COMPLETE = 2
+
+    guid = Column(db.String, nullable=False, unique=True)
+    status = Column(db.Integer, default=0, nullable=False)
+    sql = Column(db.String, nullable=False)
+    timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
+
+    node_id = reference_col('node', nullable=False)
+    node = relationship(
+        'Node',
+        backref=db.backref('distributed_queries', lazy='dynamic'),
+    )
+
+    def __init__(self, sql, node=None):
+        self.guid = str(uuid.uuid4())
+        self.sql = sql
+        self.node = node
+
+
+class DistributedQueryResult(SurrogatePK, Model):
+
+    data = Column(JSONBType)
+    timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
+
+    distributed_query_id = reference_col('distributed_query', nullable=False)
+    distributed_query = relationship(
+        'DistributedQuery',
+        backref=db.backref('result',
+                           uselist=False,
+                           cascade='all, delete-orphan',
+                           lazy='joined'),
+    )
+
+    def __init__(self, data, distributed_query=None):
+        self.data = data
+        self.distributed_query = distributed_query

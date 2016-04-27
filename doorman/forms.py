@@ -8,7 +8,20 @@ from wtforms.fields import (IntegerField,
                             SelectMultipleField,
                             StringField,
                             TextAreaField)
-from wtforms.validators import DataRequired
+from wtforms.validators import DataRequired, ValidationError
+
+from doorman.utils import validate_osquery_query
+
+
+class ValidSQL(object):
+    def __init__(self, message=None):
+        if not message:
+            message = u'Field must contain valid SQL to be run against osquery tables'
+        self.message = message
+
+    def __call__(self, form, field):
+        if not validate_osquery_query(field.data):
+            raise ValidationError(self.message)
 
 
 class UploadPackForm(Form):
@@ -19,7 +32,7 @@ class UploadPackForm(Form):
 class QueryForm(Form):
 
     name = StringField('Name', validators=[DataRequired()])
-    sql = TextAreaField("Query", validators=[DataRequired()])
+    sql = TextAreaField("Query", validators=[DataRequired(), ValidSQL()])
     interval = IntegerField('Interval', default=3600, validators=[DataRequired()])
     platform = SelectField('Platform', default='all', choices=[
         ('all', 'All'),

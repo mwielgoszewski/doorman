@@ -17,7 +17,7 @@ from doorman.models import ResultLog
 
 # Read DDL statements from our package
 schema = pkg_resources.resource_string('doorman', join('resources', 'osquery_schema.sql'))
-schema = schema.decode('latin1')
+schema = schema.decode('utf-8')
 schema = [x for x in schema.strip().split('\n') if not x.startswith('--')]
 
 # SQLite in Python will complain if you try to use it from multiple threads.
@@ -81,7 +81,7 @@ def create_query_pack_from_upload(upload):
     # read the body and possibly convert to the right type
     body = upload.data.read()
     if not isinstance(body, six.string_types):
-        body = body.decode('latin1')
+        body = body.decode('utf-8')
 
     data = json.loads(body)
     name = splitext(basename(upload.data.filename))[0]

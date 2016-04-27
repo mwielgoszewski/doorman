@@ -424,7 +424,7 @@ class TestCreateQueryPackFromUpload:
         # resp = testapp.get(url_for('manage.add_pack'))
         # form = resp.forms[]
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK).encode('latin1')),
+            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK).encode('utf-8')),
         ])
 
         location = urlparse(resp.headers['Location'])
@@ -442,7 +442,7 @@ class TestCreateQueryPackFromUpload:
         packdata['queries']['schedule']['query'] = bad_query
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('utf-8')),
         ])
 
         # This won't be a redirect, since it's an error.
@@ -467,7 +467,7 @@ class TestCreateQueryPackFromUpload:
         assert not pack
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('utf-8')),
         ])
 
         resp = resp.follow()
@@ -481,7 +481,7 @@ class TestCreateQueryPackFromUpload:
         assert not pack.queries
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK).encode('latin1')),
+            ('pack', 'foo.conf', json.dumps(SAMPLE_PACK).encode('utf-8')),
         ])
 
         resp = resp.follow()
@@ -499,7 +499,7 @@ class TestCreateQueryPackFromUpload:
         packdata['queries']['foobar'] = query.to_dict()
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('utf-8')),
         ])
 
         resp = resp.follow()
@@ -522,7 +522,7 @@ class TestCreateQueryPackFromUpload:
         query.update(sql='select * from foo;')
 
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', json.dumps(packdata).encode('latin1')),
+            ('pack', 'foo.conf', json.dumps(packdata).encode('utf-8')),
         ])
 
         resp = resp.follow()

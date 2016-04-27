@@ -103,6 +103,9 @@ POST   | /distributed/write | `--distributed_tls_write_endpoint`
        --config_tls_max_attempts 3 \
        --enroll_tls_endpoint /enroll  \
        --enroll_secret_env ENROLL_SECRET \
+       --disable_distributed=false \
+       --distributed_plugin tls \
+       --distributed_interval 10 \
        --distributed_tls_max_attempts 3 \
        --distributed_tls_read_endpoint /distributed/read \
        --distributed_tls_write_endpoint /distributed/write \

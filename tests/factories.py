@@ -3,7 +3,10 @@ from factory import Sequence
 from factory.alchemy import SQLAlchemyModelFactory
 
 from doorman.database import db
-from doorman.models import Node, Pack, Query, Tag
+from doorman.models import (Node, Pack, Query, Tag, FilePath,
+    DistributedQuery, DistributedQueryResult,
+    ResultLog, StatusLog
+)
 
 
 class BaseFactory(SQLAlchemyModelFactory):
@@ -34,3 +37,33 @@ class TagFactory(BaseFactory):
 
     class Meta:
         model = Tag
+
+
+class FilePathFactory(BaseFactory):
+
+    class Meta:
+        model = FilePath
+
+
+class DistributedQueryFactory(BaseFactory):
+
+    class Meta:
+        model = DistributedQuery
+
+
+class DistributedQueryResultFactory(BaseFactory):
+
+    class Meta:
+        model = DistributedQueryResult
+
+
+class ResultLogFactory(BaseFactory):
+
+    class Meta:
+        model = ResultLog
+
+
+class StatusLogFactory(BaseFactory):
+
+    class Meta:
+        model = StatusLog

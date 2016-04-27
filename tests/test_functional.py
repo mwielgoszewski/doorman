@@ -10,10 +10,14 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-from doorman.models import Node, Pack, Query, Tag, FilePath
+from doorman.models import (Node, Pack, Query, Tag, FilePath,
+    DistributedQuery, DistributedQueryResult,
+)
 from doorman.settings import TestConfig
 
-from .factories import NodeFactory, PackFactory, QueryFactory, TagFactory
+from .factories import (NodeFactory, PackFactory, QueryFactory, TagFactory,
+    DistributedQueryFactory, DistributedQueryResultFactory,
+)
 
 
 SAMPLE_PACK = {
@@ -234,7 +238,6 @@ class TestConfiguration:
         assert not node.get_config()['packs'] # should be an empty {}
 
 
-
 class TestLogging:
 
     def test_bad_post_request(self, node, testapp):
@@ -411,12 +414,166 @@ class TestLogging:
 
 
 class TestDistributedRead:
-    pass
+
+    def test_no_distributed_queries(self, db, node, testapp):
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': node.node_key,
+        })
+
+        assert not resp.json['queries']
+
+    def test_distributed_query_read_new(self, db, node, testapp):
+        q = DistributedQuery.create(sql='select * from osquery_info;',
+                                    node=node)
+
+        assert q.status == DistributedQuery.NEW
+
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': node.node_key,
+        })
+
+        assert q.status == DistributedQuery.PENDING
+        assert q.guid in resp.json['queries']
+        assert resp.json['queries'][q.guid] == q.sql
+
+    def test_distributed_query_read_pending(self, db, node, testapp):
+        q = DistributedQuery.create(sql='select * from osquery_info;',
+                                    node=node)
+        q.update(status=DistributedQuery.PENDING)
+
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': node.node_key,
+        })
+
+        assert not resp.json['queries']
+
+    def test_distributed_query_read_complete(self, db, node, testapp):
+        q = DistributedQuery.create(sql='select * from osquery_info;',
+                                    node=node)
+        q.update(status=DistributedQuery.COMPLETE)
+
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': node.node_key,
+        })
+
+        assert not resp.json['queries']
 
 
 class TestDistributedWrite:
-    pass
 
+    def test_invalid_distributed_query_id(self, db, node, testapp):
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': node.node_key,
+            'queries': {
+                'foo': 'bar',
+            }
+        })
+        result = DistributedQueryResult.query.filter(
+            DistributedQueryResult.data == 'bar').all()
+        assert not result
+
+    def test_distributed_query_write_state_new(self, db, node, testapp):
+        q = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';",
+            node=node)
+
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': node.node_key,
+            'queries': {
+                q.guid: '',
+            }
+        })
+
+        assert q.status == DistributedQuery.NEW
+        assert not q.result
+
+    def test_distributed_query_write_state_pending(self, db, node, testapp):
+        q = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';",
+            node=node)
+        q.update(status=DistributedQuery.PENDING)
+
+        data = [{
+            "name": "osqueryd",
+            "path": "/usr/local/bin/osqueryd",
+            "pid": "97830"
+        },
+        {
+            "name": "osqueryd",
+            "path": "/usr/local/bin/osqueryd",
+            "pid": "97830"
+        }]
+
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': node.node_key,
+            'queries': {
+                q.guid: data,
+            }
+        })
+
+        assert q.status == DistributedQuery.COMPLETE
+        assert q.result is not None
+        assert q.result.data == data
+
+    def test_distributed_query_write_state_complete(self, db, node, testapp):
+        q = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';",
+            node=node)
+        q.update(status=DistributedQuery.PENDING)
+
+        data = [{
+            "name": "osqueryd",
+            "path": "/usr/local/bin/osqueryd",
+            "pid": "97830"
+        },
+        {
+            "name": "osqueryd",
+            "path": "/usr/local/bin/osqueryd",
+            "pid": "97830"
+        }]
+
+        r = DistributedQueryResult.create(data=data, distributed_query=q)
+        q.update(status=DistributedQuery.COMPLETE)
+
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': node.node_key,
+            'queries': {
+                q.guid: '',
+            }
+        })
+
+        assert q.result == r
+        assert q.result.data == data
+
+    def test_malicious_node_distributed_query_write(self, db, node, testapp):
+        foo = NodeFactory(host_identifier='foo')
+        q1 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';",
+            node=node)
+        q2 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';",
+            node=foo)
+        q1.update(status=DistributedQuery.PENDING)
+        q2.update(status=DistributedQuery.PENDING)
+
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': foo.node_key,
+            'queries': {
+                q1.guid: 'bar'
+            }
+        })
+
+        assert not q1.result
+        assert not q2.result
+
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': foo.node_key,
+            'queries': {
+                q2.guid: 'bar'
+            }
+        })
+
+        assert q2.result
 
 class TestCreateQueryPackFromUpload:
 

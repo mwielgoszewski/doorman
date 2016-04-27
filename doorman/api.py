@@ -6,6 +6,7 @@ import json
 from flask import Blueprint, current_app, jsonify, request
 
 from doorman.database import db
+from doorman.extensions import log_plugins
 from doorman.models import Node, Pack, Query, Tag, StatusLog
 from doorman.utils import process_result
 
@@ -150,6 +151,7 @@ def logger(node=None):
         current_app.logger.debug(json.dumps(data, indent=2))
 
     if log_type == 'status':
+        log_plugins.handle_status(data, host_identifier=node.host_identifier)
         for item in data.get('data', []):
             status_log = StatusLog(node=node, **item)
             db.session.add(status_log)
@@ -157,6 +159,7 @@ def logger(node=None):
             db.session.commit()
 
     elif log_type == 'result':
+        log_plugins.handle_result(data, host_identifier=node.host_identifier)
         process_result(data, node)
 
     else:

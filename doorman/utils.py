@@ -6,6 +6,7 @@ import datetime as dt
 import json
 import pkg_resources
 import sqlite3
+import string
 import threading
 
 import six
@@ -134,6 +135,32 @@ def get_node_health(node):
         return ''
 
 
+# Since 'string.printable' includes control characters
+PRINTABLE = string.ascii_letters + string.digits + string.punctuation + ' '
+
+def quote(s, quote='"'):
+    buf = [quote]
+    for ch in s:
+        if ch == quote or ch == '\\':
+            buf.append('\\')
+            buf.append(ch)
+        elif ch == '\n':
+            buf.append('\\n')
+        elif ch == '\r':
+            buf.append('\\r')
+        elif ch == '\t':
+            buf.append('\\t')
+        elif ch in PRINTABLE:
+            buf.append(ch)
+        else:
+            # Hex escape
+            buf.append('\\x')
+            buf.append(hex(ord(ch))[2:])
+
+    buf.append(quote)
+    return ''.join(buf)
+
+
 def create_mock_db():
     mock_db = sqlite3.connect(':memory:')
     for ddl in schema:
@@ -161,14 +188,37 @@ def process_result(result, node):
         current_app.logger.error("No results to process from %s", node)
         return
 
-    if 'columns' in result['data'][0]:
-        process_event(result, node)
-    elif 'diffResults' in result['data'][0]:
-        process_batch(result, node)
+    for log in extract_results(result):
+        result = ResultLog(
+            node=node,
+            name=log['name'],
+            timestamp=log['timestamp'],
+            added=log['added'],
+            removed=log['removed']
+        )
+        db.session.add(result)
+    else:
+        db.session.commit()
     return
 
 
-def process_event(event, node):
+def extract_results(result):
+    if not result['data']:
+        return
+
+    if 'columns' in result['data'][0]:
+        gen = extract_events(result)
+    elif 'diffResults' in result['data'][0]:
+        gen = extract_batch(result)
+    else:
+        return
+
+    # We don't have 'yield from' in Python 2
+    for log in gen:
+        yield log
+
+
+def extract_events(event):
     orderby = itemgetter('unixTime', 'name', 'calendarTime', 'hostIdentifier')
 
     data = sorted(event['data'], key=orderby)
@@ -176,29 +226,25 @@ def process_event(event, node):
     for (_, name, caltime, _), items in groupby(data, orderby):
         timestamp = dt.datetime.strptime(caltime,
                                          '%a %b %d %H:%M:%S %Y UTC')
-        result = ResultLog(node=node, name=name, timestamp=timestamp,
-                           added=[], removed=[])
+
+        fields = {'name': name, 'timestamp': timestamp, 'added': [], 'removed': []}
         for item in items:
             if item['action'] == 'added':
-                result.added.append(item['columns'])
+                fields['added'].append(item['columns'])
             elif item['action'] == 'removed':
-                result.removed.append(item['columns'])
-        db.session.add(result)
-    else:
-        db.session.commit()
-    return
+                fields['removed'].append(item['columns'])
+
+        yield fields
 
 
-def process_batch(batch, node):
+def extract_batch(batch):
     for item in batch['data']:
         timestamp = dt.datetime.strptime(item['calendarTime'],
                                          '%a %b %d %H:%M:%S %Y UTC')
-        result_log = ResultLog(node=node,
-                               name=item['name'],
-                               timestamp=timestamp,
-                               added=item['diffResults']['added'],
-                               removed=item['diffResults']['removed'])
-        db.session.add(result_log)
-    else:
-        db.session.commit()
-    return
+        fields = {
+            'name': item['name'],
+            'timestamp': timestamp,
+            'added': item['diffResults']['added'],
+            'removed': item['diffResults']['removed'],
+        }
+        yield fields

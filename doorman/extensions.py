@@ -4,7 +4,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
 
-class LogSplitter(object):
+class LogTee(object):
     def __init__(self, app=None):
         self.app = app
         self.plugins = []
@@ -43,4 +43,4 @@ class LogSplitter(object):
 db = SQLAlchemy()
 migrate = Migrate()
 debug_toolbar = DebugToolbarExtension()
-log_splitter = LogSplitter()
+log_tee = LogTee()

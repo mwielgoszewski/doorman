@@ -109,6 +109,7 @@ class Query(SurrogatePK, Model):
     version = Column(db.String)
     description = Column(db.String)
     value = Column(db.String)
+    removed = Column(db.Boolean, nullable=False, default=True)
 
     packs = relationship(
         'Pack',
@@ -124,7 +125,8 @@ class Query(SurrogatePK, Model):
     )
 
     def __init__(self, name, query=None, sql=None, interval=3600, platform=None,
-                 version=None, description=None, value=None, **kwargs):
+                 version=None, description=None, value=None, removed=True,
+                 **kwargs):
         self.name = name
         self.sql = query or sql
         self.interval = int(interval)
@@ -132,6 +134,7 @@ class Query(SurrogatePK, Model):
         self.version = version
         self.description = description
         self.value = value
+        self.removed = removed
 
     def __repr__(self):
         return '<Query: {0.name}>'.format(self)
@@ -144,6 +147,7 @@ class Query(SurrogatePK, Model):
             'version': self.version,
             'description': self.description,
             'value': self.value,
+            'removed': self.removed,
         }
 
 

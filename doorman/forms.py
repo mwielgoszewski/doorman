@@ -3,7 +3,8 @@
 from flask_wtf import Form
 from flask_wtf.file import FileField, FileRequired
 
-from wtforms.fields import (IntegerField,
+from wtforms.fields import (BooleanField,
+                            IntegerField,
                             SelectField,
                             SelectMultipleField,
                             StringField,
@@ -43,6 +44,7 @@ class QueryForm(Form):
     version = StringField('Version')
     description = TextAreaField('Description')
     value = TextAreaField('Value') 
+    removed = BooleanField('Log Removed?', default=True)
     packs = SelectMultipleField('Packs', default=None, choices=[
     ])
     tags = TextAreaField("Tags")

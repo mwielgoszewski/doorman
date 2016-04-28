@@ -153,7 +153,9 @@ class TestConfiguration:
         tag = TagFactory(value='foobar')
         pack = PackFactory(name='foobar')
         pack.tags.append(tag)
-        query = QueryFactory(name='foobar', sql='select * from foobar;')
+
+        sql = 'select * from foobar;'
+        query = QueryFactory(name='foobar', sql=sql)
         pack.queries.append(query)
         pack.save()
         node.tags.append(tag)
@@ -170,8 +172,31 @@ class TestConfiguration:
         assert query.name in resp.json['packs'][pack.name]['queries']
         assert list(resp.json['packs'][pack.name]['queries'].keys()) == [query.name]
 
+        # should default to 'removed': true
+        assert resp.json['packs'][pack.name]['queries'][query.name]['query'] == sql
+        assert resp.json['packs'][pack.name]['queries'][query.name]['removed'] == True
+
         assert 'schedule' in resp.json
         assert 'file_paths' in resp.json
+
+    def test_configuration_will_respect_removed_false(self, node, testapp):
+        tag = TagFactory(value='foobar')
+        pack = PackFactory(name='foobar')
+        pack.tags.append(tag)
+
+        sql = 'select * from foobar;'
+        query = QueryFactory(name='foobar', sql=sql, removed=False)
+        pack.queries.append(query)
+        pack.save()
+        node.tags.append(tag)
+        node.save()
+
+        resp = testapp.post_json(url_for('api.configuration'), {
+            'node_key': node.node_key})
+
+        # as above, but 'removed': false
+        assert resp.json['packs'][pack.name]['queries'][query.name]['query'] == sql
+        assert resp.json['packs'][pack.name]['queries'][query.name]['removed'] == False
 
     def test_valid_configuration(self, node, testapp):
         resp = testapp.post_json(url_for('api.configuration'), {

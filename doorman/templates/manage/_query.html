@@ -37,6 +37,11 @@
                         {% endif %}
 
                         <tr>
+                            <th width="15%">Show Removed?</th>
+                            <td width="85%">{{ query.removed }}</td>
+                        </tr>
+
+                        <tr>
                             <th width="15%">Packs</th>
                             <td width="85%">
                                 {% for _pack in query.packs %}

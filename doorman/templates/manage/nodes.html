@@ -7,7 +7,7 @@
                 <h1>nodes</h1>
                 
                 {% if nodes %}
-                {% include "manage/tables/nodes.html" %}
+                {% include "tables/nodes.html" %}
                 {% elif request.endpoint == url_for('manage.nodes') %}
                 <p>No nodes have enrolled yet!</p>
                 {% endif %}

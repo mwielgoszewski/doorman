@@ -3,8 +3,10 @@ from copy import deepcopy
 from flask import url_for
 from sqlalchemy import and_
 import datetime as dt
-
 import json
+import mock
+import time
+
 try:
     from urlparse import urlparse
 except ImportError:
@@ -460,6 +462,7 @@ class TestDistributedRead:
         assert q.status == DistributedQuery.PENDING
         assert q.guid in resp.json['queries']
         assert resp.json['queries'][q.guid] == q.sql
+        assert q.retrieved > q.timestamp
 
     def test_distributed_query_read_pending(self, db, node, testapp):
         q = DistributedQuery.create(sql='select * from osquery_info;',
@@ -482,6 +485,44 @@ class TestDistributedRead:
         })
 
         assert not resp.json['queries']
+
+    def test_distributed_query_read_not_before(self, db, node, testapp):
+        import doorman.utils
+
+        now = dt.datetime.utcnow()
+        not_before = now + dt.timedelta(days=1)
+
+        q = DistributedQuery.create(sql='select * from osquery_info;',
+                                    node=node,
+                                    not_before=not_before)
+
+        assert q.not_before == not_before
+
+        datetime_patcher = mock.patch.object(doorman.utils.dt, 'datetime',
+                                             mock.Mock(wraps=dt.datetime))
+        mocked_datetime = datetime_patcher.start()
+        mocked_datetime.utcnow.return_value = not_before - dt.timedelta(seconds=1)
+
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': node.node_key,
+        })
+
+        assert not resp.json['queries']
+
+        mocked_datetime.utcnow.return_value = not_before + dt.timedelta(seconds=1)
+
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': node.node_key,
+        })
+
+        assert q.status == DistributedQuery.PENDING
+        assert q.retrieved == not_before + dt.timedelta(seconds=1)
+        assert q.guid in resp.json['queries']
+        assert resp.json['queries'][q.guid] == q.sql
+
+        datetime_patcher.stop()
+
+        assert doorman.utils.dt.datetime.utcnow() != not_before
 
 
 class TestDistributedWrite:

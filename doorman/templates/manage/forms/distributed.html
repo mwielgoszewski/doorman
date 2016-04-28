@@ -1,0 +1,45 @@
+                <form class="form-horizontal" method="POST">
+
+                    <fieldset>
+                        <legend>add distributed query</legend>
+
+                        {{ form.csrf_token() }}
+
+                        <div class="form-group">
+                            {{ form.sql.label(class_="col-sm-2 control-label") }}
+                            <div class="col-sm-10">
+                                {{ form.sql(class_="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.not_before.label(class_="col-sm-2 control-label") }}
+                            <div class="col-sm-10">
+                                {{ form.not_before(class_="datepicker form-control", placeholder="2016-01-01 12:22:01") }}
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.nodes.label(class_="col-sm-2 control-label") }}
+                            <div class="col-sm-10">
+                                {{ form.nodes(class_="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            {{ form.tags.label(class_="col-sm-2 control-label") }}
+                            <div class="col-sm-10">
+                                {{ form.tags(class_="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-sm-10 col-sm-offset-2">
+                                <p><input class="btn-small btn-default btn-submit" type="submit" value="add distributed query"></p>
+                            </div>
+                        </div>
+
+                    </fieldset>
+
+                </form>

@@ -77,11 +77,20 @@ def assemble_distributed_queries(node):
     current database session.
     '''
     from doorman.models import DistributedQuery
+    now = dt.datetime.utcnow()
+
     queries = {}
     for query in node.distributed_queries.filter(
         DistributedQuery.status == DistributedQuery.NEW):
+
+        if query.not_before > now:
+            continue
+
         queries[query.guid] = query.sql
-        query.status = DistributedQuery.PENDING
+        query.update(status=DistributedQuery.PENDING,
+                     retrieved=dt.datetime.utcnow(),
+                     commit=False)
+
         # add this query to the session, but don't commit until we're
         # as sure as we possibly can be that it's been received by the
         # osqueryd client. unfortunately, there are no guarantees though.
@@ -274,7 +283,7 @@ def flash_errors(form):
     '''http://flask.pocoo.org/snippets/12/'''
     for field, errors in form.errors.items():
         for error in errors:
-            flash(u"Error in the %s field - %s" % (
-                getattr(form, field).label.text,
-                error
-            ))
+            message = u"Error in the {0} field - {1}".format(
+                getattr(form, field).label.text, error
+            )
+            flash(message, 'danger')

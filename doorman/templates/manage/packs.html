@@ -16,7 +16,7 @@
                         {% endfor %}
                     </select>
                 </p>
-                {% include "manage/_pack.html" %}
+                {% include "_pack.html" %}
                 {% endfor %}
                 {% else %}
                 <p>No packs uploaded. You may upload a new pack <a href="{{ url_for('.add_pack') }}">here</a>.<p>

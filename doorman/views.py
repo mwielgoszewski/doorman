@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
 from doorman.forms import (
+    AddDistributedQueryForm,
     CreateQueryForm,
     UpdateQueryForm,
     CreateTagForm,
@@ -11,7 +12,7 @@ from doorman.forms import (
     FilePathForm,
 )
 from doorman.database import db
-from doorman.models import FilePath, Node, Pack, Query, Tag
+from doorman.models import DistributedQuery, FilePath, Node, Pack, Query, Tag
 from doorman.utils import create_query_pack_from_upload, flash_errors
 
 
@@ -22,7 +23,8 @@ blueprint = Blueprint('manage', __name__,
 
 @blueprint.context_processor
 def inject_models():
-    return dict(Node=Node, Pack=Pack, Query=Query, Tag=Tag)
+    return dict(Node=Node, Pack=Pack, Query=Query, Tag=Tag,
+                DistributedQuery=DistributedQuery)
 
 
 @blueprint.route('/')
@@ -57,6 +59,12 @@ def get_node(node_id):
     return render_template('node.html', node=node)
 
 
+@blueprint.route('/node/<int:node_id>/activity')
+def node_activity(node_id):
+    node = Node.query.filter(Node.id == node_id).one()
+    return render_template('activity.html', node=node)
+
+
 @blueprint.route('/node/<int:node_id>/tags', methods=['GET', 'POST'])
 def tag_node(node_id):
     node = Node.query.filter(Node.id == node_id).one()
@@ -66,6 +74,16 @@ def tag_node(node_id):
         return jsonify({}), 202
 
     return redirect(url_for('.get_node', node_id=node.id))
+
+
+@blueprint.route('/node/<int:node_id>/distributed/result/<string:guid>')
+def get_distributed_result(node_id, guid):
+    node = Node.query.filter(Node.id == node_id).one()
+    query = DistributedQuery.query.filter(
+        DistributedQuery.guid == guid,
+        DistributedQuery.node == node,
+    ).one()
+    return render_template('distributed.result.html', node=node, query=query)
 
 
 @blueprint.route('/packs')
@@ -128,6 +146,71 @@ def add_query():
 
     flash_errors(form)
     return render_template('query.html', form=form)
+
+
+@blueprint.route('/queries/distributed')
+@blueprint.route('/queries/distributed/<any(new, pending, complete):status>')
+@blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>')
+def distributed(node_id=None, status=None):
+    if status == 'new':
+        queries = DistributedQuery.query.filter(
+            DistributedQuery.status == DistributedQuery.NEW)
+    elif status == 'pending':
+        queries = DistributedQuery.query.filter(
+            DistributedQuery.status == DistributedQuery.PENDING)
+    elif status == 'complete':
+        queries = DistributedQuery.query.filter(
+            DistributedQuery.status == DistributedQuery.COMPLETE)
+    else:
+        queries = DistributedQuery.query
+
+    if node_id:
+        node = Node.query.filter(Node.id == node_id).one()
+        queries = queries.filter(DistributedQuery.node_id == node.id)
+
+    return render_template('distributed.html', queries=queries, status=status)
+
+
+@blueprint.route('/queries/distributed/add', methods=['GET', 'POST'])
+def add_distributed():
+    form = AddDistributedQueryForm()
+    form.set_choices()
+
+    if form.validate_on_submit():
+        nodes = []
+
+        if not form.nodes.data and not form.tag.data:
+            # all nodes get this query
+            nodes = Node.query.all()
+
+        if form.nodes.data:
+            nodes.extend(
+                Node.query.filter(
+                    Node.node_key.in_(form.nodes.data)
+                ).all()
+            )
+
+        if form.tags.data:
+            nodes.extend(
+                Node.query.filter(
+                    Node.tags.any(
+                        Tag.value.in_(tag_names)
+                    )
+                ).all()
+            )
+
+        for node in nodes:
+            query = DistributedQuery(sql=form.sql.data,
+                                     node=node,
+                                     not_before=form.not_before.data)
+            db.session.add(query)
+        else:
+            db.session.commit()
+
+        return redirect(url_for('.distributed', status='new'))
+
+    flash_errors(form)
+    return render_template('distributed.html', form=form)
 
 
 @blueprint.route('/queries/tagged/<string:tags>')

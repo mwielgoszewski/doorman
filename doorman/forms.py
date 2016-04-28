@@ -4,12 +4,13 @@ from flask_wtf import Form
 from flask_wtf.file import FileField, FileRequired
 
 from wtforms.fields import (BooleanField,
+                            DateTimeField,
                             IntegerField,
                             SelectField,
                             SelectMultipleField,
                             StringField,
                             TextAreaField)
-from wtforms.validators import DataRequired, ValidationError
+from wtforms.validators import DataRequired, Optional, ValidationError
 
 from doorman.utils import validate_osquery_query
 
@@ -83,6 +84,20 @@ class CreateQueryForm(QueryForm):
 
         # TODO could do some validation of the sql query
         return True
+
+
+class AddDistributedQueryForm(Form):
+
+    sql = TextAreaField('Query', validators=[DataRequired(), ValidSQL()])
+    not_before = DateTimeField('Not Before', format="%Y-%m-%d %H:%M:%S",
+                               validators=[Optional()])
+    nodes = SelectMultipleField('Nodes', choices=[])
+    tags = SelectMultipleField('Tags', choices=[])
+
+    def set_choices(self):
+        from doorman.models import Node, Tag
+        self.nodes.choices = Node.query.with_entities(Node.node_key, Node.host_identifier).all()
+        self.tags.choices = Tag.query.with_entities(Tag.value, Tag.value).all()
 
 
 class CreateTagForm(Form):

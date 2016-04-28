@@ -355,6 +355,8 @@ class DistributedQuery(SurrogatePK, Model):
     status = Column(db.Integer, default=0, nullable=False)
     sql = Column(db.String, nullable=False)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
+    not_before = Column(db.DateTime, default=dt.datetime.utcnow)
+    retrieved = Column(db.DateTime)
 
     node_id = reference_col('node', nullable=False)
     node = relationship(
@@ -362,10 +364,11 @@ class DistributedQuery(SurrogatePK, Model):
         backref=db.backref('distributed_queries', lazy='dynamic'),
     )
 
-    def __init__(self, sql, node=None):
+    def __init__(self, sql, node=None, not_before=None):
         self.guid = str(uuid.uuid4())
         self.sql = sql
         self.node = node
+        self.not_before = not_before
 
 
 class DistributedQueryResult(SurrogatePK, Model):

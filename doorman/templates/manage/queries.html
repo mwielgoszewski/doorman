@@ -8,7 +8,7 @@
 
                 {% if queries %}
                 {% for query in queries | sort(attribute='name') %}
-                {% include "manage/_query.html" %}
+                {% include "_query.html" %}
                 {% endfor %}
                 {% else %}
                 <p>No queries created. You may <a href="{{ url_for('.add_query') }}">create a new query</a> or <a href="{{ url_for('.add_pack') }}">upload a new pack</a>.<p>

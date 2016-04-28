@@ -1,0 +1,22 @@
+                <form class="form form-horizontal" method="POST" role="form" enctype="multipart/form-data">
+                    <fieldset>
+                        <legend>upload a query pack</legend>
+                        {{ form.csrf_token() }}
+
+                        <p>Learn how to format your query packs <a href="https://osquery.readthedocs.org/en/stable/deployment/configuration/#query-packs">here</a>.</p>
+
+                        <div class="form-group">
+                            <!-- {{ form.pack.label(class_="col-md-2 control-label") }} -->
+                            <div class="col-md-10">
+                                {{ form.pack(placeholder="Path to osquery pack", class_="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-8">
+                                <p><input class="btn-small btn-default btn-submit" type="submit" value="Upload Query Pack"></p>
+                            </div>
+                        </div>
+
+                    </fieldset>
+                </form>

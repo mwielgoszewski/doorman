@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            {% if queries is defined %}
+
+            <div class="col-md-12">
+                <h1>{% if status %}{{ status }} {% endif %}distributed queries</h1>
+
+                {% if queries.count() %}
+                {% include "tables/distributed.html" %}
+                {% else %}
+                <p>No distributed queries in {{ status }} state.</p>
+                {% endif %}
+
+            {% else %}
+            <div class="col-md-9">
+                {% include "forms/distributed.html" %}
+            {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

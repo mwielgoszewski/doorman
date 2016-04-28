@@ -1,0 +1,41 @@
+                <table class="table table-striped table-condensed">
+                    <thead>
+                        <th>node</th>
+                        <th>query</th>
+                        <th>created</th>
+                        <th>run after</th>
+                        <th>retrieved</th>
+                        {% if not status %}<th>status</th>{% endif %}
+                        <th>result</th>
+                    </thead>
+
+                    <tbody>
+                        {% for query in queries %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
+                            </td>
+                            <td><code>{{ query.sql }}</code></td>
+                            <td>{{ query.timestamp }}</td>
+                            <td>{{ query.not_before or 'immediately' }}</td>
+                            <td>{{ query.retrieved or '' }}</td>
+                            {% if not status %}
+                            <td>
+                                {%- if query.status == DistributedQuery.NEW -%}
+                                NEW
+                                {%- elif query.status == DistributedQuery.PENDING -%}
+                                PENDING
+                                {%- elif query.status == DistributedQuery.COMPLETE -%}
+                                COMPLETE
+                                {%- endif -%}
+                            </td>
+                            {% endif %}
+
+                            <td>
+                                <a href="{{ url_for('.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.result.timestamp }}</a>
+                            </td>
+
+                        {% endfor %}
+                    </tbody>
+
+                </table>

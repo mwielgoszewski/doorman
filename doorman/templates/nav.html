@@ -22,6 +22,7 @@
     (url_for('.nodes'), 'manage.nodes', 'nodes'),
     (url_for('.packs'), 'manage.packs', 'packs'),
     (url_for('.queries'), 'manage.queries', 'queries'),
+    (url_for('.distributed'), 'manage.distributed', 'distributed'),
     (url_for('.files'), 'manage.files', 'files'),
     (url_for('.tags'), 'manage.tags', 'tags'),
 
@@ -40,13 +41,16 @@
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">add <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu">
           <li>
-            <a href="{{ url_for('.add_file') }}">file path</a>
-          </li>
-          <li>
             <a href="{{ url_for('.add_pack') }}">pack</a>
           </li>
           <li>
             <a href="{{ url_for('.add_query') }}">query</a>
+          </li>
+          <li>
+            <a href="{{ url_for('.add_distributed') }}">distributed</a>
+          </li>
+          <li>
+            <a href="{{ url_for('.add_file') }}">file</a>
           </li>
           <li>
             <a href="{{ url_for('.add_tag') }}">tag</a>

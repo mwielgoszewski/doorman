@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>recent activity</h1>
+
+                {% if node.get_recent().count() %}
+                {% include "_activity.html" %}
+                {% else %}
+                <p>No recent activity for this node.<p>
+                {% endif %}
+
+                {% if node.distributed_queries.count() %}
+                <h1>distributed queries</h1>
+
+                {% set queries = node.distributed_queries %}
+                {% include "tables/distributed.html" %}
+                {% else %}
+                <p>No recent distributed queries for this node.</p>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

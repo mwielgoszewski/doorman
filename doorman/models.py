@@ -12,7 +12,6 @@ from doorman.database import (
     db,
     reference_col,
     relationship,
-    JSONBType,
     JSONB,
 )
 
@@ -303,8 +302,8 @@ class ResultLog(SurrogatePK, Model):
 
     name = Column(db.String, nullable=False)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
-    added = Column(JSONBType)
-    removed = Column(JSONBType)
+    added = Column(JSONB)
+    removed = Column(JSONB)
 
     node_id = reference_col('node', nullable=False)
     node = relationship(
@@ -373,7 +372,7 @@ class DistributedQuery(SurrogatePK, Model):
 
 class DistributedQueryResult(SurrogatePK, Model):
 
-    data = Column(JSONBType)
+    data = Column(JSONB)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
 
     distributed_query_id = reference_col('distributed_query', nullable=False)

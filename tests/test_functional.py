@@ -198,7 +198,7 @@ class TestConfiguration:
 
         # as above, but 'removed': false
         assert resp.json['packs'][pack.name]['queries'][query.name]['query'] == sql
-        assert resp.json['packs'][pack.name]['queries'][query.name]['removed'] == False
+        assert resp.json['packs'][pack.name]['queries'][query.name]['removed'] is False
 
     def test_valid_configuration(self, node, testapp):
         resp = testapp.post_json(url_for('api.configuration'), {
@@ -535,7 +535,7 @@ class TestDistributedWrite:
             }
         })
         result = DistributedQueryResult.query.filter(
-            DistributedQueryResult.data == 'bar').all()
+            DistributedQueryResult.data[(0, 'foo')].astext == 'baz').all()
         assert not result
 
     def test_distributed_query_write_state_new(self, db, node, testapp):

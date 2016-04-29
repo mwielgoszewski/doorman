@@ -10,9 +10,16 @@ python:
 
 install: "pip install -r requirements/dev.txt"
 
+services:
+  - postgresql
+
+addons:
+  postgresql: "9.4"
+
 before_script:
   # Install JS dependencies
   - npm install -g bower less
   - bower install
+  - psql -c 'create database doorman_test;' -U postgres
 
 script: python manage.py test

@@ -191,16 +191,21 @@ class CountRule(BaseRule):
 
         self.query_name = config.get('query_name')
 
-    def handle_result(self, result, node):
-        if self.query_name is not None and result.name != self.query_name:
-            return
-
+    def get_counts(self, result):
         count = 0
 
         if self.action == Rule.ADDED or self.action == Rule.BOTH:
             count += len(result.added)
         if self.action == Rule.REMOVED or self.action == Rule.BOTH:
             count += len(result.removed)
+
+        return count
+
+    def handle_result(self, result, node):
+        if self.query_name is not None and result.name != self.query_name:
+            return
+
+        count = self.get_counts(result)
 
         # TODO: more information in match?
         matches = []

@@ -95,8 +95,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.Column('added', doorman.database.JSONBType(), nullable=True),
-    sa.Column('removed', doorman.database.JSONBType(), nullable=True),
+    sa.Column('added', doorman.database.JSONB(), nullable=True),
+    sa.Column('removed', doorman.database.JSONB(), nullable=True),
     sa.Column('node_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['node_id'], ['node.id'], ),
     sa.PrimaryKeyConstraint('id')

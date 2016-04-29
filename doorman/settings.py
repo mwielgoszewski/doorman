@@ -56,6 +56,28 @@ class Config(object):
     #DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'     # Default: do not log results
     #DOORMAN_LOG_FILE_PLUGIN_APPEND = True                      # Default: True
 
+    # You can specify a set of alerting plugins here.  These plugins can be
+    # configured in rules to trigger alerts to a particular location.  Each
+    # plugin consists of a full path to be imported, combined with some
+    # configuration for the plugin.  Note that, since an alerter can be
+    # configured multiple times with different names, we provide the
+    # configuration per-name.
+    DOORMAN_ALERTER_PLUGINS = {
+        'debug': ('doorman.plugins.alerters.debug.DebugAlerter', {
+            'level': 'error',
+        }),
+
+        #'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
+        #    # Required
+        #    'access_key': 'foobar',
+        #    'service_key': 'foobar',
+        #
+        #    # Optional
+        #    'client_url': 'https://doorman.domain.com',
+        #    'key_format': 'doorman-security-{count}',
+        #}),
+    }
+
 
 class DevConfig(Config):
     ENV = 'dev'

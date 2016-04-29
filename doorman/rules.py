@@ -28,9 +28,23 @@ class BaseRule(object):
         This function processes an incoming log entry.  It normalizes the data,
         validates the node name (if that filter was given), and then dispatches
         to the underlying rule.
+
+        Note: the entry passed in contains a `hostIdentifier` field sent by the
+        client, and `node` contains a `host_identifier` field that was
+        originally stored when the node enrolled.  Note that the
+        `hostIdentifier` field in the incoming entry may have changed, e.g. if
+        the user changes their hostname.  All the rules here use the node's
+        (original) `host_identifier` value for comparisons.
+
+        :param entry: The full request received from the client (i.e. including "node_key", etc.)
+        :param node: Information about the sending node, retrieved from the database.
+        :type entry: dict
+        :type node: dict, created from the Node model
+
+        :returns: A list of matches
         """
         if self.node_name is not None and node['host_identifier'] != self.node_name:
-            return None
+            return []
 
         matches = []
         for result in extract_results(entry):
@@ -44,6 +58,11 @@ class BaseRule(object):
         """
         This function should be implemented by anything that wishes to handle a
         single result from a log entry.
+
+        :param result: A single query result, as returned by extract_results
+        :param node: Information about the sending node, retrieved from the database.
+        :type result: Field
+        :type node: dict, created from the Node model
         """
         raise NotImplementedError()
 

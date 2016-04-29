@@ -99,13 +99,10 @@ class EachResultRule(BaseRule):
         if self.query_name is not None and result.name != self.query_name:
             return
 
-        matches = []
         for action, columns in self.filter_result(result):
             res = self.handle_columns(action, columns, node)
             if res is not None:
-                matches.append(res)
-
-        return matches
+                yield res
 
     def handle_columns(self, action, columns, node):
         """

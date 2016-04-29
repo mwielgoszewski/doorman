@@ -42,6 +42,11 @@ file_path_tags = Table('file_path_tags',
     Column('file_path.id', db.Integer, ForeignKey('file_path.id'))
 )
 
+rule_alerters = Table('rulealerters',
+    Column('rule.id', db.Integer, ForeignKey('rule.id')),
+    Column('alerter.id', db.Integer, ForeignKey('alerter.id')),
+)
+
 
 class Tag(SurrogatePK, Model):
 
@@ -400,6 +405,13 @@ class Rule(SurrogatePK, Model):
         backref=db.backref('rules', lazy='dynamic'),
     )
 
+    alerters = relationship(
+        'Alerter',
+        secondary=rule_alerters,
+        back_populates='rules',
+        lazy='joined',
+    )
+
     # Should have a unique pair of (query, rule name)
     __table_args__ = (
         UniqueConstraint('query_id', 'name', name='_query_name_uc'),
@@ -410,3 +422,21 @@ class Rule(SurrogatePK, Model):
         self.name = name
         self.config = config
         self.query = query
+
+
+class Alerter(SurrogatePK, Model):
+    __tablename__ = 'alerter'
+
+    type = Column(db.String, nullable=False)
+    name = Column(db.String, nullable=False)
+    config = Column(JSONBType)
+
+    rules = relationship(
+        'Rule',
+        secondary=rule_alerters,
+        back_populates='alerters',
+    )
+
+    def __init__(self, type, config):
+        self.type = type
+        self.config = config

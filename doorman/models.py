@@ -397,7 +397,7 @@ class Rule(SurrogatePK, Model):
 
     type = Column(db.String, nullable=False)
     name = Column(db.String, nullable=True)
-    config = Column(JSONBType)
+    config = Column(JSONB)
 
     query_id = reference_col('query', nullable=False)
     query = relationship(
@@ -429,7 +429,7 @@ class Alerter(SurrogatePK, Model):
 
     type = Column(db.String, nullable=False)
     name = Column(db.String, nullable=False)
-    config = Column(JSONBType)
+    config = Column(JSONB)
 
     rules = relationship(
         'Rule',

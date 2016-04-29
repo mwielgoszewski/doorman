@@ -21,7 +21,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('type', sa.String(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
-    sa.Column('config', doorman.database.JSONBType(), nullable=True),
+    sa.Column('config', doorman.database.JSONB(), nullable=True),
     sa.Column('query_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['query_id'], ['query.id'], ),
     sa.PrimaryKeyConstraint('id'),

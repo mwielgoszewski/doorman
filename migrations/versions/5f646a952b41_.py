@@ -21,7 +21,7 @@ def upgrade():
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('type', sa.String(), nullable=False),
         sa.Column('name', sa.String(), nullable=False),
-        sa.Column('config', doorman.database.JSONBType(), nullable=True),
+        sa.Column('config', doorman.database.JSONB(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_table('rulealerters',

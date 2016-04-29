@@ -405,7 +405,8 @@ class Rule(SurrogatePK, Model):
         UniqueConstraint('query_id', 'name', name='_query_name_uc'),
     )
 
-    def __init__(self, type, config, query=None):
+    def __init__(self, type, name, config, query=None):
         self.type = type
+        self.name = name
         self.config = config
         self.query = query

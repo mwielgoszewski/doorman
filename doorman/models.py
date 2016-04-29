@@ -9,6 +9,7 @@ from doorman.database import (
     ForeignKey,
     Model,
     SurrogatePK,
+    UniqueConstraint,
     db,
     reference_col,
     relationship,
@@ -384,3 +385,27 @@ class DistributedQueryResult(SurrogatePK, Model):
     def __init__(self, columns, distributed_query=None):
         self.columns = columns
         self.distributed_query = distributed_query
+
+
+class Rule(SurrogatePK, Model):
+    __tablename__ = 'rule'
+
+    type = Column(db.String, nullable=False)
+    name = Column(db.String, nullable=True)
+    config = Column(JSONBType)
+
+    query_id = reference_col('query', nullable=False)
+    query = relationship(
+        'Query',
+        backref=db.backref('rules', lazy='dynamic'),
+    )
+
+    # Should have a unique pair of (query, rule name)
+    __table_args__ = (
+        UniqueConstraint('query_id', 'name', name='_query_name_uc'),
+    )
+
+    def __init__(self, type, config, query=None):
+        self.type = type
+        self.config = config
+        self.query = query

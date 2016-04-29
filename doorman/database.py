@@ -11,6 +11,7 @@ from doorman.extensions import db
 Column = db.Column
 Table = db.Table
 ForeignKey = db.ForeignKey
+UniqueConstraint = db.UniqueConstraint
 relationship = relationship
 
 

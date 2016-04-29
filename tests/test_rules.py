@@ -116,7 +116,6 @@ class TestEachResultRule:
         ]
 
 
-
 class TestBlacklistRule:
 
     def test_will_blacklist(self):

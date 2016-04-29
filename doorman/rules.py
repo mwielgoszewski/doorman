@@ -81,27 +81,33 @@ class EachResultRule(BaseRule):
         self.action = action
         self.query_name = config.get('query_name')
 
+    def filter_result(self, result):
+        """
+        Given an action filter and a result, yields only results that match the filter.
+        """
+        for action, columns in zip((Rule.ADDED, Rule.REMOVED), (result.added, result.removed)):
+            if self.action not in (action, Rule.BOTH):
+                continue
+
+            if columns == '' or not columns:
+                continue
+
+            for item in columns:
+                yield (action, item)
+
     def handle_result(self, result, node):
         if self.query_name is not None and result.name != self.query_name:
             return
 
         matches = []
-
-        if self.action == Rule.ADDED or self.action == Rule.BOTH:
-            for x in result.added:
-                res = self.handle_columns('added', x, node)
-                if res is not None:
-                    matches.append(res)
-
-        if self.action == Rule.REMOVED or self.action == Rule.BOTH:
-            for x in result.removed:
-                res = self.handle_columns('removed', x, node)
-                if res is not None:
-                    matches.append(res)
+        for action, columns in self.filter_result(result):
+            res = self.handle_columns(action, columns, node)
+            if res is not None:
+                matches.append(res)
 
         return matches
 
-    def handle_columns(self, action, item, node):
+    def handle_columns(self, action, columns, node):
         """
         This function should be implemented to match against each set of
         columns that has been extracted.
@@ -115,10 +121,10 @@ class CompareRule(EachResultRule):
     column set and pass it to a comparison function.  If it compares, it will
     create and return a match.
     """
-    def handle_columns(self, action, item, node):
-        val = item.get(self.field_name)
+    def handle_columns(self, action, columns, node):
+        val = columns.get(self.field_name)
         if self.compare(action, val, node):
-            return self.make_match(action, node, item)
+            return self.make_match(action, node, columns)
 
     def compare(self, action, value, node):
         raise NotImplementedError()

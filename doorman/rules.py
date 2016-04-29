@@ -116,6 +116,35 @@ class WhitelistRule(CompareRule):
         return val not in self.whitelist
 
 
+class CountRule(BaseRule):
+    """
+    CountRule will match if a given query returns a number of results that's
+    greater than, equal to, or less than, some threshold count.
+    """
+    def __init__(self, config, **kwargs):
+        super(CountRule, self).__init__(**kwargs)
+        self.count = int(config['count'])
+        self.direction = config['direction']
+
+        if self.direction not in ['greater', 'equal', 'less']:
+            raise ValueError('Unknown direction in CountRule: {0}'.format(self.direction))
+
+    def handle_result(self, result, node):
+        matches = []
+        for event in extract_results(result):
+            count = len(event.added)
+
+            # TODO: more information in match?
+            if self.direction == 'greater' and count > self.count:
+                matches.append(self.make_match(node, event.added))
+            elif self.direction == 'equal' and count == self.count:
+                matches.append(self.make_match(node, event.added))
+            elif self.direction == 'less' and count < self.count:
+                matches.append(self.make_match(node, event.added))
+
+        return matches
+
+
 # Note: should be at the end of the file
 RULE_MAPPINGS = {
     'blacklist': BlacklistRule,

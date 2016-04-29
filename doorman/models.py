@@ -13,6 +13,7 @@ from doorman.database import (
     db,
     reference_col,
     relationship,
+    ARRAY,
     JSONB,
 )
 
@@ -40,11 +41,6 @@ query_tags = Table('query_tags',
 file_path_tags = Table('file_path_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('file_path.id', db.Integer, ForeignKey('file_path.id'))
-)
-
-rule_alerters = Table('rulealerters',
-    Column('rule.id', db.Integer, ForeignKey('rule.id')),
-    Column('alerter.id', db.Integer, ForeignKey('alerter.id')),
 )
 
 
@@ -395,48 +391,19 @@ class DistributedQueryResult(SurrogatePK, Model):
 class Rule(SurrogatePK, Model):
     __tablename__ = 'rule'
 
-    type = Column(db.String, nullable=False)
-    name = Column(db.String, nullable=True)
-    config = Column(JSONB)
-
-    query_id = reference_col('query', nullable=False)
-    query = relationship(
-        'Query',
-        backref=db.backref('rules', lazy='dynamic'),
-    )
-
-    alerters = relationship(
-        'Alerter',
-        secondary=rule_alerters,
-        back_populates='rules',
-        lazy='joined',
-    )
-
-    # Should have a unique pair of (query, rule name)
-    __table_args__ = (
-        UniqueConstraint('query_id', 'name', name='_query_name_uc'),
-    )
-
-    def __init__(self, type, name, config, query=None):
-        self.type = type
-        self.name = name
-        self.config = config
-        self.query = query
-
-
-class Alerter(SurrogatePK, Model):
-    __tablename__ = 'alerter'
+    ADDED = 'added'
+    REMOVED = 'removed'
+    BOTH = 'both'
 
     type = Column(db.String, nullable=False)
     name = Column(db.String, nullable=False)
+    action = Column(db.Enum(ADDED, REMOVED, BOTH, name='rule_actions'), nullable=False)
+    alerters = Column(ARRAY(db.String), nullable=False)
     config = Column(JSONB)
 
-    rules = relationship(
-        'Rule',
-        secondary=rule_alerters,
-        back_populates='alerters',
-    )
-
-    def __init__(self, type, config):
+    def __init__(self, type, name, action, alerters, config=None):
         self.type = type
+        self.name = name
+        self.action = action
+        self.alerters = alerters
         self.config = config

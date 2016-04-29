@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
 
+from doorman.models import Rule
 from doorman.utils import extract_results
 
 
-RuleMatch = namedtuple('RuleMatch', ['rule_id', 'query_id', 'node', 'match'])
+# Note: the fields are:
+#   - rule_id               The ID of the Rule that created this match
+#   - node                  The node that this Rule match applies to
+#   - action                The action that took place ('added', 'removed', or None)
+#   - match                 Some additional details about this match (any type)
+RuleMatch = namedtuple('RuleMatch', ['rule_id', 'node', 'action', 'match'])
 
 
 class BaseRule(object):
@@ -13,22 +19,39 @@ class BaseRule(object):
     interface that should be implemented by classes that know how to take
     incoming log data and determine if a rule has been triggered.
     """
-    def __init__(self, rule_id=None, query_id=None):
+    def __init__(self, rule_id, action, config):
         self.rule_id = rule_id
-        self.query_id = query_id
+        self.node_name = config.get('node_name')
+
+    def handle_log_entry(self, entry, node):
+        """
+        This function processes an incoming log entry.  It normalizes the data,
+        validates the node name (if that filter was given), and then dispatches
+        to the underlying rule.
+        """
+        if self.node_name is not None and node['host_identifier'] != self.node_name:
+            return None
+
+        matches = []
+        for result in extract_results(entry):
+            res = self.handle_result(result, node)
+            if res is not None:
+                matches.extend(res)
+
+        return matches
 
     def handle_result(self, result, node):
         """
-        This function should accept incoming log requests to perform any
-        alerting.
+        This function should be implemented by anything that wishes to handle a
+        single result from a log entry.
         """
         raise NotImplementedError()
 
-    def make_match(self, node, match):
+    def make_match(self, action, node, match):
         """ Helper function to create a RuleMatch """
         return RuleMatch(
             rule_id=self.rule_id,
-            query_id=self.query_id,
+            action=action,
             node=node,
             match=match
         )
@@ -38,39 +61,67 @@ class BaseRule(object):
         """
         Create a Rule from a model.
         """
-        return BaseRule.from_config(model.type, model.config)
-
-    @staticmethod
-    def from_config(type, config):
-        """
-        Create a Rule from a type and optional configuration.
-        """
-        klass = RULE_MAPPINGS.get(type)
+        klass = RULE_MAPPINGS.get(model.type)
         if klass is None:
             # Warn instead of raising?  We shouldn't get here, since it
             # shouldn't be possible to have saved a rule with an invalid type.
-            raise ValueError('Invalid rule type: {0}'.format(type))
+            raise ValueError('Invalid rule type: {0}'.format(model.type))
 
         # TODO: should validate required fields of config
-        return klass(config)
+        return klass(model.id, model.action, model.config)
 
 
-class CompareRule(BaseRule):
+class EachResultRule(BaseRule):
     """
-    CompareRule is the base class for rules that perform a comparison against a
-    query's output.
+    Base class for rules that want to compare against every result in a query's
+    output.
     """
-    def compare(self, event, node):
-        raise NotImplementedError()
+    def __init__(self, rule_id, action, config):
+        super(EachResultRule, self).__init__(rule_id, action, config)
+        self.action = action
+        self.query_name = config.get('query_name')
 
     def handle_result(self, result, node):
+        if self.query_name is not None and result.name != self.query_name:
+            return
+
         matches = []
-        for event in extract_results(result):
-            for added in event.added:
-                if self.compare(added, node):
-                    matches.append(self.make_match(node, added))
+
+        if self.action == Rule.ADDED or self.action == Rule.BOTH:
+            for x in result.added:
+                res = self.handle_columns('added', x, node)
+                if res is not None:
+                    matches.append(res)
+
+        if self.action == Rule.REMOVED or self.action == Rule.BOTH:
+            for x in result.removed:
+                res = self.handle_columns('removed', x, node)
+                if res is not None:
+                    matches.append(res)
 
         return matches
+
+    def handle_columns(self, action, item, node):
+        """
+        This function should be implemented to match against each set of
+        columns that has been extracted.
+        """
+        raise NotImplementedError()
+
+
+class CompareRule(EachResultRule):
+    """
+    This is a simple helper class that will extract a value from the given
+    column set and pass it to a comparison function.  If it compares, it will
+    create and return a match.
+    """
+    def handle_columns(self, action, item, node):
+        val = item.get(self.field_name)
+        if self.compare(action, val, node):
+            return self.make_match(action, node, item)
+
+    def compare(self, action, value, node):
+        raise NotImplementedError()
 
 
 class BlacklistRule(CompareRule):
@@ -78,18 +129,17 @@ class BlacklistRule(CompareRule):
     BlacklistRule is a rule that will alert if the value of a field in a query
     matches any item in a blacklist.
     """
-    def __init__(self, config, **kwargs):
-        super(BlacklistRule, self).__init__(**kwargs)
-        self.field = config['field']
+    def __init__(self, rule_id, action, config):
+        super(BlacklistRule, self).__init__(rule_id, action, config)
+
+        self.field_name = config['field_name']
         self.blacklist = config['blacklist']
 
-    def compare(self, added, node):
-        val = added.get(self.field)
-        if val is None:
-            # TODO: warning?
+    def compare(self, action, value, node):
+        if value is None:
             return False
 
-        return val in self.blacklist
+        return value in self.blacklist
 
 
 class WhitelistRule(CompareRule):
@@ -97,15 +147,15 @@ class WhitelistRule(CompareRule):
     WhitelistRule is a rule that will alert if the value of a field in a query
     does not matche any entry in a whitelist.
     """
-    def __init__(self, config, **kwargs):
-        super(WhitelistRule, self).__init__(**kwargs)
-        self.field = config['field']
+    def __init__(self, rule_id, action, config):
+        super(WhitelistRule, self).__init__(rule_id, action, config)
+
+        self.field_name = config['field_name']
         self.whitelist = config['whitelist']
         self.ignore_null = config.get('ignore_null', False)
 
-    def compare(self, added, node):
-        val = added.get(self.field)
-        if val is None:
+    def compare(self, action, value, node):
+        if value is None:
             # If we're ignoring null, we return "False" to indicate that this
             # is not a 'match' of the rule.
             if self.ignore_null:
@@ -113,34 +163,47 @@ class WhitelistRule(CompareRule):
 
             return True
 
-        return val not in self.whitelist
+        return value not in self.whitelist
 
 
 class CountRule(BaseRule):
     """
     CountRule will match if a given query returns a number of results that's
     greater than, equal to, or less than, some threshold count.
+
+    This is generally only useful when combined with an 'action' filter, so as
+    to only count the 'added' or 'removed' values.
     """
-    def __init__(self, config, **kwargs):
-        super(CountRule, self).__init__(**kwargs)
+    def __init__(self, rule_id, action, config):
+        super(CountRule, self).__init__(rule_id, action, config)
+
+        self.action = action
         self.count = int(config['count'])
         self.direction = config['direction']
-
         if self.direction not in ['greater', 'equal', 'less']:
             raise ValueError('Unknown direction in CountRule: {0}'.format(self.direction))
 
-    def handle_result(self, result, node):
-        matches = []
-        for event in extract_results(result):
-            count = len(event.added)
+        self.query_name = config.get('query_name')
 
-            # TODO: more information in match?
-            if self.direction == 'greater' and count > self.count:
-                matches.append(self.make_match(node, event.added))
-            elif self.direction == 'equal' and count == self.count:
-                matches.append(self.make_match(node, event.added))
-            elif self.direction == 'less' and count < self.count:
-                matches.append(self.make_match(node, event.added))
+    def handle_result(self, result, node):
+        if self.query_name is not None and result.name != self.query_name:
+            return
+
+        count = 0
+
+        if self.action == Rule.ADDED or self.action == Rule.BOTH:
+            count += len(result.added)
+        if self.action == Rule.REMOVED or self.action == Rule.BOTH:
+            count += len(result.removed)
+
+        # TODO: more information in match?
+        matches = []
+        if self.direction == 'greater' and count > self.count:
+            matches.append(self.make_match(None, node, count))
+        elif self.direction == 'equal' and count == self.count:
+            matches.append(self.make_match(None, node, count))
+        elif self.direction == 'less' and count < self.count:
+            matches.append(self.make_match(None, node, count))
 
         return matches
 
@@ -149,5 +212,6 @@ class CountRule(BaseRule):
 RULE_MAPPINGS = {
     'blacklist': BlacklistRule,
     'whitelist': WhitelistRule,
+    'count':     CountRule,
 }
 RULE_TYPES = list(RULE_MAPPINGS.keys())

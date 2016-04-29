@@ -230,6 +230,11 @@ def process_result(result, node):
 
 
 def extract_results(result):
+    """
+    extract_results will conver the incoming log data into a series of Fields,
+    normalizing and/or aggregating both batch and event format into batch
+    format, which is used throughout the rest of doorman.
+    """
     if not result['data']:
         return
 

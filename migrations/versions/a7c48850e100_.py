@@ -30,7 +30,7 @@ def upgrade():
     )
     op.create_table('distributed_query_result',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('data', doorman.database.JSONBType(), nullable=True),
+    sa.Column('data', doorman.database.JSONB(), nullable=True),
     sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.Column('distributed_query_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['distributed_query_id'], ['distributed_query.id'], ),

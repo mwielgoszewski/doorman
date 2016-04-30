@@ -163,7 +163,10 @@ def logger(node=None):
 
     elif log_type == 'result':
         log_tee.handle_result(data, host_identifier=node.host_identifier)
-        process_result(data, node)
+        results = list(process_result(data, node))
+        if results:
+            db.session.bulk_save_objects(results)
+            db.session.commit()
 
     else:
         current_app.logger.error("Unknown log_type %r", log_type)
@@ -198,7 +201,7 @@ def distributed_write(node=None):
     data = request.get_json()
     current_app.logger.info("Got data: %s", data)
 
-    for guid, data in data.get('queries', {}).items():
+    for guid, results in data.get('queries', {}).items():
         query = DistributedQuery.query.filter(
             DistributedQuery.guid == guid,
             DistributedQuery.status == DistributedQuery.PENDING,
@@ -211,9 +214,12 @@ def distributed_write(node=None):
                                      guid, json.dumps(data))
             continue
 
-        result = DistributedQueryResult(data, distributed_query=query)
-        query.status = DistributedQuery.COMPLETE
-        db.session.add(result, query)
+        for columns in results:
+            result = DistributedQueryResult(columns, distributed_query=query)
+            db.session.add(result)
+        else:
+            query.status = DistributedQuery.COMPLETE
+            db.session.add(query)
 
     else:
         db.session.commit()

@@ -302,8 +302,8 @@ class ResultLog(SurrogatePK, Model):
 
     name = Column(db.String, nullable=False)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
-    added = Column(JSONB)
-    removed = Column(JSONB)
+    action = Column(db.String)
+    columns = Column(JSONB)
 
     node_id = reference_col('node', nullable=False)
     node = relationship(
@@ -311,13 +311,16 @@ class ResultLog(SurrogatePK, Model):
         backref=db.backref('result_logs', lazy='dynamic')
     )
 
-    def __init__(self, name=None, timestamp=None, added=None, removed=None,
-                 node=None):
+    def __init__(self, name=None, action=None, columns=None, timestamp=None,
+                 node=None, node_id=None):
         self.name = name
+        self.action = action
+        self.columns = columns or {}
         self.timestamp = timestamp
-        self.added = added
-        self.removed = removed
-        self.node = node
+        if node:
+            self.node = node
+        elif node_id:
+            self.node_id = node_id
 
 
 class StatusLog(SurrogatePK, Model):
@@ -372,18 +375,17 @@ class DistributedQuery(SurrogatePK, Model):
 
 class DistributedQueryResult(SurrogatePK, Model):
 
-    data = Column(JSONB)
+    columns = Column(JSONB)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
 
     distributed_query_id = reference_col('distributed_query', nullable=False)
     distributed_query = relationship(
         'DistributedQuery',
-        backref=db.backref('result',
-                           uselist=False,
+        backref=db.backref('results',
                            cascade='all, delete-orphan',
                            lazy='joined'),
     )
 
-    def __init__(self, data, distributed_query=None):
-        self.data = data
+    def __init__(self, columns, distributed_query=None):
+        self.columns = columns
         self.distributed_query = distributed_query

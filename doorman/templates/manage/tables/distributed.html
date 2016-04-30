@@ -32,7 +32,9 @@
                             {% endif %}
 
                             <td>
-                                <a href="{{ url_for('.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.result.timestamp }}</a>
+                                {% if query.results %}
+                                <a href="{{ url_for('.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.results | first | attr('timestamp') }}</a>
+                                {% endif %}
                             </td>
 
                         {% endfor %}

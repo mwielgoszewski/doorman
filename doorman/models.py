@@ -16,34 +16,33 @@ from doorman.database import (
 )
 
 
-querypacks = Table('querypacks',
+querypacks = Table('query_packs',
     Column('pack.id', db.Integer, ForeignKey('pack.id')),
     Column('query.id', db.Integer, ForeignKey('query.id'))
 )
 
-pack_tags = Table('packtags',
+pack_tags = Table('pack_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('pack.id', db.Integer, ForeignKey('pack.id'))
 )
 
-node_tags = Table('nodetags',
+node_tags = Table('node_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('node.id', db.Integer, ForeignKey('node.id'))
 )
 
-query_tags = Table('querytags',
+query_tags = Table('query_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('query.id', db.Integer, ForeignKey('query.id'))
 )
 
-filepath_tags = Table('pathtags',
+file_path_tags = Table('file_path_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
-    Column('filepath.id', db.Integer, ForeignKey('filepath.id'))
+    Column('file_path.id', db.Integer, ForeignKey('file_path.id'))
 )
 
 
 class Tag(SurrogatePK, Model):
-    __tablename__ = 'tag'
 
     value = Column(db.String, nullable=False, unique=True)
 
@@ -67,7 +66,7 @@ class Tag(SurrogatePK, Model):
 
     file_paths = relationship(
         'FilePath',
-        secondary=filepath_tags,
+        secondary=file_path_tags,
         back_populates='tags',
     )
 
@@ -99,7 +98,6 @@ class Tag(SurrogatePK, Model):
 
 
 class Query(SurrogatePK, Model):
-    __tablename__ = 'query'
 
     name = Column(db.String, nullable=False)
     sql = Column(db.String, nullable=False)
@@ -151,7 +149,6 @@ class Query(SurrogatePK, Model):
 
 
 class Pack(SurrogatePK, Model):
-    __tablename__ = 'pack'
 
     name = Column(db.String, nullable=False, unique=True)
     platform = Column(db.String)
@@ -202,7 +199,6 @@ class Pack(SurrogatePK, Model):
 
 
 class Node(SurrogatePK, Model):
-    __tablename__ = 'node'
 
     node_key = Column(db.String, nullable=False, unique=True)
     enroll_secret = Column(db.String)
@@ -267,14 +263,13 @@ class Node(SurrogatePK, Model):
 
 
 class FilePath(SurrogatePK, Model):
-    __tablename__ = 'filepath'
 
     category = Column(db.String, nullable=False, unique=True)
     target_paths = Column(db.String)
 
     tags = relationship(
         'Tag',
-        secondary=filepath_tags,
+        secondary=file_path_tags,
         back_populates='file_paths',
         lazy='joined',
     )

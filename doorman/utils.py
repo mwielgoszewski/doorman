@@ -17,7 +17,7 @@ from doorman.database import db
 from doorman.models import ResultLog
 
 
-Field = namedtuple('Field', ['name', 'timestamp', 'added', 'removed'])
+Field = namedtuple('Field', ['name', 'action', 'columns', 'timestamp'])
 
 
 # Read DDL statements from our package
@@ -221,17 +221,12 @@ def process_result(result, node):
         current_app.logger.error("No results to process from %s", node)
         return
 
-    for name, timestamp, added, removed in extract_results(result):
-        result = ResultLog(node=node,
-                           name=name,
-                           timestamp=timestamp,
-                           added=added,
-                           removed=removed
-        )
-        db.session.add(result)
-    else:
-        db.session.commit()
-    return
+    for name, action, columns, timestamp, in extract_results(result):
+        yield ResultLog(name=name,
+                        action=action,
+                        columns=columns,
+                        timestamp=timestamp,
+                        node_id=node.id)
 
 
 def extract_results(result):
@@ -251,32 +246,30 @@ def extract_results(result):
 
 
 def extract_events(event):
-    orderby = itemgetter('unixTime', 'name', 'calendarTime', 'hostIdentifier')
-
-    data = sorted(event['data'], key=orderby)
-
-    for (_, name, caltime, _), items in groupby(data, orderby):
-        timestamp = dt.datetime.strptime(caltime,
+    for item in event['data']:
+        timestamp = dt.datetime.strptime(item['calendarTime'],
                                          '%a %b %d %H:%M:%S %Y UTC')
-
-        field = Field(name, timestamp, [], [])
-        for item in items:
-            if item['action'] == 'added':
-                field.added.append(item['columns'])
-            elif item['action'] == 'removed':
-                field.removed.append(item['columns'])
-
-        yield field
+        yield Field(name=item['name'],
+                    action=item['action'],
+                    columns=item['columns'],
+                    timestamp=timestamp)
 
 
 def extract_batch(batch):
     for item in batch['data']:
+        name = item['name']
         timestamp = dt.datetime.strptime(item['calendarTime'],
                                          '%a %b %d %H:%M:%S %Y UTC')
-        yield Field(item['name'],
-                    timestamp,
-                    item['diffResults']['added'],
-                    item['diffResults']['removed'])
+        added = item['diffResults']['added']
+        removed = item['diffResults']['removed']
+        for (action, items) in zip(('added', 'removed'), (added, removed)):
+            # items could be "", so we're still safe to iter over
+            # and ensure we don't return an empty value for columns
+            for columns in items:
+                yield Field(name=name,
+                            action=action,
+                            columns=columns,
+                            timestamp=timestamp)
 
 
 def flash_errors(form):

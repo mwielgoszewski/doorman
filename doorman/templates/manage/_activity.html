@@ -12,7 +12,7 @@
                     
                 <h3>{{ grouper }}</h3>
 
-                {% set columns = results[0].removed | first | list | sort if results[0].removed else results[0].added | first | list | sort %}
+                {% set columns = results | first | attr('columns') | list | sort %}
 
                 <div class="table-responsive">
                     <table class="table table-striped table-condensed">
@@ -25,24 +25,13 @@
                         </thead>
                         <tbody>
                             {% for result in results %}
-                            {% for item in result.removed %}
                             <tr>
-                                <td>removed</td>
+                                <td>{{ result.action }}</td>
                                 <td>{{ result.timestamp }}</td>
                                 {% for column in columns %}
-                                <td>{{ item[column] }}</td>
+                                <td>{{ result.columns[column] }}</td>
                                 {% endfor %}
                             </tr>
-                            {% endfor %}
-                            {% for item in result.added %}
-                            <tr>
-                                <td>added</td>
-                                <td>{{ result.timestamp }}</td>
-                                {% for column in columns %}
-                                <td>{{ item[column] }}</td>
-                                {% endfor %}
-                            </tr>
-                            {% endfor %}
                             {% endfor %}
                         </tbody>
                     </table>

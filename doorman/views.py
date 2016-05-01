@@ -179,7 +179,7 @@ def add_distributed():
     if form.validate_on_submit():
         nodes = []
 
-        if not form.nodes.data and not form.tag.data:
+        if not form.nodes.data and not form.tags.data:
             # all nodes get this query
             nodes = Node.query.all()
 

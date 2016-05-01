@@ -53,7 +53,7 @@ class DevConfig(Config):
     # Put the db file in project root
     DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
     # SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:6432/doorman'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
 
     DOORMAN_ENROLL_SECRET = [
         'secret',

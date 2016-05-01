@@ -346,14 +346,20 @@ class TestLogging:
             'log_type': 'result',
         })
 
-        assert node.result_logs.count()
+        assert node.result_logs.count() == 2
 
-        result = node.result_logs.first()
+        added, removed = node.result_logs.all()
 
-        assert result.timestamp == now.replace(microsecond=0)
-        assert result.name == data[0]['name']
-        assert result.added == data[0]['diffResults']['added']
-        assert result.removed == data[0]['diffResults']['removed']
+        assert added.timestamp == now.replace(microsecond=0)
+        assert added.name == data[0]['name']
+        assert added.action == 'added'
+        assert added.columns == data[0]['diffResults']['added'][0]
+
+        assert removed.timestamp == now.replace(microsecond=0)
+        assert removed.name == data[0]['name']
+        assert removed.action == 'removed'
+        assert removed.columns == data[0]['diffResults']['removed'][0]
+
 
     def test_no_result_log_created_when_data_is_empty(self, node, testapp):
         assert not node.result_logs.count()
@@ -430,14 +436,13 @@ class TestLogging:
             'log_type': 'result',
         })
 
-        assert node.result_logs.count() == 2
+        assert node.result_logs.count() == 4
 
-        result = node.result_logs.first()
-
-        assert result.timestamp == now.replace(microsecond=0)
-        assert result.name == data[0]['name']
-        assert result.added == [data[0]['columns']]
-        assert result.removed == [data[1]['columns']]
+        for i, result in enumerate(node.result_logs.all()):
+            assert result.timestamp == now.replace(microsecond=0)
+            assert result.name == data[i]['name']
+            assert result.action == data[i]['action']
+            assert result.columns == data[i]['columns']
 
 
 class TestDistributedRead:
@@ -535,7 +540,7 @@ class TestDistributedWrite:
             }
         })
         result = DistributedQueryResult.query.filter(
-            DistributedQueryResult.data[(0, 'foo')].astext == 'baz').all()
+            DistributedQueryResult.columns['foo'].astext == 'baz').all()
         assert not result
 
     def test_distributed_query_write_state_new(self, db, node, testapp):
@@ -551,7 +556,7 @@ class TestDistributedWrite:
         })
 
         assert q.status == DistributedQuery.NEW
-        assert not q.result
+        assert not q.results
 
     def test_distributed_query_write_state_pending(self, db, node, testapp):
         q = DistributedQuery.create(
@@ -567,7 +572,7 @@ class TestDistributedWrite:
         {
             "name": "osqueryd",
             "path": "/usr/local/bin/osqueryd",
-            "pid": "97830"
+            "pid": "97831"
         }]
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
@@ -578,8 +583,9 @@ class TestDistributedWrite:
         })
 
         assert q.status == DistributedQuery.COMPLETE
-        assert q.result is not None
-        assert q.result.data == data
+        assert q.results
+        assert q.results[0].columns == data[0]
+        assert q.results[1].columns == data[1]
 
     def test_distributed_query_write_state_complete(self, db, node, testapp):
         q = DistributedQuery.create(
@@ -595,10 +601,11 @@ class TestDistributedWrite:
         {
             "name": "osqueryd",
             "path": "/usr/local/bin/osqueryd",
-            "pid": "97830"
+            "pid": "97831"
         }]
 
-        r = DistributedQueryResult.create(data=data, distributed_query=q)
+        r = DistributedQueryResult.create(columns=data[0],
+                                          distributed_query=q)
         q.update(status=DistributedQuery.COMPLETE)
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
@@ -608,8 +615,10 @@ class TestDistributedWrite:
             }
         })
 
-        assert q.result == r
-        assert q.result.data == data
+        assert q.results
+        assert len(q.results) == 1
+        assert q.results[0] == r
+        assert q.results[0].columns == data[0]
 
     def test_malicious_node_distributed_query_write(self, db, node, testapp):
         foo = NodeFactory(host_identifier='foo')
@@ -629,8 +638,8 @@ class TestDistributedWrite:
             }
         })
 
-        assert not q1.result
-        assert not q2.result
+        assert not q1.results
+        assert not q2.results
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': foo.node_key,
@@ -639,7 +648,7 @@ class TestDistributedWrite:
             }
         })
 
-        assert q2.result
+        assert q2.results
 
 class TestCreateQueryPackFromUpload:
 

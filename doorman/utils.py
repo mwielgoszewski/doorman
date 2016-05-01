@@ -233,43 +233,40 @@ def extract_results(result):
     if not result['data']:
         return
 
-    if 'columns' in result['data'][0]:
-        gen = extract_events(result)
-    elif 'diffResults' in result['data'][0]:
-        gen = extract_batch(result)
-    else:
-        return
+    timefmt = '%a %b %d %H:%M:%S %Y UTC'
+    strptime = dt.datetime.strptime
 
-    # We don't have 'yield from' in Python 2
-    for log in gen:
-        yield log
+    for entry in result['data']:
+        name = entry['name']
+        timestamp = strptime(entry['calendarTime'], timefmt)
 
+        if 'columns' in entry:
+            yield Field(name=name,
+                        action=entry['action'],
+                        columns=entry['columns'],
+                        timestamp=timestamp)
 
-def extract_events(event):
-    for item in event['data']:
-        timestamp = dt.datetime.strptime(item['calendarTime'],
-                                         '%a %b %d %H:%M:%S %Y UTC')
-        yield Field(name=item['name'],
-                    action=item['action'],
-                    columns=item['columns'],
-                    timestamp=timestamp)
+        elif 'diffResults' in entry:
+            added = entry['diffResults']['added']
+            removed = entry['diffResults']['removed']
+            for (action, items) in (('added', added), ('removed', removed)):
+                # items could be "", so we're still safe to iter over
+                # and ensure we don't return an empty value for columns
+                for columns in items:
+                    yield Field(name=name,
+                                action=action,
+                                columns=columns,
+                                timestamp=timestamp)
 
+        elif 'snapshot' in entry:
+            # TODO
+            current_app.logger.debug("Received snapshot log: %s",
+                                     json.dumps(entry))
 
-def extract_batch(batch):
-    for item in batch['data']:
-        name = item['name']
-        timestamp = dt.datetime.strptime(item['calendarTime'],
-                                         '%a %b %d %H:%M:%S %Y UTC')
-        added = item['diffResults']['added']
-        removed = item['diffResults']['removed']
-        for (action, items) in zip(('added', 'removed'), (added, removed)):
-            # items could be "", so we're still safe to iter over
-            # and ensure we don't return an empty value for columns
-            for columns in items:
-                yield Field(name=name,
-                            action=action,
-                            columns=columns,
-                            timestamp=timestamp)
+        else:
+            current_app.logger.error("Encountered a result entry that "
+                                     "could not be processed! %s",
+                                     json.dumps(entry))
 
 
 def flash_errors(form):

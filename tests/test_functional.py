@@ -444,6 +444,86 @@ class TestLogging:
             assert result.action == data[i]['action']
             assert result.columns == data[i]['columns']
 
+    def test_heterogeneous_result_format(self, node, testapp):
+
+        now = dt.datetime.utcnow()
+        calendarTime = "%s %s" % (now.ctime(), "UTC")
+        unixTime = now.strftime('%s')
+
+        data = [
+            {
+              "action": "removed",
+              "columns": {
+                "name": "osqueryd",
+                "path": "/usr/local/bin/osqueryd",
+                "pid": "97830"
+              },
+              "name": "processes",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+            },
+            {
+              "diffResults": {
+                "added": [
+                  {
+                    "name": "osqueryd",
+                    "path": "/usr/local/bin/osqueryd",
+                    "pid": "97830"
+                  }
+                ],
+                "removed": [
+                  {
+                    "name": "osqueryd",
+                    "path": "/usr/local/bin/osqueryd",
+                    "pid": "97650"
+                  }
+                ]
+              },
+              "name": "processes",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+            },
+
+            {
+              "calendarTime": calendarTime,
+              "unixTime": unixTime,
+              "snapshot": "",
+              "name": "file_events",
+              "hostIdentifier": "hostname.local",
+            }
+        ]
+
+        assert not node.result_logs.count()
+
+        resp = testapp.post_json(url_for('api.logger'), {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        })
+
+        assert node.result_logs.count() == 3
+
+        r0, r1, r2 = node.result_logs.all()
+
+        assert r0.name == data[0]['name']
+        assert r0.action == data[0]['action']
+        assert r0.columns == data[0]['columns']
+        assert r0.timestamp == now.replace(microsecond=0)
+
+        assert r1.name == data[1]['name']
+        assert r1.action == 'added'
+        assert r1.columns == data[1]['diffResults']['added'][0]
+        assert r1.timestamp == now.replace(microsecond=0)
+
+        assert r2.name == data[1]['name']
+        assert r2.action == 'removed'
+        assert r2.columns == data[1]['diffResults']['removed'][0]
+        assert r2.timestamp == now.replace(microsecond=0)
+
+        # TODO add assertions for snapshot logs
+
 
 class TestDistributedRead:
 

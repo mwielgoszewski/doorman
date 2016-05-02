@@ -81,16 +81,8 @@ class LogPlugin(AbstractLogsPlugin):
             base = self.join_fields(fields)
 
             # Write each added/removed entry on a different line
-            for entry in item.added:
-                curr_fields = {'result_type': 'added'}
-                for key, val in entry.items():
-                    curr_fields['added_' + key] = val
+            curr_fields = {'result_type': item.action}
+            for key, val in entry.columns.items():
+                curr_fields['_'.join([item.action, key])] = val
 
-                self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')
-
-            for entry in item.removed:
-                curr_fields = {'result_type': 'removed'}
-                for key, val in entry.items():
-                    curr_fields['removed_' + key] = val
-
-                self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')
+            self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')

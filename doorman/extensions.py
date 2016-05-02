@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from celery import Celery
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -38,6 +39,21 @@ class LogTee(object):
     def handle_result(self, data, **kwargs):
         for plugin in self.plugins:
             plugin.handle_result(data, **kwargs)
+
+
+def make_celery(app, celery):
+    """ From http://flask.pocoo.org/docs/0.10/patterns/celery/ """
+    celery.config_from_object(app.config)
+
+    TaskBase = celery.Task
+    class ContextTask(TaskBase):
+        abstract = True
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return TaskBase.__call__(self, *args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery
 
 
 db = SQLAlchemy()

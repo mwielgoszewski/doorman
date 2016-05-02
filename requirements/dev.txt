@@ -1,6 +1,10 @@
 alembic==0.8.6
+amqp==1.4.9
+anyjson==0.3.3
 beautifulsoup4==4.4.1
+billiard==3.3.0.23
 blinker==1.4
+celery==3.1.23
 cssmin==0.2.0
 factory-boy==2.7.0
 fake-factory==0.5.7
@@ -16,6 +20,7 @@ ipaddress==1.0.16
 itsdangerous==0.24
 Jinja2==2.8
 jsmin==2.2.1
+kombu==3.0.35
 Mako==1.0.4
 MarkupSafe==0.23
 mock==2.0.0
@@ -25,6 +30,8 @@ py==1.4.31
 pytest==2.9.1
 python-dateutil==2.5.3
 python-editor==1.0
+pytz==2016.4
+redis==2.10.5
 six==1.10.0
 SQLAlchemy==1.0.12
 waitress==0.9.0

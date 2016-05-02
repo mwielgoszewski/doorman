@@ -26,6 +26,6 @@ before_script:
   - psql -c 'create database doorman_test;' -U postgres
 
   # Launch celery worker for tests
-  - celery worker -D -A doorman.worker:celery
+  - celery worker -D -A doorman.worker:celery -l DEBUG
 
 script: python manage.py test

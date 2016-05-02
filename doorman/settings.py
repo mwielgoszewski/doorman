@@ -32,6 +32,7 @@ class Config(object):
 
     BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_ACCEPT_CONTENT = ['json']
 
     # You can specify a set of custom logger plugins here.  These plugins will
     # be called for every status or result log that is received, and can

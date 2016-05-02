@@ -12,6 +12,7 @@ install: "pip install -r requirements/dev.txt"
 
 services:
   - postgresql
+  - redis-server
 
 addons:
   postgresql: "9.4"
@@ -20,6 +21,11 @@ before_script:
   # Install JS dependencies
   - npm install -g bower less
   - bower install
+
+  # Create test DB
   - psql -c 'create database doorman_test;' -U postgres
+
+  # Launch celery worker for tests
+  - celery worker -D -A doorman.worker:celery
 
 script: python manage.py test

@@ -84,19 +84,29 @@ class RuleManager(object):
         """ Load rules from the database. """
         from doorman.models import Rule
         from doorman.rules import RULE_MAPPINGS
+        from sqlalchemy.exc import SQLAlchemyError
 
         self.rules = []
         with self.app.app_context():
-            for rule in Rule.query.all():
-                # Verify the alerters
-                for alerter in rule.alerters:
-                    if alerter not in self.alerters:
-                        raise ValueError('No such alerter: "{0}"'.format(alerter))
+            try:
+                all_rules = list(Rule.query.all())
+            except SQLAlchemyError:
+                # Ignore DB errors when testing
+                if self.app.config['TESTING']:
+                    all_rules = []
+                else:
+                    raise
 
-                klass = RULE_MAPPINGS[rule.type]
-                rule_instance = klass(rule.id, rule.action, rule.config or {})
-                self.rules.append((rule_instance, rule.alerters))
-                current_app.logger.debug('Created rule {0} of type "{1}"'.format(rule.id, rule.type))
+        for rule in all_rules:
+            # Verify the alerters
+            for alerter in rule.alerters:
+                if alerter not in self.alerters:
+                    raise ValueError('No such alerter: "{0}"'.format(alerter))
+
+            klass = RULE_MAPPINGS[rule.type]
+            rule_instance = klass(rule.id, rule.action, rule.config or {})
+            self.rules.append((rule_instance, rule.alerters))
+            current_app.logger.debug('Created rule {0} of type "{1}"'.format(rule.id, rule.type))
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """

@@ -32,10 +32,10 @@ class Config(object):
 
     BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-    CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_EVENT_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_ACCEPT_CONTENT = ['djson']
+    CELERY_EVENT_SERIALIZER = 'djson'
+    CELERY_RESULT_SERIALIZER = 'djson'
+    CELERY_TASK_SERIALIZER = 'djson'
 
     GRAPHITE_ENABLED = False
     GRAPHITE_PREFIX = 'dev.doorman'

@@ -262,6 +262,13 @@ class Node(SurrogatePK, Model):
         return self.result_logs.filter(ResultLog.timestamp > when) \
             .order_by(ResultLog.timestamp.desc())
 
+    def to_dict(self):
+        # NOTE: deliberately not including any secret values in here, for now.
+        return {
+            'enrolled_on': self.enrolled_on,
+            'host_identifier': self.host_identifier,
+            'last_checkin': self.last_checkin,
+        }
 
 
 class FilePath(SurrogatePK, Model):

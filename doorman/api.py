@@ -11,6 +11,7 @@ from doorman.models import (Node, Pack, Query, Tag,
     DistributedQuery, DistributedQueryResult,
     StatusLog,
 )
+from doorman.tasks import analyze_result
 from doorman.utils import process_result
 
 
@@ -197,6 +198,7 @@ def logger(node=None):
 
     elif log_type == 'result':
         log_tee.handle_result(data, host_identifier=node.host_identifier)
+        analyze_result.delay(data, node.to_dict())
         results = list(process_result(data, node))
         if results:
             db.session.bulk_save_objects(results)

@@ -1,14 +1,14 @@
 """empty message
 
-Revision ID: 34539eeed672
-Revises: b3f73178cee6
-Create Date: 2016-04-28 21:59:53.669251
+Revision ID: fd28e46e46a6
+Revises: d2b00dd93241
+Create Date: 2016-05-02 17:46:46.658227
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '34539eeed672'
-down_revision = 'b3f73178cee6'
+revision = 'fd28e46e46a6'
+down_revision = 'd2b00dd93241'
 
 from alembic import op
 import sqlalchemy as sa
@@ -22,7 +22,7 @@ def upgrade():
     sa.Column('type', sa.String(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('action', sa.Enum('added', 'removed', 'both', name='rule_actions'), nullable=False),
-    sa.Column('alerters', postgresql.ARRAY(String()), nullable=False),
+    sa.Column('alerters', postgresql.ARRAY(sa.String()), nullable=False),
     sa.Column('config', postgresql.JSONB(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )

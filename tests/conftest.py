@@ -20,9 +20,10 @@ def app():
     ctx = _app.test_request_context()
     ctx.push()
 
-    yield _app
-
-    ctx.pop()
+    try:
+        yield _app
+    finally:
+        ctx.pop()
 
 
 @pytest.fixture(scope='function')

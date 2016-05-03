@@ -5,7 +5,7 @@ from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.views import blueprint as backend
 from doorman.extensions import (
-    db, migrate, debug_toolbar, log_tee, make_celery, metrics
+    db, migrate, debug_toolbar, log_tee, make_celery, metrics, rule_manager
 )
 from doorman.models import Pack, Query
 from doorman.settings import DevConfig
@@ -35,6 +35,8 @@ def register_extensions(app):
     assets.init_app(app)
     debug_toolbar.init_app(app)
     log_tee.init_app(app)
+    rule_manager.init_app(app)
+
     make_celery(app, celery)
     metrics.init_app(app)
 

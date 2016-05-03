@@ -98,7 +98,6 @@ class TestConfig(Config):
     """
     This class specifies a configuration that is used for our tests.
     """
-    ENV = 'test'
     TESTING = True
     DEBUG = True
 
@@ -107,6 +106,7 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman_test'
 
     WTF_CSRF_ENABLED = False
+    CELERY_ALWAYS_EAGER = True      # Don't use the Celery queue by default
 
     DOORMAN_ENROLL_SECRET = [
         'secret',

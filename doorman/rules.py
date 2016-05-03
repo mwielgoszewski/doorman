@@ -100,28 +100,18 @@ class EachResultRule(BaseRule):
         self.action = action
         self.query_name = config.get('query_name')
 
-    def filter_result(self, result):
-        """
-        Given an action filter and a result, yields only results that match the filter.
-        """
-        for action, columns in zip((Rule.ADDED, Rule.REMOVED), (result.added, result.removed)):
-            if self.action not in (action, Rule.BOTH):
-                continue
-
-            if columns == '' or not columns:
-                continue
-
-            for item in columns:
-                yield (action, item)
-
     def handle_result(self, result, node):
         if self.query_name is not None and result.name != self.query_name:
-            return
+            return []
 
-        for action, columns in self.filter_result(result):
-            res = self.handle_columns(action, columns, node)
-            if res is not None:
-                yield res
+        if self.action != Rule.BOTH and self.action != result.action:
+            return []
+
+        res = self.handle_columns(result.action, result.columns, node)
+        if not res:
+            return []
+
+        return [res]
 
     def handle_columns(self, action, columns, node):
         """

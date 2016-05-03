@@ -28,7 +28,7 @@ class TestBaseRule:
             'data': [
                 {
                     "diffResults": {
-                        "added": "",
+                        "added": [{'op': 'added'}],
                         "removed": "",
                     },
                     "name": "fake",

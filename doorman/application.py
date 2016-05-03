@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import os
+
 from flask import Flask
 
 from doorman.api import blueprint as api
@@ -13,9 +15,13 @@ from doorman.tasks import celery
 from doorman.utils import get_node_health
 
 
-def create_app(config=DevConfig):
+def create_app():
     app = Flask(__name__)
-    app.config.from_object(config)
+    app.config.from_object('doorman.settings.Config')
+
+    override = os.environ.setdefault('DOORMAN_SETTINGS', 'doorman.settings.DevConfig')
+    if override:
+        app.config.from_object(override)
 
     register_blueprints(app)
     register_extensions(app)

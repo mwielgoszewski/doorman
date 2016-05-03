@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from os.path import abspath, basename, dirname, join, splitext
+import os
 import glob
 import json
 
@@ -35,6 +36,10 @@ manager.add_command('urls', ShowUrls())
 @manager.command
 def test():
     """Run the tests."""
+    # Override the environment variable to load test configuration
+    os.environ['DOORMAN_SETTINGS'] = 'doorman.settings.TestConfig'
+
+    # Run tests
     import pytest
     test_path = join(abspath(dirname(__file__)), 'tests')
     exit_code = pytest.main([test_path, '--verbose'])

@@ -16,7 +16,7 @@ from .factories import NodeFactory
 @pytest.yield_fixture(scope='function')
 def app():
     """An application for the tests."""
-    _app = create_app(config=TestConfig)
+    _app = create_app()
     ctx = _app.test_request_context()
     ctx.push()
 

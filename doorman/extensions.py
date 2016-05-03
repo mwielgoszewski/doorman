@@ -46,13 +46,13 @@ class LogTee(object):
 
 class RuleManager(object):
     def __init__(self, app=None):
+        self.loaded_rules = False
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app):
         self.app = app
         self.load_alerters()
-        self.load_rules()
 
         # Save this instance on the app, so we have a way to get at it.
         app.rule_manager = self
@@ -100,6 +100,11 @@ class RuleManager(object):
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """
+        # Need to lazy-load rules
+        if not self.loaded_rules:
+            self.load_rules()
+            self.loaded_rules = True
+
         alerts = defaultdict(list)
         for rule, alerters in self.rules:
             matches = rule.handle_log_entry(entry, node)

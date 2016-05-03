@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from binascii import b2a_hex
 import os
 
 
 class Config(object):
-    SECRET_KEY = 'secret'
+    SECRET_KEY = b2a_hex(os.urandom(20))
 
     DEBUG = False
     DEBUG_TB_ENABLED = False
@@ -12,9 +13,6 @@ class Config(object):
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
 
-    DB_NAME = 'osquery.db'
-    DB_PATH = None
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # When osquery is configured to start with the command-line flag
@@ -30,8 +28,6 @@ class Config(object):
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
 
-    BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     CELERY_ACCEPT_CONTENT = ['djson']
     CELERY_EVENT_SERIALIZER = 'djson'
     CELERY_RESULT_SERIALIZER = 'djson'
@@ -80,15 +76,17 @@ class Config(object):
 
 
 class DevConfig(Config):
+    """
+    This class specifies a configuration that is suitable for running in
+    development.  It should not be used for running in production.
+    """
     ENV = 'dev'
     DEBUG = True
     DEBUG_TB_ENABLED = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
 
-    DB_NAME = 'dev.db'
-    # Put the db file in project root
-    DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
-    # SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
+    BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
 
     DOORMAN_ENROLL_SECRET = [
@@ -97,11 +95,17 @@ class DevConfig(Config):
 
 
 class TestConfig(Config):
+    """
+    This class specifies a configuration that is used for our tests.
+    """
+    ENV = 'test'
     TESTING = True
     DEBUG = True
-    # SQLALCHEMY_DATABASE_URI = 'sqlite://'
-    # SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:6432/doorman_test'
+
+    BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman_test'
+
     WTF_CSRF_ENABLED = False
 
     DOORMAN_ENROLL_SECRET = [

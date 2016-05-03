@@ -15,9 +15,9 @@ from doorman.tasks import celery
 from doorman.utils import get_node_health
 
 
-def create_app():
+def create_app(config=DevConfig):
     app = Flask(__name__)
-    app.config.from_object('doorman.settings.DevConfig')
+    app.config.from_object(config)
     app.config.from_envvar('DOORMAN_SETTINGS', silent=True)
 
     register_blueprints(app)

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
@@ -10,9 +12,12 @@ from doorman.forms import (
     CreateTagForm,
     UploadPackForm,
     FilePathForm,
+    CreateRuleForm,
+    UpdateRuleForm,
 )
 from doorman.database import db
-from doorman.models import DistributedQuery, FilePath, Node, Pack, Query, Tag
+from doorman.models import DistributedQuery, FilePath, Node, Pack, Query, Tag, Rule
+from doorman.tasks import reload_rules
 from doorman.utils import create_query_pack_from_upload, flash_errors
 
 
@@ -340,3 +345,48 @@ def create_tags(*tags):
                   ', '.join(tag.value for tag in values)),
                   'info')
     return values + existing
+
+
+@blueprint.route('/rules')
+def rules():
+    rules = Rule.query.all()
+    return render_template('rules.html', rules=rules)
+
+
+@blueprint.route('/rules/add', methods=['GET', 'POST'])
+def add_rule():
+    form = CreateRuleForm()
+    form.set_choices()
+
+    if form.validate_on_submit():
+        rule = Rule(type=form.type.data,
+                    name=form.name.data,
+                    action=form.action.data,
+                    alerters=form.alerters.data,
+                    config=form.config.data)
+        rule.save()
+        reload_rules.delay()
+
+        return redirect(url_for('.rule', rule_id=rule.id))
+
+    flash_errors(form)
+    return render_template('rule.html', form=form)
+
+
+@blueprint.route('/rules/<int:rule_id>', methods=['GET', 'POST'])
+def rule(rule_id):
+    rule = Rule.query.filter(Rule.id == rule_id).one()
+    form = UpdateRuleForm(request.form)
+
+    if form.validate_on_submit():
+        rule = rule.update(type=form.type.data,
+                           name=form.name.data,
+                           action=form.action.data,
+                           alerters=form.alerters.data,
+                           config=form.config.data)
+        reload_rules.delay()
+        return redirect(url_for('.rule', rule_id=rule.id))
+
+    form = UpdateRuleForm(request.form, obj=rule)
+    flash_errors(form)
+    return render_template('rule.html', form=form, rule=rule)

@@ -94,8 +94,8 @@ class RuleManager(object):
                         raise ValueError('No such alerter: "{0}"'.format(alerter))
 
                 klass = RULE_MAPPINGS[rule.type]
-                rule = klass(rule.id, rule.action, rule.config or {})
-                self.rules.append((rule, rule.alerters))
+                rule_instance = klass(rule.id, rule.action, rule.config or {})
+                self.rules.append((rule_instance, rule.alerters))
                 current_app.logger.debug('Created rule {0} of type "{1}"'.format(rule.id, rule.type))
 
     def handle_log_entry(self, entry, node):

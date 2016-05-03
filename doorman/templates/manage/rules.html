@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>rules</h1>
+
+                {% if rules %}
+
+                {% for rule in rules | sort(attribute='name') %}
+                {% include "_rule.html" %}
+                {% endfor %}
+
+                {% else %}
+                <p>No rules defined.</p>
+                {% endif %}
+
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

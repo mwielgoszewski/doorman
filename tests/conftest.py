@@ -17,6 +17,7 @@ from .factories import NodeFactory
 def app():
     """An application for the tests."""
     _app = create_app()
+    _app.config.from_object('doorman.settings.TestConfig')
     ctx = _app.test_request_context()
     ctx.push()
 

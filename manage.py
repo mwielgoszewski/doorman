@@ -36,9 +36,6 @@ manager.add_command('urls', ShowUrls())
 @manager.command
 def test():
     """Run the tests."""
-    # Override the environment variable to load test configuration
-    os.environ['DOORMAN_SETTINGS'] = 'doorman.settings.TestConfig'
-
     # Run tests
     import pytest
     test_path = join(abspath(dirname(__file__)), 'tests')

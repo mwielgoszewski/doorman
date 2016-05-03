@@ -17,11 +17,8 @@ from doorman.utils import get_node_health
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object('doorman.settings.Config')
-
-    override = os.environ.setdefault('DOORMAN_SETTINGS', 'doorman.settings.DevConfig')
-    if override:
-        app.config.from_object(override)
+    app.config.from_object('doorman.settings.DevConfig')
+    app.config.from_envvar('DOORMAN_SETTINGS', silent=True)
 
     register_blueprints(app)
     register_extensions(app)

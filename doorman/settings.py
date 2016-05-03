@@ -37,6 +37,13 @@ class Config(object):
     CELERY_RESULT_SERIALIZER = 'json'
     CELERY_TASK_SERIALIZER = 'json'
 
+    GRAPHITE_ENABLED = False
+    GRAPHITE_PREFIX = 'dev.doorman'
+    GRAPHITE_ALLOW = [
+        'api.*',
+        # 'manage-*',
+    ]
+
     # You can specify a set of custom logger plugins here.  These plugins will
     # be called for every status or result log that is received, and can
     # do what they wish with them.

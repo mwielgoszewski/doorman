@@ -4,7 +4,9 @@ from flask import Flask
 from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.views import blueprint as backend
-from doorman.extensions import db, migrate, debug_toolbar, log_tee, make_celery
+from doorman.extensions import (
+    db, migrate, debug_toolbar, log_tee, make_celery, metrics
+)
 from doorman.models import Pack, Query
 from doorman.settings import DevConfig
 from doorman.tasks import celery
@@ -34,6 +36,7 @@ def register_extensions(app):
     debug_toolbar.init_app(app)
     log_tee.init_app(app)
     make_celery(app, celery)
+    metrics.init_app(app)
 
 
 def register_filters(app):

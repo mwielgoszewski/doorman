@@ -115,9 +115,10 @@ class RuleManager(object):
             for alerter in alerters:
                 alerts[alerter].append((node, matches))
 
-        for alerter, (node, matches) in alerts.items():
-            for match in matches:
-                self.alerters[alerter].handle_alert(node, match)
+        for alerter, curr_alerts in alerts.items():
+            for (node, matches) in curr_alerts:
+                for match in matches:
+                    self.alerters[alerter].handle_alert(node, match)
 
 
 def make_celery(app, celery):

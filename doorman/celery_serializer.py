@@ -3,6 +3,8 @@ from datetime import datetime
 from time import mktime
 import json
 
+from doorman.compat import string_types
+
 
 class DJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -28,5 +30,7 @@ def djson_dumps(obj):
 
 
 # Decoder function
-def djson_loads(obj):
-    return json.loads(obj, object_hook=djson_decoder)
+def djson_loads(s):
+    if not isinstance(s, string_types):
+        s = s.decode('utf-8')
+    return json.loads(s, object_hook=djson_decoder)

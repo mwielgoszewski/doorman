@@ -28,7 +28,7 @@ class Config(object):
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
 
-    CELERY_ACCEPT_CONTENT = ['djson']
+    CELERY_ACCEPT_CONTENT = ['djson', 'application/x-djson']
     CELERY_EVENT_SERIALIZER = 'djson'
     CELERY_RESULT_SERIALIZER = 'djson'
     CELERY_TASK_SERIALIZER = 'djson'

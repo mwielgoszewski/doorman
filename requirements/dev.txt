@@ -32,6 +32,7 @@ python-dateutil==2.5.3
 python-editor==1.0
 pytz==2016.4
 redis==2.10.5
+scales==1.0.9
 six==1.10.0
 SQLAlchemy==1.0.12
 waitress==0.9.0

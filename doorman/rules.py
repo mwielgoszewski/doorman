@@ -178,57 +178,9 @@ class WhitelistRule(CompareRule):
         return value not in self.whitelist
 
 
-class CountRule(BaseRule):
-    """
-    CountRule will match if a given query returns a number of results that's
-    greater than, equal to, or less than, some threshold count.
-
-    This is generally only useful when combined with an 'action' filter, so as
-    to only count the 'added' or 'removed' values.
-    """
-    def __init__(self, rule_id, action, config):
-        super(CountRule, self).__init__(rule_id, action, config)
-
-        self.action = action
-        self.count = int(config['count'])
-        self.direction = config['direction']
-        if self.direction not in ['greater', 'equal', 'less']:
-            raise ValueError('Unknown direction in CountRule: {0}'.format(self.direction))
-
-        self.query_name = config.get('query_name')
-
-    def get_counts(self, result):
-        count = 0
-
-        if self.action == Rule.ADDED or self.action == Rule.BOTH:
-            count += len(result.added)
-        if self.action == Rule.REMOVED or self.action == Rule.BOTH:
-            count += len(result.removed)
-
-        return count
-
-    def handle_result(self, result, node):
-        if self.query_name is not None and result.name != self.query_name:
-            return
-
-        count = self.get_counts(result)
-
-        # TODO: more information in match?
-        matches = []
-        if self.direction == 'greater' and count > self.count:
-            matches.append(self.make_match(None, node, count))
-        elif self.direction == 'equal' and count == self.count:
-            matches.append(self.make_match(None, node, count))
-        elif self.direction == 'less' and count < self.count:
-            matches.append(self.make_match(None, node, count))
-
-        return matches
-
-
 # Note: should be at the end of the file
 RULE_MAPPINGS = {
     'blacklist': BlacklistRule,
     'whitelist': WhitelistRule,
-    'count':     CountRule,
 }
 RULE_TYPES = list(RULE_MAPPINGS.keys())

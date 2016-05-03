@@ -28,6 +28,9 @@ class Config(object):
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
 
+    BROKER_URL = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
     CELERY_ACCEPT_CONTENT = ['djson', 'application/x-djson']
     CELERY_EVENT_SERIALIZER = 'djson'
     CELERY_RESULT_SERIALIZER = 'djson'
@@ -85,8 +88,6 @@ class DevConfig(Config):
     DEBUG_TB_ENABLED = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
 
-    BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
 
     DOORMAN_ENROLL_SECRET = [
@@ -101,8 +102,6 @@ class TestConfig(Config):
     TESTING = True
     DEBUG = True
 
-    BROKER_URL = 'redis://localhost:6379/0'
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman_test'
 
     WTF_CSRF_ENABLED = False

@@ -13,7 +13,7 @@ except ImportError:
     from urllib.parse import urlparse
 
 from doorman.models import (Node, Pack, Query, Tag, FilePath,
-    DistributedQuery, DistributedQueryResult,
+    DistributedQuery, DistributedQueryResult, Rule,
 )
 from doorman.settings import TestConfig
 
@@ -863,3 +863,63 @@ class TestCreateQuery:
 
 class TestCreateTag:
     pass
+
+
+class TestAddRule:
+
+    def test_will_reload_rules(self, node, app, testapp):
+        from doorman.tasks import reload_rules
+
+        with mock.patch.object(reload_rules, 'delay', return_value=None) as mock_delay:
+            resp = testapp.post(url_for('manage.add_rule'), {
+                'name': 'Test Rule',
+                'type': 'blacklist',
+                'action': 'both',
+                'alerters': 'debug',
+                'config': '{"field_name": "foo", "blacklist": []}',
+            })
+
+        assert mock_delay.called
+
+
+class TestUpdateRule:
+
+    def test_will_reload_rules(self, db, node, app, testapp):
+        from doorman.tasks import reload_rules
+
+        r = Rule(
+            type='blacklist',
+            name='Test Rule',
+            action=Rule.BOTH,
+            alerters=['debug'],
+            config={"field_name": "foo", "blacklist": []}
+        )
+        db.session.add(r)
+        db.session.commit()
+
+        # Manually reload the rules here, and verify that we have the right
+        # rule in our list
+        app.rule_manager.load_rules()
+        assert len(app.rule_manager.rules) == 1
+        assert app.rule_manager.rules[0][0].action == Rule.BOTH
+
+        # Fake wrapper that just calls reload
+        def real_reload(*args, **kwargs):
+            app.rule_manager.load_rules()
+
+        # Update the rule
+        with mock.patch.object(reload_rules, 'delay', wraps=real_reload) as mock_delay:
+            resp = testapp.post(url_for('manage.rule', rule_id=r.id), {
+                'name': 'Test Rule',
+                'type': 'blacklist',
+                'action': Rule.ADDED,
+                'alerters': 'debug',
+                'config': '{"field_name": "foo", "blacklist": []}',
+            })
+
+        assert mock_delay.called
+
+        # Trigger a manual reload again, and verify that it's been updated
+        app.rule_manager.load_rules()
+        assert len(app.rule_manager.rules) == 1
+        assert app.rule_manager.rules[0][0].action == Rule.ADDED

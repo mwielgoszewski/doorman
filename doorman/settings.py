@@ -24,7 +24,6 @@ class Config(object):
     # node record in the database. This will result in stale node entries.
     DOORMAN_EXPECTS_UNIQUE_HOST_ID = True
     DOORMAN_CHECKIN_INTERVAL = 3600
-    DOORMAN_OSQUERY_STATUS_LOG_LEVEL = 0
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
 
@@ -37,10 +36,10 @@ class Config(object):
     CELERY_TASK_SERIALIZER = 'djson'
 
     GRAPHITE_ENABLED = False
-    GRAPHITE_PREFIX = 'dev.doorman'
+    # GRAPHITE_HOST = "localhost"
+    # GRAPHITE_PORT = 2003
     GRAPHITE_ALLOW = [
         'api.*',
-        # 'manage-*',
     ]
 
     # You can specify a set of custom logger plugins here.  These plugins will
@@ -78,6 +77,31 @@ class Config(object):
     }
 
 
+class ProdConfig(Config):
+
+    ENV = 'prod'
+    DEBUG = False
+    DEBUG_TB_ENABLED = False
+    DEBUG_TB_INTERCEPT_REDIRECTS = False
+
+    SQLALCHEMY_DATABASE_URI = ''
+
+    DOORMAN_ENROLL_SECRET = [
+
+    ]
+
+    BROKER_URL = ''
+    CELERY_RESULT_BACKEND = ''
+
+    GRAPHITE_ENABLED = True
+    GRAPHITE_PREFIX = 'prod.doorman'
+    GRAPHITE_HOST = ""
+    GRAPHITE_PORT = 2003
+    GRAPHITE_ALLOW = [
+        'api.*',
+    ]
+
+
 class DevConfig(Config):
     """
     This class specifies a configuration that is suitable for running in
@@ -93,6 +117,8 @@ class DevConfig(Config):
     DOORMAN_ENROLL_SECRET = [
         'secret',
     ]
+
+    GRAPHITE_PREFIX = 'dev.doorman'
 
 
 class TestConfig(Config):
@@ -110,3 +136,5 @@ class TestConfig(Config):
         'secret',
     ]
     DOORMAN_UNIQUE_HOST_ID = False
+
+    GRAPHITE_ENABLED = False

@@ -99,7 +99,7 @@ class CreateQueryForm(QueryForm):
         query = Query.query.filter(Query.name == self.name.data).first()
         if query:
             self.name.errors.append(
-                "Query with the name {0} already exists!".format(
+                u"Query with the name {0} already exists!".format(
                 self.name.data)
             )
             return False
@@ -161,7 +161,7 @@ class CreateRuleForm(RuleForm):
         query = Rule.query.filter(Rule.name == self.name.data).first()
         if query:
             self.name.errors.append(
-                "Rule with the name {0} already exists!".format(
+                u"Rule with the name {0} already exists!".format(
                 self.name.data)
             )
             return False

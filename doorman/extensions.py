@@ -2,7 +2,6 @@
 from collections import defaultdict
 
 from celery import Celery
-from flask import current_app
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -78,7 +77,6 @@ class RuleManager(object):
                     raise ValueError('{0} is not a subclass of AbstractAlerterPlugin'.format(name))
 
                 self.alerters[name] = klass(config)
-                current_app.logger.debug('Created alerter "{0}" from class: {1}'.format(name, plugin))
 
     def load_rules(self):
         """ Load rules from the database. """
@@ -106,7 +104,6 @@ class RuleManager(object):
             klass = RULE_MAPPINGS[rule.type]
             rule_instance = klass(rule.id, rule.action, rule.config or {})
             self.rules.append((rule_instance, rule.alerters))
-            current_app.logger.debug('Created rule {0} of type "{1}"'.format(rule.id, rule.type))
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """

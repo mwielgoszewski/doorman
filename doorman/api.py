@@ -182,7 +182,6 @@ def logger(node=None):
     '''
     data = request.get_json()
     log_type = data['log_type']
-    log_level = current_app.config['DOORMAN_OSQUERY_STATUS_LOG_LEVEL']
     debug = current_app.config['DEBUG']
 
     if debug:

@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
+import json
 
+from flask import current_app
 from flask_wtf import Form
 from flask_wtf.file import FileField, FileRequired
 
 from wtforms.fields import (BooleanField,
                             DateTimeField,
+                            Field,
                             IntegerField,
                             SelectField,
                             SelectMultipleField,
                             StringField,
                             TextAreaField)
 from wtforms.validators import DataRequired, Optional, ValidationError
+from wtforms.widgets import TextArea
 
+from doorman.models import Rule
+from doorman.rules import RULE_TYPES
 from doorman.utils import validate_osquery_query
 
 
@@ -24,6 +30,22 @@ class ValidSQL(object):
     def __call__(self, form, field):
         if not validate_osquery_query(field.data):
             raise ValidationError(self.message)
+
+
+class JSONField(Field):
+    widget = TextArea()
+
+    def _value(self):
+        if self.data:
+            return json.dumps(self.data)
+        else:
+            return u''
+
+    def process_formdata(self, incoming):
+        if incoming:
+            self.data = json.loads(incoming[0])
+        else:
+            self.data = None
 
 
 class UploadPackForm(Form):
@@ -107,3 +129,48 @@ class CreateTagForm(Form):
 class FilePathForm(Form):
     category = StringField('category', validators=[DataRequired()])
     target_paths = TextAreaField('files', validators=[DataRequired()])
+
+
+class RuleForm(Form):
+
+    name = StringField('Name', validators=[DataRequired()])
+    type = SelectField('Type', choices=[(r, r.title()) for r in RULE_TYPES])
+    action = SelectField('Action', default=Rule.BOTH, choices=[
+        (Rule.ADDED, 'Added'),
+        (Rule.REMOVED, 'Removed'),
+        (Rule.BOTH, 'Both'),
+    ])
+    alerters = SelectMultipleField('alerters', default=None, choices=[
+    ])
+    config = JSONField("Config")
+
+    def set_choices(self):
+        alerter_ids = list(current_app.config.get('DOORMAN_ALERTER_PLUGINS', {}).keys())
+        self.alerters.choices = [(a, a.title()) for a in alerter_ids]
+
+
+class CreateRuleForm(RuleForm):
+
+    def validate(self):
+        from doorman.models import Rule
+
+        initial_validation = super(CreateRuleForm, self).validate()
+        if not initial_validation:
+            return False
+
+        query = Rule.query.filter(Rule.name == self.name.data).first()
+        if query:
+            self.name.errors.append(
+                "Rule with the name {0} already exists!".format(
+                self.name.data)
+            )
+            return False
+
+        return True
+
+
+class UpdateRuleForm(RuleForm):
+
+    def __init__(self, *args, **kwargs):
+        super(UpdateRuleForm, self).__init__(*args, **kwargs)
+        self.set_choices()

@@ -9,9 +9,11 @@ from doorman.database import (
     ForeignKey,
     Model,
     SurrogatePK,
+    UniqueConstraint,
     db,
     reference_col,
     relationship,
+    ARRAY,
     JSONB,
 )
 
@@ -260,6 +262,13 @@ class Node(SurrogatePK, Model):
         return self.result_logs.filter(ResultLog.timestamp > when) \
             .order_by(ResultLog.timestamp.desc())
 
+    def to_dict(self):
+        # NOTE: deliberately not including any secret values in here, for now.
+        return {
+            'enrolled_on': self.enrolled_on,
+            'host_identifier': self.host_identifier,
+            'last_checkin': self.last_checkin,
+        }
 
 
 class FilePath(SurrogatePK, Model):
@@ -384,3 +393,24 @@ class DistributedQueryResult(SurrogatePK, Model):
     def __init__(self, columns, distributed_query=None):
         self.columns = columns
         self.distributed_query = distributed_query
+
+
+class Rule(SurrogatePK, Model):
+    __tablename__ = 'rule'
+
+    ADDED = 'added'
+    REMOVED = 'removed'
+    BOTH = 'both'
+
+    type = Column(db.String, nullable=False)
+    name = Column(db.String, nullable=False)
+    action = Column(db.Enum(ADDED, REMOVED, BOTH, name='rule_actions'), nullable=False)
+    alerters = Column(ARRAY(db.String), nullable=False)
+    config = Column(JSONB)
+
+    def __init__(self, type, name, action, alerters, config=None):
+        self.type = type
+        self.name = name
+        self.action = action
+        self.alerters = alerters
+        self.config = config

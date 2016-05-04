@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Database module, including the SQLAlchemy database object and DB-related utilities."""
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship
 
 from doorman.compat import basestring
@@ -11,6 +11,7 @@ from doorman.extensions import db
 Column = db.Column
 Table = db.Table
 ForeignKey = db.ForeignKey
+UniqueConstraint = db.UniqueConstraint
 relationship = relationship
 
 

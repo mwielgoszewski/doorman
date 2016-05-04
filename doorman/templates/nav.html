@@ -25,6 +25,7 @@
     (url_for('.distributed'), 'manage.distributed', 'distributed'),
     (url_for('.files'), 'manage.files', 'files'),
     (url_for('.tags'), 'manage.tags', 'tags'),
+    (url_for('.rules'), 'manage.rules', 'rules'),
 
   ] %}
 
@@ -54,6 +55,9 @@
           </li>
           <li>
             <a href="{{ url_for('.add_tag') }}">tag</a>
+          </li>
+          <li>
+            <a href="{{ url_for('.add_rule') }}">rule</a>
           </li>
         </ul>
       </li>

@@ -1,8 +1,21 @@
 # -*- coding: utf-8 -*-
 from celery import Celery
+from flask import current_app
 
 
 celery = Celery(__name__)
+
+
+@celery.task()
+def analyze_result(result, node):
+    current_app.rule_manager.handle_log_entry(result, node)
+    return
+
+
+@celery.task()
+def reload_rules():
+    current_app.rule_manager.load_rules()
+    return
 
 
 @celery.task()

@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-9">
+
+                {% if rule is defined %}
+                <h1>{{ rule.name }}</h1>
+                {% endif %}
+
+                {% include "forms/rule.html" %}
+
+            </div><!--./col-md-9-->
+        </div><!--./row-->
+    </div><!--./body-content-->
+
+{% endblock %}

@@ -1,0 +1,38 @@
+            <div class="panel panel-default" id="rule-{{ rule.id }}">
+                <h4 class="panel-heading">
+                    <a href="{{ url_for('manage.rule', rule_id=rule.id) }}">{{ rule.name }}</a>
+                </h4>
+
+                <table class="table table-striped table-condensed">
+
+                    <tbody>
+
+                        <tr>
+                            <th width="15%">Type</th>
+                            <td width="85%">{{ rule.type }}</td>
+                        </tr>
+
+                        <tr>
+                            <th width="15%">Action</th>
+                            <td width="85%">{{ rule.action }}</td>
+                        </tr>
+
+                        <tr>
+                            <th width="15%">Alerters</th>
+                            <td width="85%">{{ rule.alerters | join(', ') }}</td>
+                        </tr>
+
+                        <tr>
+                            <th width="15%">Config</th>
+                            {% if rule.config %}
+                            <td width="85%"><pre><code>{{ rule.config }}</code></pre></td>
+                            {% else %}
+                            <td width="85%"><i>No config</i></td>
+                            {% endif %}
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>

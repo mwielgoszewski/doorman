@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from binascii import b2a_hex
 import os
 
 
 class Config(object):
-    SECRET_KEY = 'secret'
+    SECRET_KEY = b2a_hex(os.urandom(20))
 
     DEBUG = False
     DEBUG_TB_ENABLED = False
@@ -12,9 +13,6 @@ class Config(object):
     APP_DIR = os.path.abspath(os.path.dirname(__file__))  # This directory
     PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, os.pardir))
 
-    DB_NAME = 'osquery.db'
-    DB_PATH = None
-    SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # When osquery is configured to start with the command-line flag
@@ -32,10 +30,11 @@ class Config(object):
 
     BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-    CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_EVENT_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_TASK_SERIALIZER = 'json'
+
+    CELERY_ACCEPT_CONTENT = ['djson', 'application/x-djson']
+    CELERY_EVENT_SERIALIZER = 'djson'
+    CELERY_RESULT_SERIALIZER = 'djson'
+    CELERY_TASK_SERIALIZER = 'djson'
 
     GRAPHITE_ENABLED = False
     GRAPHITE_PREFIX = 'dev.doorman'
@@ -56,17 +55,39 @@ class Config(object):
     #DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'     # Default: do not log results
     #DOORMAN_LOG_FILE_PLUGIN_APPEND = True                      # Default: True
 
+    # You can specify a set of alerting plugins here.  These plugins can be
+    # configured in rules to trigger alerts to a particular location.  Each
+    # plugin consists of a full path to be imported, combined with some
+    # configuration for the plugin.  Note that, since an alerter can be
+    # configured multiple times with different names, we provide the
+    # configuration per-name.
+    DOORMAN_ALERTER_PLUGINS = {
+        'debug': ('doorman.plugins.alerters.debug.DebugAlerter', {
+            'level': 'error',
+        }),
+
+        #'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
+        #    # Required
+        #    'access_key': 'foobar',
+        #    'service_key': 'foobar',
+        #
+        #    # Optional
+        #    'client_url': 'https://doorman.domain.com',
+        #    'key_format': 'doorman-security-{count}',
+        #}),
+    }
+
 
 class DevConfig(Config):
+    """
+    This class specifies a configuration that is suitable for running in
+    development.  It should not be used for running in production.
+    """
     ENV = 'dev'
     DEBUG = True
     DEBUG_TB_ENABLED = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
 
-    DB_NAME = 'dev.db'
-    # Put the db file in project root
-    DB_PATH = os.path.join(Config.PROJECT_ROOT, DB_NAME)
-    # SQLALCHEMY_DATABASE_URI = 'sqlite:///{0}'.format(DB_PATH)
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
 
     DOORMAN_ENROLL_SECRET = [
@@ -75,11 +96,14 @@ class DevConfig(Config):
 
 
 class TestConfig(Config):
+    """
+    This class specifies a configuration that is used for our tests.
+    """
     TESTING = True
     DEBUG = True
-    # SQLALCHEMY_DATABASE_URI = 'sqlite://'
-    # SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:6432/doorman_test'
+
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman_test'
+
     WTF_CSRF_ENABLED = False
 
     DOORMAN_ENROLL_SECRET = [

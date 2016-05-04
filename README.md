@@ -4,6 +4,7 @@
 
 Doorman is an osquery fleet manager that allows administrators to remotely manage the osquery configurations retrieved by nodes. Administrators can dynamically configure the set of packs, queries, and/or file integrity monitoring target paths using tags. Doorman takes advantage of osquery's TLS configuration, logger, and distributed read/write endpoints, to give administrators visibility across a fleet of devices with minimal overhead and intrusiveness.
 
+
 # at a glance
 
 Doorman makes extensive use of tags. A node's configuration is dependent on the tags it shares with packs, queries, and/or file paths. As tags are added and/or removed, a node's configuration will change.
@@ -12,6 +13,7 @@ For example, it's possible to assign a set of packs and queries a `baseline` tag
 
 ![nodes](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/nodes.png)
 
+
 # state of the node
 
 Click on any node to view its recent activity, original enrollment date, time of its last check-in, and the set of packs and queries that are configured for it. This view provides an "at-a-glance" view on the current state of a node.
@@ -19,17 +21,29 @@ Click on any node to view its recent activity, original enrollment date, time of
 ![nodes](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/node.png)
 
 
-# caveats
+# distributed queries
 
-Doorman is currently in alpha status. For one, it lacks the required authentication and authorization checks one would expect from a production, release-ready project. Second, there's still quite a few details to work out. For example, some features I think are needed:
+With Doorman, you can distribute ad-hoc queries to one, some, or all nodes. A distributed query's status in Doorman is tracked based on whether the node has picked up the query and/or returned its results.
 
-* authentication / authorization model
-* validation of query sql
-* enrollment workflow for new nodes, import existing nodes
-* learn about nodes based on result logs
-* dashboards!!
-* API client certificate authentication
-* a built-in query profiler?
+
+# rules and alerts
+
+If you're not acting on the information you collect, what's the point? Doorman allows fleet managers to configure custom rules to trigger alerts on specific events (for example, an unauthorized browser plugin is installed, or a removable USB storage device is inserted). Currently, Doorman supports the following rule types:
+
+* Whitelist
+* Blacklist
+
+Doorman allows supports alerting via the following methods:
+
+* PagerDuty
+* Slack (coming soon!)
+* Email (coming soon!)
+* Log file (primarily for development)
+
+
+# logging
+
+Doorman is intended to be configured to receive results from nodes via the osquery tls logging plugin. Results are saved in a Postgres database for easy access to recent events. Doorman also supports development of custom plugins to handle event data, allowing Doorman to send data elsewhere, such as to a separate file, rsyslog, Elasticsearch, etc.
 
 
 # osquery tls api
@@ -48,9 +62,10 @@ POST   | /distributed/write | `--distributed_tls_write_endpoint`
 # up and running (development mode)
 
 1. Install PostgreSQL.
+
     a. Choose a directory to host the database. We'll use `~/doormandb` for these examples.
-    a. Run `initdb ~/doormandb` to initialize the database.
-    a. Run `pg_ctl -D ~/doormandb -l ~/doormandb/pg.log -o -p 5432 start` to start a Postgres instance.
+    b. Run `initdb ~/doormandb` to initialize the database.
+    c. Run `pg_ctl -D ~/doormandb -l ~/doormandb/pg.log -o -p 5432 start` to start a Postgres instance.
 
     If you reboot or otherwise, just run the pg_ctl ... start command above to resurrect the server.
 
@@ -58,6 +73,12 @@ POST   | /distributed/write | `--distributed_tls_write_endpoint`
 
     ~~~
     createdb -h localhost -p 5432 doorman
+    ~~~
+
+1. Install and start Redis:
+
+    ~~~
+    redis-server /etc/redis/redis.conf
     ~~~
 
 1. Install the required Python dependencies under [requirements/dev.txt](https://github.com/mwielgoszewski/doorman/blob/master/requirements/dev.txt).
@@ -78,6 +99,12 @@ POST   | /distributed/write | `--distributed_tls_write_endpoint`
 
     ~~~
     bower install
+    ~~~
+
+1. Start the doormany celery workers:
+
+    ~~~
+    celery worker -A doorman.worker:celery -l INFO
     ~~~
 
 1. Start doorman by running:
@@ -120,6 +147,14 @@ POST   | /distributed/write | `--distributed_tls_write_endpoint`
        --pack_delimiter /
     ~~~
 
+
 ## running tests
 
 To execute tests, simply run `python manage.py test`.
+
+
+# authors
+
+Doorman is written and maintained by Marcin Wielgoszewski, with contributions from the following individuals and companies:
+
+* [Andrew Dunham](https://github.com/andrew-d) (Stripe)

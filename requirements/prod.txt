@@ -7,6 +7,7 @@ celery==3.1.23
 cssmin==0.2.0
 Flask==0.10.1
 Flask-Assets==0.11
+Flask-DebugToolbar==0.10.0
 Flask-Migrate==1.8.0
 Flask-Script==2.0.5
 Flask-SQLAlchemy==2.1

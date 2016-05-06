@@ -21,6 +21,7 @@ def create_app(config=DevConfig):
 
     register_blueprints(app)
     register_errorhandlers(app)
+    register_loggers(app)
     register_extensions(app)
     register_filters(app)
 
@@ -41,6 +42,23 @@ def register_extensions(app):
     rule_manager.init_app(app)
     make_celery(app, celery)
     metrics.init_app(app)
+
+
+def register_loggers(app):
+    if app.debug:
+        return
+
+    import logging
+    from logging.handlers import WatchedFileHandler
+
+    handler = WatchedFileHandler(app.config['DOORMAN_LOGGING_FILENAME'])
+    levelname = app.config['DOORMAN_LOGGING_LEVEL']
+    if levelname in ('DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL'):
+        handler.setLevel(getattr(logging, levelname))
+    formatter = logging.Formatter(app.config['DOORMAN_LOGGING_FORMAT'])
+    handler.setFormatter(formatter)
+
+    app.logger.addHandler(handler)
 
 
 def register_errorhandlers(app):

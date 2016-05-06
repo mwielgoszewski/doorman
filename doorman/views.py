@@ -2,6 +2,8 @@
 import json
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask_paginate import Pagination
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
@@ -38,9 +40,37 @@ def index():
 
 
 @blueprint.route('/nodes')
-def nodes():
-    nodes = Node.query.all()
-    return render_template('nodes.html', nodes=nodes)
+@blueprint.route('/nodes/<int:page>')
+def nodes(page=1):
+    try:
+        per_page = int(request.args.get('pp', 20))
+    except Exception:
+        per_page = 20
+
+    per_page = max(0, min(20, per_page))
+
+    order_by = request.args.get('order_by', 'id')
+    if order_by not in ('id', 'host_identifier', 'enrolled_on', 'last_checkin'):
+        order_by = 'id'
+    order_by = getattr(Node, order_by)
+
+    sort = request.args.get('sort', 'asc')
+    if sort not in ('asc', 'desc'):
+        sort = 'asc'
+
+    order_by = getattr(order_by, sort)()
+
+    nodes = Node.query.order_by(order_by).paginate(page=page, per_page=per_page)
+    pagination = Pagination(page=page,
+                            per_page=per_page,
+                            total=nodes.total,
+                            alignment='center',
+                            show_single_page=True,
+                            record_name='nodes',
+                            bs_version=3)
+
+    return render_template('nodes.html', nodes=nodes.items,
+                           pagination=pagination)
 
 
 @blueprint.route('/nodes/add', methods=['GET', 'POST'])

@@ -8,6 +8,11 @@
                 
                 {% if nodes %}
                 {% include "tables/nodes.html" %}
+
+                <div class="text-center">
+                    {{ pagination.links }}
+                </div>
+
                 {% elif request.endpoint == url_for('manage.nodes') %}
                 <p>No nodes have enrolled yet!</p>
                 {% endif %}

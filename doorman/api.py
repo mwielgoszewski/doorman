@@ -75,6 +75,11 @@ def node_required(f):
     return decorated_function
 
 
+@blueprint.route('/')
+def index():
+    return '', 204
+
+
 @blueprint.route('/enroll', methods=['POST'])
 @blueprint.route('/v1/enroll', methods=['POST'])
 def enroll():

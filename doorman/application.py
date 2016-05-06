@@ -9,12 +9,12 @@ from doorman.views import blueprint as backend
 from doorman.extensions import (
     db, debug_toolbar, log_tee, make_celery, metrics, migrate, rule_manager
 )
-from doorman.settings import ProdConfig
+from doorman.settings import DevConfig
 from doorman.tasks import celery
 from doorman.utils import get_node_health
 
 
-def create_app(config=ProdConfig):
+def create_app(config=DevConfig):
     app = Flask(__name__)
     app.config.from_object(config)
     app.config.from_envvar('DOORMAN_SETTINGS', silent=True)

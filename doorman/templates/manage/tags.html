@@ -24,10 +24,10 @@
                         <tr>
                             <td>
                                 <button type="button" class="btn btn-link btn-xs" aria-label="Delete Tag">
-                                    <span class="glyphicon glyphicon-trash" aria-hidden="true" data-uri="{{ url_for('.delete_tag', tag_value=tag.value) }}"></span>
+                                    <span class="glyphicon glyphicon-trash" aria-hidden="true" data-uri="{{ url_for('manage.delete_tag', tag_value=tag.value) }}"></span>
                                 </button>
                                 <span class="label">
-                                    <a href="{{ url_for('.get_tag', tag_value=tag.value) }}">{{ tag.value }}</a>
+                                    <a href="{{ url_for('manage.get_tag', tag_value=tag.value) }}">{{ tag.value }}</a>
                                 </span>
                             </td>
                             <td>{{ tag.nodes_count }}</td>
@@ -42,7 +42,7 @@
 
                 {% else %}
 
-                <p>No tags created. You may <a href="{{ url_for('.add_tag') }}">create new tags</a>.</p>
+                <p>No tags created. You may <a href="{{ url_for('manage.add_tag') }}">create new tags</a>.</p>
 
                 {% endif %}
 

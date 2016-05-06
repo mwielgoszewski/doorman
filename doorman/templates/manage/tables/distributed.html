@@ -13,7 +13,7 @@
                         {% for query in queries %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
+                                <a href="{{ url_for('manage.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
                             </td>
                             <td><code>{{ query.sql }}</code></td>
                             <td>{{ query.timestamp }}</td>
@@ -33,7 +33,7 @@
 
                             <td>
                                 {% if query.results %}
-                                <a href="{{ url_for('.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.results | first | attr('timestamp') }}</a>
+                                <a href="{{ url_for('manage.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.results | first | attr('timestamp') }}</a>
                                 {% endif %}
                             </td>
 

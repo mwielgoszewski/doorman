@@ -76,6 +76,15 @@ class Config(object):
         #}),
     }
 
+    # Doorman uses the WatchedFileHandler in logging.handlers module.
+    # It is the responsibility of the system to rotate these logs on
+    # a periodic basis, as the file will grow indefinitely. See
+    # https://docs.python.org/dev/library/logging.handlers.html#watchedfilehandler
+    # for more information.
+    DOORMAN_LOGGING_FILENAME = '/var/log/doorman/doorman.log'
+    DOORMAN_LOGGING_FORMAT = '%(asctime)s -  %(name)s - %(levelname)s - %(thread)d - %(message)s'
+    DOORMAN_LOGGING_LEVEL = 'WARNING'
+
 
 class ProdConfig(Config):
 

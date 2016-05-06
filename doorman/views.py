@@ -45,7 +45,7 @@ def nodes():
 
 @blueprint.route('/nodes/add', methods=['GET', 'POST'])
 def add_node():
-    return redirect(url_for('.nodes'))
+    return redirect(url_for('manage.nodes'))
 
 
 @blueprint.route('/nodes/tagged/<string:tags>')
@@ -60,34 +60,34 @@ def nodes_by_tag(tags):
 
 @blueprint.route('/node/<int:node_id>')
 def get_node(node_id):
-    node = Node.query.filter(Node.id == node_id).one()
+    node = Node.query.filter(Node.id == node_id).first_or_404()
     return render_template('node.html', node=node)
 
 
 @blueprint.route('/node/<int:node_id>/activity')
 def node_activity(node_id):
-    node = Node.query.filter(Node.id == node_id).one()
+    node = Node.query.filter(Node.id == node_id).first_or_404()
     return render_template('activity.html', node=node)
 
 
 @blueprint.route('/node/<int:node_id>/tags', methods=['GET', 'POST'])
 def tag_node(node_id):
-    node = Node.query.filter(Node.id == node_id).one()
+    node = Node.query.filter(Node.id == node_id).first_or_404()
     if request.is_xhr and request.method == 'POST':
         node.tags = create_tags(*request.get_json())
         node.save()
         return jsonify({}), 202
 
-    return redirect(url_for('.get_node', node_id=node.id))
+    return redirect(url_for('manage.get_node', node_id=node.id))
 
 
 @blueprint.route('/node/<int:node_id>/distributed/result/<string:guid>')
 def get_distributed_result(node_id, guid):
-    node = Node.query.filter(Node.id == node_id).one()
+    node = Node.query.filter(Node.id == node_id).first_or_404()
     query = DistributedQuery.query.filter(
         DistributedQuery.guid == guid,
         DistributedQuery.node == node,
-    ).one()
+    ).first_or_404()
     return render_template('distributed.result.html', node=node, query=query)
 
 
@@ -106,7 +106,7 @@ def add_pack():
 
         # Only redirect back to the pack list if everything was successful
         if pack is not None:
-            return redirect(url_for('.packs', _anchor=pack.name))
+            return redirect(url_for('manage.packs', _anchor=pack.name))
 
     flash_errors(form)
     return render_template('pack.html', form=form)
@@ -114,14 +114,14 @@ def add_pack():
 
 @blueprint.route('/pack/<string:pack_name>/tags', methods=['GET', 'POST'])
 def tag_pack(pack_name):
-    pack = Pack.query.filter(Pack.name == pack_name).one()
+    pack = Pack.query.filter(Pack.name == pack_name).first_or_404()
     if request.is_xhr:
         if request.method == 'POST':
             pack.tags = create_tags(*request.get_json())
             pack.save()
         return jsonify(tags=[t.value for t in pack.tags])
 
-    return redirect(url_for('.packs'))
+    return redirect(url_for('manage.packs'))
 
 
 @blueprint.route('/queries')
@@ -147,7 +147,7 @@ def add_query():
         query.tags = create_tags(*form.tags.data.splitlines())
         query.save()
 
-        return redirect(url_for('.query', query_id=query.id))
+        return redirect(url_for('manage.query', query_id=query.id))
 
     flash_errors(form)
     return render_template('query.html', form=form)
@@ -170,7 +170,7 @@ def distributed(node_id=None, status=None):
         queries = DistributedQuery.query
 
     if node_id:
-        node = Node.query.filter(Node.id == node_id).one()
+        node = Node.query.filter(Node.id == node_id).first_or_404()
         queries = queries.filter(DistributedQuery.node_id == node.id)
 
     return render_template('distributed.html', queries=queries, status=status)
@@ -212,7 +212,7 @@ def add_distributed():
         else:
             db.session.commit()
 
-        return redirect(url_for('.distributed', status='new'))
+        return redirect(url_for('manage.distributed', status='new'))
 
     flash_errors(form)
     return render_template('distributed.html', form=form)
@@ -227,7 +227,7 @@ def queries_by_tag(tags):
 
 @blueprint.route('/query/<int:query_id>', methods=['GET', 'POST'])
 def query(query_id):
-    query = Query.query.filter(Query.id == query_id).one()
+    query = Query.query.filter(Query.id == query_id).first_or_404()
     form = UpdateQueryForm(request.form)
 
     if form.validate_on_submit():
@@ -245,7 +245,7 @@ def query(query_id):
                              description=form.description.data,
                              value=form.value.data,
                              removed=form.removed.data)
-        return redirect(url_for('.query', query_id=query.id))
+        return redirect(url_for('manage.query', query_id=query.id))
 
     form = UpdateQueryForm(request.form, obj=query)
     flash_errors(form)
@@ -254,14 +254,14 @@ def query(query_id):
 
 @blueprint.route('/query/<int:query_id>/tags', methods=['GET', 'POST'])
 def tag_query(query_id):
-    query = Query.query.filter(Query.id == query_id).one()
+    query = Query.query.filter(Query.id == query_id).first_or_404()
     if request.is_xhr:
         if request.method == 'POST':
             query.tags = create_tags(*request.get_json())
             query.save()
         return jsonify(tags=[t.value for t in query.tags])
 
-    return redirect(url_for('.query', query_id=query.id))
+    return redirect(url_for('manage.query', query_id=query.id))
 
 
 @blueprint.route('/files')
@@ -276,7 +276,7 @@ def add_file():
     if form.validate_on_submit():
         FilePath.create(category=form.category.data,
                         target_paths=form.target_paths.data.splitlines())
-        return redirect(url_for('.files'))
+        return redirect(url_for('manage.files'))
 
     flash_errors(form)
     return render_template('file.html', form=form)
@@ -284,14 +284,14 @@ def add_file():
 
 @blueprint.route('/file/<int:file_path_id>/tags', methods=['GET', 'POST'])
 def tag_file(file_path_id):
-    file_path = FilePath.query.filter(FilePath.id == file_path_id).one()
+    file_path = FilePath.query.filter(FilePath.id == file_path_id).first_or_404()
     if request.is_xhr:
         if request.method == 'POST':
             file_path.tags = create_tags(*request.get_json())
             file_path.save()
         return jsonify(tags=[t.value for t in file_path.tags])
 
-    return redirect(url_for('.files'))
+    return redirect(url_for('manage.files'))
 
 
 @blueprint.route('/tags')
@@ -306,7 +306,7 @@ def add_tag():
     form = CreateTagForm()
     if form.validate_on_submit():
         create_tags(*form.value.data.splitlines())
-        return redirect(url_for('.tags'))
+        return redirect(url_for('manage.tags'))
 
     flash_errors(form)
     return render_template('tag.html', form=form)
@@ -314,13 +314,13 @@ def add_tag():
 
 @blueprint.route('/tag/<string:tag_value>')
 def get_tag(tag_value):
-    tag = Tag.query.filter(Tag.value == tag_value).one()
+    tag = Tag.query.filter(Tag.value == tag_value).first_or_404()
     return render_template('tag.html', tag=tag)
 
 
 @blueprint.route('/tag/<string:tag_value>', methods=['DELETE'])
 def delete_tag(tag_value):
-    tag = Tag.query.filter(Tag.value == tag_value).one()
+    tag = Tag.query.filter(Tag.value == tag_value).first_or_404()
     tag.delete()
     return jsonify({}), 204
 
@@ -367,7 +367,7 @@ def add_rule():
         rule.save()
         reload_rules.delay()
 
-        return redirect(url_for('.rule', rule_id=rule.id))
+        return redirect(url_for('manage.rule', rule_id=rule.id))
 
     flash_errors(form)
     return render_template('rule.html', form=form)
@@ -375,7 +375,7 @@ def add_rule():
 
 @blueprint.route('/rules/<int:rule_id>', methods=['GET', 'POST'])
 def rule(rule_id):
-    rule = Rule.query.filter(Rule.id == rule_id).one()
+    rule = Rule.query.filter(Rule.id == rule_id).first_or_404()
     form = UpdateRuleForm(request.form)
 
     if form.validate_on_submit():
@@ -385,7 +385,7 @@ def rule(rule_id):
                            alerters=form.alerters.data,
                            config=form.config.data)
         reload_rules.delay()
-        return redirect(url_for('.rule', rule_id=rule.id))
+        return redirect(url_for('manage.rule', rule_id=rule.id))
 
     form = UpdateRuleForm(request.form, obj=rule)
     flash_errors(form)

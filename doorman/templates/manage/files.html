@@ -17,7 +17,7 @@
                     {% endfor %}
                 </ul>
 
-                <select multiple class="tagsinput" data-uri="{{ url_for('.tag_file', file_path_id=file_path.id) }}">
+                <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_file', file_path_id=file_path.id) }}">
                     {% for tag in file_path.tags %}
                     <option value="{{ tag.value }}">{{ tag.value }}</option>
                     {% endfor %}

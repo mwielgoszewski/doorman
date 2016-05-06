@@ -10,7 +10,7 @@
                 {% for pack in packs %}
                 <h2 id="{{ pack.name }}">{{ pack.name }}</h2>
                 <p>
-                    <select multiple class="tagsinput" data-uri="{{ url_for('.tag_pack', pack_name=pack.name) }}">
+                    <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_pack', pack_name=pack.name) }}">
                         {% for tag in pack.tags %}
                         <option value="{{ tag.value }}">{{ tag.value }}</option>
                         {% endfor %}
@@ -19,7 +19,7 @@
                 {% include "_pack.html" %}
                 {% endfor %}
                 {% else %}
-                <p>No packs uploaded. You may upload a new pack <a href="{{ url_for('.add_pack') }}">here</a>.<p>
+                <p>No packs uploaded. You may upload a new pack <a href="{{ url_for('manage.add_pack') }}">here</a>.<p>
                 {% endif %}
             </div>
 

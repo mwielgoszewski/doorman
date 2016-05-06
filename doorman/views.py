@@ -45,7 +45,7 @@ def nodes():
 
 @blueprint.route('/nodes/add', methods=['GET', 'POST'])
 def add_node():
-    return redirect(url_for('.nodes'))
+    return redirect(url_for('manage.nodes'))
 
 
 @blueprint.route('/nodes/tagged/<string:tags>')
@@ -78,7 +78,7 @@ def tag_node(node_id):
         node.save()
         return jsonify({}), 202
 
-    return redirect(url_for('.get_node', node_id=node.id))
+    return redirect(url_for('manage.get_node', node_id=node.id))
 
 
 @blueprint.route('/node/<int:node_id>/distributed/result/<string:guid>')
@@ -106,7 +106,7 @@ def add_pack():
 
         # Only redirect back to the pack list if everything was successful
         if pack is not None:
-            return redirect(url_for('.packs', _anchor=pack.name))
+            return redirect(url_for('manage.packs', _anchor=pack.name))
 
     flash_errors(form)
     return render_template('pack.html', form=form)
@@ -121,7 +121,7 @@ def tag_pack(pack_name):
             pack.save()
         return jsonify(tags=[t.value for t in pack.tags])
 
-    return redirect(url_for('.packs'))
+    return redirect(url_for('manage.packs'))
 
 
 @blueprint.route('/queries')
@@ -147,7 +147,7 @@ def add_query():
         query.tags = create_tags(*form.tags.data.splitlines())
         query.save()
 
-        return redirect(url_for('.query', query_id=query.id))
+        return redirect(url_for('manage.query', query_id=query.id))
 
     flash_errors(form)
     return render_template('query.html', form=form)
@@ -212,7 +212,7 @@ def add_distributed():
         else:
             db.session.commit()
 
-        return redirect(url_for('.distributed', status='new'))
+        return redirect(url_for('manage.distributed', status='new'))
 
     flash_errors(form)
     return render_template('distributed.html', form=form)
@@ -245,7 +245,7 @@ def query(query_id):
                              description=form.description.data,
                              value=form.value.data,
                              removed=form.removed.data)
-        return redirect(url_for('.query', query_id=query.id))
+        return redirect(url_for('manage.query', query_id=query.id))
 
     form = UpdateQueryForm(request.form, obj=query)
     flash_errors(form)
@@ -261,7 +261,7 @@ def tag_query(query_id):
             query.save()
         return jsonify(tags=[t.value for t in query.tags])
 
-    return redirect(url_for('.query', query_id=query.id))
+    return redirect(url_for('manage.query', query_id=query.id))
 
 
 @blueprint.route('/files')
@@ -276,7 +276,7 @@ def add_file():
     if form.validate_on_submit():
         FilePath.create(category=form.category.data,
                         target_paths=form.target_paths.data.splitlines())
-        return redirect(url_for('.files'))
+        return redirect(url_for('manage.files'))
 
     flash_errors(form)
     return render_template('file.html', form=form)
@@ -291,7 +291,7 @@ def tag_file(file_path_id):
             file_path.save()
         return jsonify(tags=[t.value for t in file_path.tags])
 
-    return redirect(url_for('.files'))
+    return redirect(url_for('manage.files'))
 
 
 @blueprint.route('/tags')
@@ -306,7 +306,7 @@ def add_tag():
     form = CreateTagForm()
     if form.validate_on_submit():
         create_tags(*form.value.data.splitlines())
-        return redirect(url_for('.tags'))
+        return redirect(url_for('manage.tags'))
 
     flash_errors(form)
     return render_template('tag.html', form=form)
@@ -367,7 +367,7 @@ def add_rule():
         rule.save()
         reload_rules.delay()
 
-        return redirect(url_for('.rule', rule_id=rule.id))
+        return redirect(url_for('manage.rule', rule_id=rule.id))
 
     flash_errors(form)
     return render_template('rule.html', form=form)
@@ -385,7 +385,7 @@ def rule(rule_id):
                            alerters=form.alerters.data,
                            config=form.config.data)
         reload_rules.delay()
-        return redirect(url_for('.rule', rule_id=rule.id))
+        return redirect(url_for('manage.rule', rule_id=rule.id))
 
     form = UpdateRuleForm(request.form, obj=rule)
     flash_errors(form)

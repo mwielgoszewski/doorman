@@ -16,7 +16,7 @@
 
                         <tr>
                             <td>
-                                <a href="{{ url_for('.packs', _anchor=pack.name) }}">{{ pack.name }}</a>
+                                <a href="{{ url_for('manage.packs', _anchor=pack.name) }}">{{ pack.name }}</a>
                             </td>
                             <td>{{ pack.platform or 'all' }}</td>
                             <td>{{ pack.version or '' }}</td>
@@ -24,7 +24,7 @@
                             <td>{{ pack.shard or '' }}</td>
                             <td>{{ pack.queries | count }}</td>
                             <td>
-                                <select multiple class="tagsinput" data-uri="{{ url_for('.tag_pack', pack_name=pack.name) }}">
+                                <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_pack', pack_name=pack.name) }}">
                                     {% for tag in pack.tags %}
                                     <option value="{{ tag.value }}">{{ tag.value }}</option>
                                     {% endfor %}

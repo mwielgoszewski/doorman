@@ -46,6 +46,7 @@ setup(
         'WTForms==2.1',
     ],
     package_data={
+        'resources': 'doorman/resources/*',
         'static': 'doorman/static/*',
         'templates': 'doorman/templates/*',
     }

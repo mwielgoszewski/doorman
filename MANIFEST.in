@@ -1,0 +1,3 @@
+recursive-include doorman/templates *
+recursive-include doorman/static *
+recursive-include doorman/resources *

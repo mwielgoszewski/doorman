@@ -229,7 +229,7 @@ def add_distributed():
             nodes.extend(
                 Node.query.filter(
                     Node.tags.any(
-                        Tag.value.in_(tag_names)
+                        Tag.value.in_(form.tags.data)
                     )
                 ).all()
             )

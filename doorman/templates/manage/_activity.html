@@ -2,7 +2,7 @@
                 <ul class="nav nav-tabs">
                 {% for group in node.get_recent() | groupby('name') %}
                     <li class="{% if loop.first %}active{% endif %}">
-                        <a href="#{{ group.grouper }}" aria-controls="{{ group.grouper }}" role="tab" data-toggle="tab">{{ group.grouper }}
+                        <a href="#{{ group.grouper | replace('/', ':') }}" aria-controls="{{ group.grouper }}" role="tab" data-toggle="tab">{{ group.grouper }}
                             <span class="badge">{{ group.list | count }}</span>
                         </a>
                     </li>
@@ -10,7 +10,7 @@
                     {% if queries.count() %}
                     <li class="{% if not node.get_recent() %}active{% endif %}">
                         <a href="#distributed_queries" aria-controls="distributed_queries" role="tab" data-toggle="tab">distributed queries
-                            </span class="badge">{{ queries.count() or '' }}</span>
+                            <span class="badge">{{ queries.count() or '' }}</span>
                         </a>
                     </li>
                     {% endif %}
@@ -20,7 +20,7 @@
 
                     {% for grouper, results in node.get_recent() | groupby('name') %}
 
-                    <div class="tab-pane{% if loop.first %} active{% endif %}" id="{{ grouper }}">
+                    <div class="tab-pane{% if loop.first %} active{% endif %}" id="{{ grouper | replace('/', ':') }}">
 
                     {% set columns = results | first | attr('columns') | list | sort %}
 

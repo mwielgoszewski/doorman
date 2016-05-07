@@ -5,7 +5,7 @@
         <div class="row">
             <div class="col-md-12">
 
-                <h1>{{ query.sql }}</h1>
+                <h1><a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.host_identifier }}</a> / {{ query.sql }}</h1>
 
                 {% if query.results %}
 

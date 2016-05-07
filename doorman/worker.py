@@ -2,14 +2,18 @@
 import os
 
 from doorman.application import create_app
-from doorman.settings import DevConfig, TestConfig
+from doorman.settings import DevConfig, ProdConfig, TestConfig
 
-# Allow overriding config if we're testing
-config = DevConfig
-if os.environ.get('DOORMAN_CELERY_TESTING'):
-    config = TestConfig
 
-app = create_app(config=config)
+if os.environ.get('DOORMAN_ENV') == 'prod':
+    CONFIG = ProdConfig
+elif os.environ.get('DOORMAN_ENV') == 'test':
+    CONFIG = TestConfig
+else:
+    CONFIG = DevConfig
+
+
+app = create_app(config=CONFIG)
 
 
 from doorman.tasks import celery

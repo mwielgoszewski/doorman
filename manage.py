@@ -9,10 +9,15 @@ from flask_script import Command, Manager, Server, Shell
 from flask_script.commands import Clean, ShowUrls
 
 from doorman import create_app, db
-from doorman.settings import DevConfig, ProdConfig
+from doorman.settings import DevConfig, ProdConfig, TestConfig
 
 
-CONFIG = ProdConfig if os.environ.get('DOORMAN_ENV') == 'prod' else DevConfig
+if os.environ.get('DOORMAN_ENV') == 'prod':
+    CONFIG = ProdConfig
+elif os.environ.get('DOORMAN_ENV') == 'test':
+    CONFIG = TestConfig
+else:
+    CONFIG = DevConfig
 
 
 app = create_app(config=CONFIG)

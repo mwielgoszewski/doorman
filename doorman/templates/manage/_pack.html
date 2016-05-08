@@ -16,6 +16,6 @@
             <dd>{{ pack.shard }}</dd>
             {% endif %}
 
-            {% for query in pack.queries %}
+            {% for query in pack.queries | sort(attribute='name') %}
                 {% include "_query.html" %}
             {% endfor %}

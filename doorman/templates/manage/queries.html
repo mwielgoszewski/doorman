@@ -15,6 +15,17 @@
                 {% endif %}
 
             </div>
+
+            <nav class="col-md-3 bs-docs-sidebar">
+                <ul class="nav nav-stacked fixed" id="sidebar">
+                {% if queries %}
+                    {% for query in queries | sort (attribute='name') %}
+                    <li><a href="#{{ query.name }}">{{ query.name }}</a></li>
+                    {% endfor %}
+                {% endif %}
+                </ul>
+            </nav>
+
         </div>
     </div>
 

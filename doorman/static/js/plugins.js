@@ -65,4 +65,15 @@ $(function() {
 
     })
 
+    $('body').scrollspy({
+        target: '.bs-docs-sidebar',
+        offset: 70
+    })
+
+    $('#sidebar').affix({
+        offset: {
+            top: 0
+        }
+    })
+
 })

@@ -120,6 +120,7 @@ class DevConfig(Config):
     DEBUG = True
     DEBUG_TB_ENABLED = True
     DEBUG_TB_INTERCEPT_REDIRECTS = False
+    ASSETS_DEBUG = True
 
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost:5432/doorman'
 

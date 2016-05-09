@@ -10,6 +10,7 @@ html {
 
 body {
   padding-top: 50px;
+  position: relative;
 }
 
 section {
@@ -98,9 +99,6 @@ td .bootstrap-tagsinput, p .bootstrap-tagsinput {
   box-shadow: none;
 }
 
-/*td .bootstrap-tagsinput > input {
-
-  display: none;
-
+#sidebar.affix {
+  top: 70px;
 }
-*/

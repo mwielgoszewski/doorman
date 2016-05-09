@@ -5,3 +5,68 @@
 // bootstrap font path
 @icon-font-path:        "/static/libs/bootstrap/fonts/";
 
+
+/* sidebar */
+.bs-docs-sidebar {
+  padding-left: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+/* all links */
+.bs-docs-sidebar .nav>li>a {
+  color: @navbar-default-link-color;
+  border-left: 2px solid transparent;
+  padding: 4px 20px;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* nested links */
+.bs-docs-sidebar .nav .nav>li>a {
+  padding-top: 1px;
+  padding-bottom: 1px;
+  padding-left: 30px;
+  font-size: 12px;
+}
+
+/* active & hover links */
+.bs-docs-sidebar .nav>.active>a,
+.bs-docs-sidebar .nav>li>a:hover,
+.bs-docs-sidebar .nav>li>a:focus {
+  color: @navbar-default-link-hover-color;
+  text-decoration: none;
+  background-color: transparent;
+  border-left: 2px solid @navbar-default-link-hover-color;
+}
+
+/* all active links */
+.bs-docs-sidebar .nav>.active>a,
+.bs-docs-sidebar .nav>.active:hover>a,
+.bs-docs-sidebar .nav>.active:focus>a {
+  font-weight: 700;
+}
+
+/* nested active links */
+.bs-docs-sidebar .nav .nav>.active>a,
+.bs-docs-sidebar .nav .nav>.active:hover>a,
+.bs-docs-sidebar .nav .nav>.active:focus>a {
+  font-weight: 600;
+}
+
+/* hide inactive nested list */
+.bs-docs-sidebar .nav ul.nav {
+  display: none;
+}
+
+/* show active nested list */
+.bs-docs-sidebar .nav>.active>ul.nav {
+  display: block;
+}
+
+/* scrollable navbar */
+.bs-docs-sidebar > ul {
+  overflow-y: auto;
+  height: 85%;
+  padding-bottom: 100px;
+}

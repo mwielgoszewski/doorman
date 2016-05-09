@@ -23,9 +23,22 @@
                 {% endif %}
             </div>
 
-            <div class="col-md-3">
-                <div id="toc">
-            </div>
+            <nav class="col-md-3 bs-docs-sidebar">
+                <ul class="nav nav-stacked fixed" id="sidebar">
+                {% if packs %}
+                    {% for pack in packs %}
+                    <li>
+                        <a href="#{{ pack.name }}">{{ pack.name }}</a>
+                        <ul class="nav nav-stacked">
+                        {% for query in pack.queries | sort (attribute='name') %}
+                            <li><a href="#{{ pack.name }}-{{ query.name }}">{{ query.name }}</a></li>
+                        {% endfor %}
+                        </ul>
+                    </li>
+                    {% endfor %}
+                {% endif %}
+                </ul>
+            </nav>
             
         </div>
     </div>

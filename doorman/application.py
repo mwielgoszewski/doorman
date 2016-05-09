@@ -30,7 +30,13 @@ def create_app(config=ProdConfig):
 
 def register_blueprints(app):
     app.register_blueprint(api)
-    app.register_blueprint(backend)
+
+    # if the DOORMAN_NO_MANAGER environment variable isn't set,
+    # register the backend blueprint. This is useful when you want
+    # to only deploy the api as a standalone service.
+
+    if 'DOORMAN_NO_MANAGER' not in os.environ:
+        app.register_blueprint(backend)
 
 
 def register_extensions(app):

@@ -35,8 +35,10 @@ def register_blueprints(app):
     # register the backend blueprint. This is useful when you want
     # to only deploy the api as a standalone service.
 
-    if 'DOORMAN_NO_MANAGER' not in os.environ:
-        app.register_blueprint(backend)
+    if 'DOORMAN_NO_MANAGER' in os.environ:
+        return
+
+    app.register_blueprint(backend)
 
 
 def register_extensions(app):

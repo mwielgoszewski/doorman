@@ -30,6 +30,14 @@ def create_app(config=ProdConfig):
 
 def register_blueprints(app):
     app.register_blueprint(api)
+
+    # if the DOORMAN_NO_MANAGER environment variable isn't set,
+    # register the backend blueprint. This is useful when you want
+    # to only deploy the api as a standalone service.
+
+    if 'DOORMAN_NO_MANAGER' in os.environ:
+        return
+
     app.register_blueprint(backend)
 
 
@@ -67,6 +75,8 @@ def register_errorhandlers(app):
         """Render error template."""
         # If a HTTPException, pull the `code` attribute; default to 500
         error_code = getattr(error, 'code', 500)
+        if 'DOORMAN_NO_MANAGER' in os.environ:
+            return '', 400
         return render_template('{0}.html'.format(error_code)), error_code
 
     for errcode in [401, 403, 404, 500]:

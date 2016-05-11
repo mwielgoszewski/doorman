@@ -8,6 +8,8 @@ from flask import (Blueprint, abort, current_app, flash, redirect, render_templa
     request, session, url_for)
 from flask_login import current_user, login_user, logout_user
 
+from oauthlib.oauth2 import OAuth2Error
+
 from .forms import LoginForm
 from doorman.extensions import login_manager
 from doorman.models import User
@@ -65,7 +67,12 @@ def oauth2callback():
     if '_oauth_state' not in session:
         return redirect(url_for('users.login'))
 
-    user = current_app.oauth_provider.fetch_user()
+    try:
+        user = current_app.oauth_provider.fetch_user()
+    except OAuth2Error:
+        current_app.logger.exception("Failed to authenticate with oauth")
+        return redirect(url_for('users.logout'))
+
     login_user(user)
     flash(u'Welcome {0}.'.format(user.first_name or user.username), 'info')
 

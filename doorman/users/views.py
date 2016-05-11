@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-from urlparse import urlparse, urljoin
+try:
+    from urlparse import urlparse, urljoin
+except ImportError:
+    from urllib.parse import urlparse, urljoin
 
 from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
     request, session, url_for)

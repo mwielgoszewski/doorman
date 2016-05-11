@@ -85,6 +85,21 @@ class Config(object):
     DOORMAN_LOGGING_FORMAT = '%(asctime)s -  %(name)s - %(levelname)s - %(thread)d - %(message)s'
     DOORMAN_LOGGING_LEVEL = 'WARNING'
 
+    DOORMAN_AUTH_METHOD = None
+    # DOORMAN_AUTH_METHOD = 'doorman'
+    # DOORMAN_AUTH_METHOD = 'google'
+
+    DOORMAN_OAUTH_GOOGLE_ALLOWED_DOMAINS = [
+    ]
+
+    DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = [
+    ]
+
+    DOORMAN_OAUTH_CLIENT_ID = ''
+    DOORMAN_OAUTH_CLIENT_SECRET = ''
+
+    BCRYPT_LOG_ROUNDS = 13
+
 
 class ProdConfig(Config):
 
@@ -148,3 +163,5 @@ class TestConfig(Config):
     DOORMAN_UNIQUE_HOST_ID = False
 
     GRAPHITE_ENABLED = False
+
+    DOORMAN_AUTH_METHOD = None

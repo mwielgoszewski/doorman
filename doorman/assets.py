@@ -2,6 +2,9 @@
 from flask_assets import Bundle, Environment
 
 css = Bundle(
+    Bundle('css/font-awesome.less',
+           output='css/font-awesome.css',
+           filters='less'),
     Bundle('css/bootstrap.less',
            output='css/bootstrap.css',
            filters='less',

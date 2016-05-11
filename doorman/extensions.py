@@ -2,7 +2,9 @@
 from collections import defaultdict
 
 from celery import Celery
+from flask_bcrypt import Bcrypt
 from flask_debugtoolbar import DebugToolbarExtension
+from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 
@@ -196,9 +198,11 @@ class Metrics(object):
         return
 
 
+bcrypt = Bcrypt()
 db = SQLAlchemy()
 migrate = Migrate()
 debug_toolbar = DebugToolbarExtension()
 log_tee = LogTee()
+login_manager = LoginManager()
 metrics = Metrics()
 rule_manager = RuleManager()

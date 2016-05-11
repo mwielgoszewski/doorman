@@ -5,9 +5,10 @@ from flask import Flask, render_template
 
 from doorman.api import blueprint as api
 from doorman.assets import assets
-from doorman.views import blueprint as backend
+from doorman.manage import blueprint as backend
 from doorman.extensions import (
-    db, debug_toolbar, log_tee, make_celery, metrics, migrate, rule_manager
+    db, debug_toolbar, log_tee, login_manager, make_celery, metrics,
+    migrate, rule_manager
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
@@ -23,6 +24,7 @@ def create_app(config=ProdConfig):
     register_errorhandlers(app)
     register_loggers(app)
     register_extensions(app)
+    register_auth_method(app)
     register_filters(app)
 
     return app
@@ -50,6 +52,7 @@ def register_extensions(app):
     rule_manager.init_app(app)
     make_celery(app, celery)
     metrics.init_app(app)
+    login_manager.init_app(app)
 
 
 def register_loggers(app):
@@ -85,3 +88,24 @@ def register_errorhandlers(app):
 
 def register_filters(app):
     app.jinja_env.filters['health'] = get_node_health
+
+
+def register_auth_method(app):
+    from doorman.users import views
+    app.register_blueprint(views.blueprint)
+
+    if app.config['DOORMAN_AUTH_METHOD'] is None:
+        from doorman.users.mixins import NoAuthUserMixin
+        login_manager.anonymous_user = NoAuthUserMixin
+        return
+
+    login_manager.login_view = 'users.login'
+    login_manager.login_message_category = 'warning'
+
+    if app.config['DOORMAN_AUTH_METHOD'] != 'doorman':
+        login_manager.login_message = None
+        login_manager.needs_refresh_message = None
+
+        from doorman.users.oauth import OAuthLogin
+        provider = OAuthLogin.get_provider(app.config['DOORMAN_AUTH_METHOD'])
+        provider.init_app(app)

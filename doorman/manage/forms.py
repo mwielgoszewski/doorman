@@ -66,7 +66,7 @@ class QueryForm(Form):
     ])
     version = StringField('Version')
     description = TextAreaField('Description')
-    value = TextAreaField('Value') 
+    value = TextAreaField('Value')
     removed = BooleanField('Log Removed?', default=True)
     packs = SelectMultipleField('Packs', default=None, choices=[
     ])

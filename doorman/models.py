@@ -3,6 +3,8 @@ from itertools import chain
 import datetime as dt
 import uuid
 
+from flask_login import UserMixin
+
 from doorman.database import (
     Column,
     Table,
@@ -16,6 +18,7 @@ from doorman.database import (
     ARRAY,
     JSONB,
 )
+from doorman.extensions import bcrypt
 
 
 querypacks = Table('query_packs',
@@ -396,7 +399,6 @@ class DistributedQueryResult(SurrogatePK, Model):
 
 
 class Rule(SurrogatePK, Model):
-    __tablename__ = 'rule'
 
     ADDED = 'added'
     REMOVED = 'removed'
@@ -414,3 +416,40 @@ class Rule(SurrogatePK, Model):
         self.action = action
         self.alerters = alerters
         self.config = config
+
+
+class User(UserMixin, SurrogatePK, Model):
+
+    username = Column(db.String(80), unique=True, nullable=False)
+    email = Column(db.String)
+
+    password = Column(db.String, nullable=True)
+    created_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
+
+    # oauth related stuff
+    social_id = Column(db.String)
+    first_name = Column(db.String)
+    last_name = Column(db.String)
+
+    def __init__(self, username, password=None, email=None, social_id=None,
+                 first_name=None, last_name=None):
+        self.username = username
+        self.email = email
+        if password:
+            self.set_password(password)
+        else:
+            self.password = None
+
+        self.social_id = social_id
+        self.first_name = first_name
+        self.last_name = last_name
+
+    def set_password(self, password):
+        self.update(password=bcrypt.generate_password_hash(password))
+        return
+
+    def check_password(self, value):
+        if not self.password:
+            # still do the computation
+            return bcrypt.generate_password_hash(value) and False
+        return bcrypt.check_password_hash(self.password, value)

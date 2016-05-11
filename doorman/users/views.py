@@ -6,7 +6,7 @@ except ImportError:
 
 from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
     request, session, url_for)
-from flask_login import current_user, login_user, logout_user
+from flask_login import current_user, login_user, logout_user, COOKIE_NAME
 
 from oauthlib.oauth2 import OAuth2Error
 
@@ -41,7 +41,7 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        login_user(form.user)
+        login_user(form.user, remember=form.remember.data)
         flash(u'Welcome {0}.'.format(form.user.username), 'info')
         return safe_redirect(next, url_for('manage.index'))
 
@@ -59,7 +59,14 @@ def logout():
     for key in ('_oauth_state', '_oauth_token'):
         session.pop(key, None)
 
-    return redirect(url_for('manage.index'))
+    response = redirect(url_for('manage.index'))
+
+    # explicitly log the user out, and clear their remember me cookie
+
+    cookie_name = current_app.config.get('REMEMBER_COOKIE_NAME', COOKIE_NAME)
+    cookie_path = current_app.config.get('REMEMBER_COOKIE_PATH', '/')
+    response.set_cookie(cookie_name, path=cookie_path, expires=0)
+    return response, 302
 
 
 @blueprint.route('/oauth2callback')

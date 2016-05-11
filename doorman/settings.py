@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from binascii import b2a_hex
+import datetime as dt
 import os
 
 
@@ -84,6 +85,16 @@ class Config(object):
     DOORMAN_LOGGING_FILENAME = '/var/log/doorman/doorman.log'
     DOORMAN_LOGGING_FORMAT = '%(asctime)s -  %(name)s - %(levelname)s - %(thread)d - %(message)s'
     DOORMAN_LOGGING_LEVEL = 'WARNING'
+
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_DURATION = dt.timedelta(days=30)
+    REMEMBER_COOKIE_PATH = '/manage'
+    REMEMBER_COOKIE_SECURE = True
+    REMEMBER_COOKIE_HTTPONLY = True
+
+    # see http://flask-login.readthedocs.io/en/latest/#session-protection
+    # only applicable when DOORMAN_AUTH_METHOD = 'doorman'
+    SESSION_PROTECTION = "strong"
 
     DOORMAN_AUTH_METHOD = None
     # DOORMAN_AUTH_METHOD = 'doorman'

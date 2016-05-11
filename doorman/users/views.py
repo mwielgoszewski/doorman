@@ -43,6 +43,7 @@ def login():
     if form.validate_on_submit():
         login_user(form.user, remember=form.remember.data)
         flash(u'Welcome {0}.'.format(form.user.username), 'info')
+        current_app.logger.info("%s logged in", form.user.username)
         return safe_redirect(next, url_for('manage.index'))
 
     if form.errors:
@@ -53,13 +54,19 @@ def login():
 
 @blueprint.route('/logout')
 def logout():
+    username = getattr(current_user, 'username', None)
+
     logout_user()
 
     # clear any oauth state
     for key in ('_oauth_state', '_oauth_token'):
         session.pop(key, None)
 
-    response = redirect(url_for('manage.index'))
+    response = redirect(url_for('users.login'))
+
+    if username:
+        flash(u"You have successfully logged out.", "info")
+        current_app.logger.info("%s logged in", username)
 
     # explicitly log the user out, and clear their remember me cookie
 
@@ -82,6 +89,7 @@ def oauth2callback():
 
     login_user(user)
     flash(u'Welcome {0}.'.format(user.first_name or user.username), 'info')
+    current_app.logger.info("%s logged in", user.username)
 
     return redirect(url_for('users.login'))
 

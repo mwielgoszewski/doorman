@@ -80,5 +80,31 @@ def extract_ddl(specs_dir):
         f.write('\n'.join(ddl))
 
 
+
+@manager.option('username')
+@manager.option('--email', default=None)
+def adduser(username, email):
+    from doorman.models import User
+    import getpass
+    import sys
+
+    if User.query.filter_by(username=username).first():
+        raise ValueError("Username already exists!")
+
+    password = getpass.getpass(stream=sys.stderr)
+
+    try:
+        user = User.create(username=username,
+            email=email or username,
+            password=password,
+        )
+    except Exception as error:
+        print("Failed to create user {0} - {1}".format(username, error))
+        exit(1)
+    else:
+        print("Created user {0}".format(user.username))
+        exit(0)
+
+
 if __name__ == '__main__':
     manager.run()

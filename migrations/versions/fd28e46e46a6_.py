@@ -1,4 +1,4 @@
-"""empty message
+"""Add rule table to configure rules and alerts.
 
 Revision ID: fd28e46e46a6
 Revises: d2b00dd93241

@@ -55,18 +55,19 @@ def login():
 @blueprint.route('/logout')
 def logout():
     username = getattr(current_user, 'username', None)
+    oauth = False
 
     logout_user()
 
     # clear any oauth state
     for key in ('_oauth_state', '_oauth_token'):
-        session.pop(key, None)
+        oauth |= not not session.pop(key, None)
 
     response = redirect(url_for('users.login'))
 
-    if username:
+    if username and not oauth:
         flash(u"You have successfully logged out.", "info")
-        current_app.logger.info("%s logged in", username)
+        current_app.logger.info("%s logged out", username)
 
     # explicitly log the user out, and clear their remember me cookie
 

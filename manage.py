@@ -45,14 +45,22 @@ manager.add_command('urls', ShowUrls())
 manager.add_command("assets", ManageAssets(assets))
 
 
-@manager.command
-def test():
-    """Run the tests."""
-    # Run tests
-    import pytest
-    test_path = join(abspath(dirname(__file__)), 'tests')
-    exit_code = pytest.main([test_path, '--verbose'])
-    return exit_code
+@manager.add_command
+class test(Command):
+    name = 'test'
+    capture_all_args = True
+
+    def run(self, remaining):
+        import pytest
+        test_path = join(abspath(dirname(__file__)), 'tests')
+
+        if remaining:
+            test_args = remaining + ['--verbose']
+        else:
+            test_args = [test_path, '--verbose']
+
+        exit_code = pytest.main(test_args)
+        return exit_code
 
 
 @manager.command

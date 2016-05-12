@@ -4,10 +4,10 @@ import os
 import glob
 import json
 
+from flask_assets import ManageAssets
 from flask_migrate import MigrateCommand
 from flask_script import Command, Manager, Server, Shell
 from flask_script.commands import Clean, ShowUrls
-from flask.ext.assets import ManageAssets
 
 from doorman import create_app, db
 from doorman.settings import DevConfig, ProdConfig, TestConfig

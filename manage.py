@@ -45,14 +45,22 @@ manager.add_command('urls', ShowUrls())
 manager.add_command("assets", ManageAssets(assets))
 
 
-@manager.command
-def test():
-    """Run the tests."""
-    # Run tests
-    import pytest
-    test_path = join(abspath(dirname(__file__)), 'tests')
-    exit_code = pytest.main([test_path, '--verbose'])
-    return exit_code
+@manager.add_command
+class test(Command):
+    name = 'test'
+    capture_all_args = True
+
+    def run(self, remaining):
+        import pytest
+        test_path = join(abspath(dirname(__file__)), 'tests')
+
+        if remaining:
+            test_args = remaining + ['--verbose']
+        else:
+            test_args = [test_path, '--verbose']
+
+        exit_code = pytest.main(test_args)
+        return exit_code
 
 
 @manager.command
@@ -70,6 +78,32 @@ def extract_ddl(specs_dir):
     with open(opath, 'wb') as f:
         f.write('-- This file is generated using "python manage.py extract_ddl" - do not edit manually\n')
         f.write('\n'.join(ddl))
+
+
+
+@manager.option('username')
+@manager.option('--email', default=None)
+def adduser(username, email):
+    from doorman.models import User
+    import getpass
+    import sys
+
+    if User.query.filter_by(username=username).first():
+        raise ValueError("Username already exists!")
+
+    password = getpass.getpass(stream=sys.stderr)
+
+    try:
+        user = User.create(username=username,
+            email=email or username,
+            password=password,
+        )
+    except Exception as error:
+        print("Failed to create user {0} - {1}".format(username, error))
+        exit(1)
+    else:
+        print("Created user {0}".format(user.username))
+        exit(0)
 
 
 if __name__ == '__main__':

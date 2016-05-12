@@ -31,6 +31,7 @@
 
   <!-- Collect the nav links, forms, and other content for toggling -->
   <div class="collapse navbar-collapse navbar-ex1-collapse">
+    {% if current_user and current_user.is_authenticated %}
     <ul class="nav navbar-nav">
       {% for href, page_id, page_name in navigation_bar %}
       <li{% if page_id == request.endpoint %} class="active"{% endif %}>
@@ -63,6 +64,23 @@
       </li>
 
     </ul>
+
+    {% endif %}
+
+    {% if current_user.username %}
+
+    <ul class="nav navbar-nav navbar-right">
+        <li>
+          <p class="navbar-text">
+            logged in as {{ current_user.username }}
+          </p>
+        </li>
+        <li>
+          <a class="navbar-link" href="{{ url_for('users.logout') }}"><i class="fa fa-sign-out"></i></a>
+        </li>
+    </ul>
+
+    {% endif %}
 
   </div><!-- /.navbar-collapse -->
   </div><!-- /.container -->

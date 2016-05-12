@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from doorman.forms import (
+from doorman.manage.forms import (
     CreateQueryForm,
     UpdateQueryForm,
     UploadPackForm,

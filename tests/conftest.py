@@ -26,10 +26,33 @@ def app():
         ctx.pop()
 
 
+@pytest.yield_fixture(scope='function')
+def api():
+    """An api instance for the tests, no manager"""
+    import os
+    # the mere presence of the env var should prevent the manage
+    # blueprint from being registered
+    os.environ['DOORMAN_NO_MANAGER'] = '1'
+    
+    _app = create_app(config=TestConfig)
+    ctx = _app.test_request_context()
+    ctx.push()
+
+    try:
+        yield _app
+    finally:
+        ctx.pop()
+
+
 @pytest.fixture(scope='function')
 def testapp(app):
     """A Webtest app."""
     return TestApp(app)
+
+
+@pytest.fixture(scope='function')
+def testapi(api):
+    return TestApp(api)
 
 
 @pytest.yield_fixture(scope='function')

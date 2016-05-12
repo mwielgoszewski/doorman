@@ -2,12 +2,13 @@
 import json
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask_login import login_required
 from flask_paginate import Pagination
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 
-from doorman.forms import (
+from .forms import (
     AddDistributedQueryForm,
     CreateQueryForm,
     UpdateQueryForm,
@@ -24,7 +25,7 @@ from doorman.utils import create_query_pack_from_upload, flash_errors
 
 
 blueprint = Blueprint('manage', __name__,
-                      template_folder='./templates/manage',
+                      template_folder='../templates/manage',
                       url_prefix='/manage')
 
 
@@ -35,12 +36,14 @@ def inject_models():
 
 
 @blueprint.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
 
 @blueprint.route('/nodes')
 @blueprint.route('/nodes/<int:page>')
+@login_required
 def nodes(page=1):
     try:
         per_page = int(request.args.get('pp', 20))
@@ -74,11 +77,13 @@ def nodes(page=1):
 
 
 @blueprint.route('/nodes/add', methods=['GET', 'POST'])
+@login_required
 def add_node():
     return redirect(url_for('manage.nodes'))
 
 
 @blueprint.route('/nodes/tagged/<string:tags>')
+@login_required
 def nodes_by_tag(tags):
     if tags == 'null':
         nodes = Node.query.filter(Node.tags == None).all()
@@ -89,18 +94,21 @@ def nodes_by_tag(tags):
 
 
 @blueprint.route('/node/<int:node_id>')
+@login_required
 def get_node(node_id):
     node = Node.query.filter(Node.id == node_id).first_or_404()
     return render_template('node.html', node=node)
 
 
 @blueprint.route('/node/<int:node_id>/activity')
+@login_required
 def node_activity(node_id):
     node = Node.query.filter(Node.id == node_id).first_or_404()
     return render_template('activity.html', node=node)
 
 
 @blueprint.route('/node/<int:node_id>/tags', methods=['GET', 'POST'])
+@login_required
 def tag_node(node_id):
     node = Node.query.filter(Node.id == node_id).first_or_404()
     if request.is_xhr and request.method == 'POST':
@@ -112,6 +120,7 @@ def tag_node(node_id):
 
 
 @blueprint.route('/node/<int:node_id>/distributed/result/<string:guid>')
+@login_required
 def get_distributed_result(node_id, guid):
     node = Node.query.filter(Node.id == node_id).first_or_404()
     query = DistributedQuery.query.filter(
@@ -122,6 +131,7 @@ def get_distributed_result(node_id, guid):
 
 
 @blueprint.route('/packs')
+@login_required
 def packs():
     packs = Pack.query.options(joinedload(Pack.queries).joinedload(Query.packs)).all()
     return render_template('packs.html', packs=packs)
@@ -129,6 +139,7 @@ def packs():
 
 @blueprint.route('/packs/add', methods=['GET', 'POST'])
 @blueprint.route('/packs/upload', methods=['POST'])
+@login_required
 def add_pack():
     form = UploadPackForm()
     if form.validate_on_submit():
@@ -143,6 +154,7 @@ def add_pack():
 
 
 @blueprint.route('/pack/<string:pack_name>/tags', methods=['GET', 'POST'])
+@login_required
 def tag_pack(pack_name):
     pack = Pack.query.filter(Pack.name == pack_name).first_or_404()
     if request.is_xhr:
@@ -155,12 +167,14 @@ def tag_pack(pack_name):
 
 
 @blueprint.route('/queries')
+@login_required
 def queries():
     queries = Query.query.options(joinedload(Query.packs)).all()
     return render_template('queries.html', queries=queries)
 
 
 @blueprint.route('/queries/add', methods=['GET', 'POST'])
+@login_required
 def add_query():
     form = CreateQueryForm()
     form.set_choices()
@@ -186,6 +200,7 @@ def add_query():
 @blueprint.route('/queries/distributed')
 @blueprint.route('/queries/distributed/<any(new, pending, complete):status>')
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>')
+@login_required
 def distributed(node_id=None, status=None):
     if status == 'new':
         queries = DistributedQuery.query.filter(
@@ -207,6 +222,7 @@ def distributed(node_id=None, status=None):
 
 
 @blueprint.route('/queries/distributed/add', methods=['GET', 'POST'])
+@login_required
 def add_distributed():
     form = AddDistributedQueryForm()
     form.set_choices()
@@ -249,6 +265,7 @@ def add_distributed():
 
 
 @blueprint.route('/queries/tagged/<string:tags>')
+@login_required
 def queries_by_tag(tags):
     tag_names = [t.strip() for t in tags.split(',')]
     queries = Query.query.filter(Query.tags.any(Tag.value.in_(tag_names))).all()
@@ -256,6 +273,7 @@ def queries_by_tag(tags):
 
 
 @blueprint.route('/query/<int:query_id>', methods=['GET', 'POST'])
+@login_required
 def query(query_id):
     query = Query.query.filter(Query.id == query_id).first_or_404()
     form = UpdateQueryForm(request.form)
@@ -283,6 +301,7 @@ def query(query_id):
 
 
 @blueprint.route('/query/<int:query_id>/tags', methods=['GET', 'POST'])
+@login_required
 def tag_query(query_id):
     query = Query.query.filter(Query.id == query_id).first_or_404()
     if request.is_xhr:
@@ -295,12 +314,14 @@ def tag_query(query_id):
 
 
 @blueprint.route('/files')
+@login_required
 def files():
     file_paths = FilePath.query.all()
     return render_template('files.html', file_paths=file_paths)
 
 
 @blueprint.route('/files/add', methods=['GET', 'POST'])
+@login_required
 def add_file():
     form = FilePathForm()
     if form.validate_on_submit():
@@ -313,6 +334,7 @@ def add_file():
 
 
 @blueprint.route('/file/<int:file_path_id>/tags', methods=['GET', 'POST'])
+@login_required
 def tag_file(file_path_id):
     file_path = FilePath.query.filter(FilePath.id == file_path_id).first_or_404()
     if request.is_xhr:
@@ -325,6 +347,7 @@ def tag_file(file_path_id):
 
 
 @blueprint.route('/tags')
+@login_required
 def tags():
     if request.is_xhr:
         return jsonify(tags=[t.value for t in Tag.query.all()])
@@ -332,6 +355,7 @@ def tags():
 
 
 @blueprint.route('/tags/add', methods=['GET', 'POST'])
+@login_required
 def add_tag():
     form = CreateTagForm()
     if form.validate_on_submit():
@@ -343,12 +367,14 @@ def add_tag():
 
 
 @blueprint.route('/tag/<string:tag_value>')
+@login_required
 def get_tag(tag_value):
     tag = Tag.query.filter(Tag.value == tag_value).first_or_404()
     return render_template('tag.html', tag=tag)
 
 
 @blueprint.route('/tag/<string:tag_value>', methods=['DELETE'])
+@login_required
 def delete_tag(tag_value):
     tag = Tag.query.filter(Tag.value == tag_value).first_or_404()
     tag.delete()
@@ -378,12 +404,14 @@ def create_tags(*tags):
 
 
 @blueprint.route('/rules')
+@login_required
 def rules():
     rules = Rule.query.all()
     return render_template('rules.html', rules=rules)
 
 
 @blueprint.route('/rules/add', methods=['GET', 'POST'])
+@login_required
 def add_rule():
     form = CreateRuleForm()
     form.set_choices()
@@ -404,6 +432,7 @@ def add_rule():
 
 
 @blueprint.route('/rules/<int:rule_id>', methods=['GET', 'POST'])
+@login_required
 def rule(rule_id):
     rule = Rule.query.filter(Rule.id == rule_id).first_or_404()
     form = UpdateRuleForm(request.form)

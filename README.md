@@ -59,6 +59,29 @@ POST   | /distributed/read | `--distributed_tls_read_endpoint`
 POST   | /distributed/write | `--distributed_tls_write_endpoint`
 
 
+# authentication
+
+Authenticating to Doorman can be handled several ways:
+
+* `DOORMAN_AUTH_METHOD = None`
+* `DOORMAN_AUTH_METHOD = 'doorman'`
+* `DOORMAN_AUTH_METHOD = 'google'`
+
+`None` implies no authentication, resulting in an exposed manager web interface. If you deploy the api and web interface (the manager) separately, and the manager will only be accessible from a trusted network, this may be enough for you.
+
+`doorman` utilizes username and password based authentication, managed by the backend database. Passwords are stored as bcrypt hashes with a work factor of 13 log_rounds. Doorman does not support user registration, or password reset capabilities from the web interface. This must be handled by the administrator using Doorman's [manage.py](https://github.com/mwielgoszewski/doorman/blob/master/manage.py) script.
+
+`google` uses OAuth 2.0 to authenticate with your Google credentials. To get started, you'll need to register a new web application client in the [Google API Console](https://console.developers.google.com/apis/credentials) and obtain a client_id and client_secret, along with authorize a callback URL. The following will need to be configured:
+
+* `DOORMAN_OAUTH_CLIENT_ID = "client_id"`
+* `DOORMAN_OAUTH_CLIENT_SECRET = "client_secret"`
+
+The callback URL by default is `https://SERVER_NAME/oauth2callback`. The `SERVER_NAME` is populated from the environment parameters passed from your upstream web proxy (i.e., nginx's [server_name](http://nginx.org/en/docs/http/server_names.html)).
+
+# configuration
+
+Doorman's [default configuration](https://github.com/mwielgoszewski/doorman/blob/master/doorman/settings.py) can be overridden by setting the `DOORMAN_SETTINGS` environment variable to a configuration file.
+
 # up and running (development mode)
 
 1. Install PostgreSQL.

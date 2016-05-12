@@ -7,9 +7,11 @@ import json
 from flask_migrate import MigrateCommand
 from flask_script import Command, Manager, Server, Shell
 from flask_script.commands import Clean, ShowUrls
+from flask.ext.assets import ManageAssets
 
 from doorman import create_app, db
 from doorman.settings import DevConfig, ProdConfig, TestConfig
+from doorman.assets import assets
 
 
 if os.environ.get('DOORMAN_ENV') == 'prod':
@@ -40,6 +42,7 @@ manager.add_command('shell', Shell(make_context=_make_context))
 manager.add_command('db', MigrateCommand)
 manager.add_command('clean', Clean())
 manager.add_command('urls', ShowUrls())
+manager.add_command("assets", ManageAssets(assets))
 
 
 @manager.command

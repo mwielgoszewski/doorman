@@ -12,7 +12,6 @@ DEFAULT_KEY_FORMAT = 'doorman-incident-{count}'
 class PagerDutyAlerter(AbstractAlerterPlugin):
     def __init__(self, config):
         # Required configuration
-        self.access_key = config['access_key']
         self.service_key = config['service_key']
 
         # Optional
@@ -34,7 +33,6 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             'match': match,
         }
         headers = {
-            'Authorization': 'Token token={0}'.format(self.access_key),
             'Content-type': 'application/json',
         }
         payload = json.dumps({

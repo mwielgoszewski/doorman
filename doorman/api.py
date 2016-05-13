@@ -89,8 +89,8 @@ def index():
     return '', 204
 
 
-@blueprint.route('/enroll', methods=['POST'])
-@blueprint.route('/v1/enroll', methods=['POST'])
+@blueprint.route('/enroll', methods=['POST', 'PUT'])
+@blueprint.route('/v1/enroll', methods=['POST', 'PUT'])
 def enroll():
     '''
     Enroll an endpoint with osquery.
@@ -172,8 +172,8 @@ def enroll():
     return jsonify(node_key=node.node_key, node_invalid=False)
 
 
-@blueprint.route('/config', methods=['POST'])
-@blueprint.route('/v1/config', methods=['POST'])
+@blueprint.route('/config', methods=['POST', 'PUT'])
+@blueprint.route('/v1/config', methods=['POST', 'PUT'])
 @node_required
 def configuration(node=None):
     '''
@@ -188,8 +188,8 @@ def configuration(node=None):
     return jsonify(config, node_invalid=False)
 
 
-@blueprint.route('/log', methods=['POST'])
-@blueprint.route('/v1/log', methods=['POST'])
+@blueprint.route('/log', methods=['POST', 'PUT'])
+@blueprint.route('/v1/log', methods=['POST', 'PUT'])
 @node_required
 def logger(node=None):
     '''
@@ -222,8 +222,8 @@ def logger(node=None):
     return jsonify(node_invalid=False)
 
 
-@blueprint.route('/distributed/read', methods=['POST'])
-@blueprint.route('/v1/distributed/read', methods=['POST'])
+@blueprint.route('/distributed/read', methods=['POST', 'PUT'])
+@blueprint.route('/v1/distributed/read', methods=['POST', 'PUT'])
 @node_required
 def distributed_read(node=None):
     '''
@@ -239,8 +239,8 @@ def distributed_read(node=None):
     return jsonify(queries=queries, node_invalid=False)
 
 
-@blueprint.route('/distributed/write', methods=['POST'])
-@blueprint.route('/v1/distributed/write', methods=['POST'])
+@blueprint.route('/distributed/write', methods=['POST', 'PUT'])
+@blueprint.route('/v1/distributed/write', methods=['POST', 'PUT'])
 @node_required
 def distributed_write(node=None):
     '''

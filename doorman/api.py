@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from functools import wraps
+from io import BytesIO
 import datetime as dt
+import gzip
 import json
 
 from flask import Blueprint, current_app, jsonify, request, g
@@ -55,7 +57,14 @@ def teardown_request(*args, **kwargs):
 def node_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # in v1.7.4, the Content-Encoding header is set when
+        # --logger_tls_compress=true
+        if 'Content-Encoding' in request.headers and \
+            request.headers['Content-Encoding'] == 'gzip':
+            request._cached_data = gzip.GzipFile(fileobj=BytesIO(request.get_data())).read()
+
         request_json = request.get_json()
+
         if not request_json:
             current_app.logger.error(
                 "Request did not contain valid JSON data. This could be an "

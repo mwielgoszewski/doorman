@@ -337,6 +337,7 @@ class StatusLog(SurrogatePK, Model):
     severity = Column(db.Integer)
     filename = Column(db.String)
     created = Column(db.DateTime, default=dt.datetime.utcnow)
+    version = Column(db.String)
 
     node_id = reference_col('node', nullable=False)
     node = relationship(
@@ -345,13 +346,14 @@ class StatusLog(SurrogatePK, Model):
     )
 
     def __init__(self, line=None, message=None, severity=None,
-                 filename=None, created=None, node=None):
+                 filename=None, created=None, node=None, version=None):
         self.line = int(line)
         self.message = message
         self.severity = int(severity)
         self.filename = filename
         self.created = created
         self.node = node
+        self.version = version
 
 
 class DistributedQuery(SurrogatePK, Model):

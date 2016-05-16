@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from functools import wraps
+from io import BytesIO
 import datetime as dt
+import gzip
 import json
 
 from flask import Blueprint, current_app, jsonify, request, g
@@ -55,7 +57,14 @@ def teardown_request(*args, **kwargs):
 def node_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # in v1.7.4, the Content-Encoding header is set when
+        # --logger_tls_compress=true
+        if 'Content-Encoding' in request.headers and \
+            request.headers['Content-Encoding'] == 'gzip':
+            request._cached_data = gzip.GzipFile(fileobj=BytesIO(request.get_data())).read()
+
         request_json = request.get_json()
+
         if not request_json:
             current_app.logger.error(
                 "Request did not contain valid JSON data. This could be an "
@@ -80,8 +89,8 @@ def index():
     return '', 204
 
 
-@blueprint.route('/enroll', methods=['POST'])
-@blueprint.route('/v1/enroll', methods=['POST'])
+@blueprint.route('/enroll', methods=['POST', 'PUT'])
+@blueprint.route('/v1/enroll', methods=['POST', 'PUT'])
 def enroll():
     '''
     Enroll an endpoint with osquery.
@@ -163,8 +172,8 @@ def enroll():
     return jsonify(node_key=node.node_key, node_invalid=False)
 
 
-@blueprint.route('/config', methods=['POST'])
-@blueprint.route('/v1/config', methods=['POST'])
+@blueprint.route('/config', methods=['POST', 'PUT'])
+@blueprint.route('/v1/config', methods=['POST', 'PUT'])
 @node_required
 def configuration(node=None):
     '''
@@ -179,8 +188,8 @@ def configuration(node=None):
     return jsonify(config, node_invalid=False)
 
 
-@blueprint.route('/log', methods=['POST'])
-@blueprint.route('/v1/log', methods=['POST'])
+@blueprint.route('/log', methods=['POST', 'PUT'])
+@blueprint.route('/v1/log', methods=['POST', 'PUT'])
 @node_required
 def logger(node=None):
     '''
@@ -213,8 +222,8 @@ def logger(node=None):
     return jsonify(node_invalid=False)
 
 
-@blueprint.route('/distributed/read', methods=['POST'])
-@blueprint.route('/v1/distributed/read', methods=['POST'])
+@blueprint.route('/distributed/read', methods=['POST', 'PUT'])
+@blueprint.route('/v1/distributed/read', methods=['POST', 'PUT'])
 @node_required
 def distributed_read(node=None):
     '''
@@ -230,8 +239,8 @@ def distributed_read(node=None):
     return jsonify(queries=queries, node_invalid=False)
 
 
-@blueprint.route('/distributed/write', methods=['POST'])
-@blueprint.route('/v1/distributed/write', methods=['POST'])
+@blueprint.route('/distributed/write', methods=['POST', 'PUT'])
+@blueprint.route('/v1/distributed/write', methods=['POST', 'PUT'])
 @node_required
 def distributed_write(node=None):
     '''

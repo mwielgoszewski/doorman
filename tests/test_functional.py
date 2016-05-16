@@ -3,6 +3,8 @@ from copy import deepcopy
 from flask import url_for
 from sqlalchemy import and_
 import datetime as dt
+import gzip
+import io
 import json
 import mock
 import time
@@ -291,6 +293,58 @@ class TestLogging:
             'node_key': node.node_key,
             'data': [data],
             'log_type': 'status',
+        })
+
+        assert node.status_logs.count()
+        assert node.status_logs[0].line == data['line']
+        assert node.status_logs[0].message == data['message']
+        assert node.status_logs[0].severity == data['severity']
+        assert node.status_logs[0].filename == data['filename']
+
+    def test_status_log_created_for_node_put(self, node, testapp):
+        data = {
+            'line': 1,
+            'message': 'This is a test of the emergency broadcast system.',
+            'severity': 1,
+            'filename': 'foobar.cpp'
+        }
+
+        assert not node.status_logs.count()
+
+        resp = testapp.put_json(url_for('api.logger'), {
+            'node_key': node.node_key,
+            'data': [data],
+            'log_type': 'status',
+        })
+
+        assert node.status_logs.count()
+        assert node.status_logs[0].line == data['line']
+        assert node.status_logs[0].message == data['message']
+        assert node.status_logs[0].severity == data['severity']
+        assert node.status_logs[0].filename == data['filename']
+
+    def test_status_log_created_for_node_when_gzipped(self, node, testapp):
+        data = {
+            'line': 1,
+            'message': 'This is a test of the emergency broadcast system.',
+            'severity': 1,
+            'filename': 'foobar.cpp'
+        }
+
+        assert not node.status_logs.count()
+        fileobj = io.BytesIO()
+        gzf = gzip.GzipFile(fileobj=fileobj, mode='wb')
+
+        gzf.write(json.dumps({
+            'node_key': node.node_key,
+            'data': [data],
+            'log_type': 'status',
+        }).encode('utf-8'))
+        gzf.close()
+
+        resp = testapp.post(url_for('api.logger'), fileobj.getvalue(), headers={
+            'Content-Encoding': 'gzip',
+            'Content-Type': 'application/json'
         })
 
         assert node.status_logs.count()

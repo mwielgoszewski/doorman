@@ -58,8 +58,6 @@ class TestNode:
 
         config = node.get_config()
 
-        assert node.host_identifier == config['options']['host_identifier']
-
         assert pack.name in config['packs']
         assert query1.name in config['packs'][pack.name]['queries']
         assert query1.sql == config['packs'][pack.name]['queries'][query1.name]['query']

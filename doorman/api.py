@@ -163,9 +163,21 @@ def enroll():
                     last_checkin=now,
                     enrolled_on=now)
     else:
-        node = Node.create(host_identifier=host_identifier,
-                           last_checkin=now,
-                           enrolled_on=now)
+        tags = []
+        for value in current_app.config.get('DOORMAN_ENROLL_DEFAULT_TAGS', []):
+            tag = Tag.query.filter(Tag.value == value).first()
+            if not tag:
+                tags.append(Tag.create(value=value))
+            else:
+                tags.append(tag)
+        else:
+            tags = list(set(tags))
+
+        node = Node(host_identifier=host_identifier,
+                    last_checkin=now,
+                    enrolled_on=now)
+        node.tags = tags
+        node.save()
 
     current_app.logger.info("Enrolled new node %s", node)
 

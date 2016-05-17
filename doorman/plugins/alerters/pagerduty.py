@@ -4,6 +4,7 @@ import logging
 
 import requests
 
+from doorman.utils import DateTimeEncoder
 from .base import AbstractAlerterPlugin
 
 
@@ -45,7 +46,7 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             'client': 'Doorman',
             "client_url": self.client_url,
             'details': details,
-        })
+        }, cls=DateTimeEncoder)
         resp = requests.post(
             'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
             headers=headers,

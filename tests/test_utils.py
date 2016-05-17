@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
+import datetime as dt
+
 import pytest
 
-from doorman.utils import quote, validate_osquery_query
+from doorman.utils import quote, validate_osquery_query, DateTimeEncoder
 
 
 class TestValidate:
@@ -40,3 +43,13 @@ class TestQuote:
 
     def test_quote_unprintable_chars(self):
         assert quote('\x8Ffoo\xA3bar').lower() == r'"\x8Ffoo\xA3bar"'.lower()
+
+
+class TestDateTimeEncoder:
+
+    def test_will_serialize_datetime(self):
+        time = dt.datetime(year=2016, month=5, day=16, hour=11, minute=11, second=11)
+        data = {'foo': time}
+
+        s = json.dumps(data, cls=DateTimeEncoder)
+        assert s == '{"foo": "2016-05-16T11:11:11"}'

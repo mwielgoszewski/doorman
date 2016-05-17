@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 
 import requests
 
+from doorman.utils import DateTimeEncoder
 from .base import AbstractAlerterPlugin
 
 
@@ -12,7 +14,6 @@ DEFAULT_KEY_FORMAT = 'doorman-incident-{count}'
 class PagerDutyAlerter(AbstractAlerterPlugin):
     def __init__(self, config):
         # Required configuration
-        self.access_key = config['access_key']
         self.service_key = config['service_key']
 
         # Optional
@@ -34,7 +35,6 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             'match': match,
         }
         headers = {
-            'Authorization': 'Token token={0}'.format(self.access_key),
             'Content-type': 'application/json',
         }
         payload = json.dumps({
@@ -46,11 +46,13 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             'client': 'Doorman',
             "client_url": self.client_url,
             'details': details,
-        })
-        r = requests.post(
+        }, cls=DateTimeEncoder)
+        resp = requests.post(
             'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
             headers=headers,
-            data=paylooad
+            data=payload
         )
-        if not r.ok:
+        if not resp.ok:
             self.logger.warn('Could not trigger PagerDuty alert!')
+
+        self.logger.debug('Response from PagerDuty: %r', resp.content)

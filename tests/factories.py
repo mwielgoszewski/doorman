@@ -4,7 +4,7 @@ from factory.alchemy import SQLAlchemyModelFactory
 
 from doorman.database import db
 from doorman.models import (Node, Pack, Query, Tag, FilePath,
-    DistributedQuery, DistributedQueryResult,
+    DistributedQuery, DistributedQueryTask, DistributedQueryResult,
     ResultLog, StatusLog
 )
 
@@ -49,6 +49,12 @@ class DistributedQueryFactory(BaseFactory):
 
     class Meta:
         model = DistributedQuery
+
+
+class DistributedQueryTaskFactory(BaseFactory):
+
+    class Meta:
+        model = DistributedQueryTask
 
 
 class DistributedQueryResultFactory(BaseFactory):

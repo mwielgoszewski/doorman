@@ -10,7 +10,7 @@ from flask import Blueprint, current_app, jsonify, request, g
 from doorman.database import db
 from doorman.extensions import log_tee
 from doorman.models import (Node, Pack, Query, Tag,
-    DistributedQuery, DistributedQueryResult,
+    DistributedQueryTask, DistributedQueryResult,
     StatusLog,
 )
 from doorman.tasks import analyze_result
@@ -258,24 +258,26 @@ def distributed_write(node=None):
     current_app.logger.info("Got data: %s", data)
 
     for guid, results in data.get('queries', {}).items():
-        query = DistributedQuery.query.filter(
-            DistributedQuery.guid == guid,
-            DistributedQuery.status == DistributedQuery.PENDING,
-            DistributedQuery.node == node,
+        task = DistributedQueryTask.query.filter(
+            DistributedQueryTask.guid == guid,
+            DistributedQueryTask.status == DistributedQueryTask.PENDING,
+            DistributedQueryTask.node == node,
         ).first()
 
-        if not query:
+        if not task:
             current_app.logger.error("Got result for distributed query not "
                                      "in PENDING state: %s: %s",
                                      guid, json.dumps(data))
             continue
 
         for columns in results:
-            result = DistributedQueryResult(columns, distributed_query=query)
+            result = DistributedQueryResult(columns,
+                                            distributed_query=task.distributed_query,
+                                            distributed_query_task=task)
             db.session.add(result)
         else:
-            query.status = DistributedQuery.COMPLETE
-            db.session.add(query)
+            task.status = DistributedQueryTask.COMPLETE
+            db.session.add(task)
 
     else:
         db.session.commit()

@@ -15,13 +15,11 @@ except ImportError:
     from urllib.parse import urlparse
 
 from doorman.models import (Node, Pack, Query, Tag, FilePath,
-    DistributedQuery, DistributedQueryResult, Rule,
+    DistributedQuery, DistributedQueryTask, DistributedQueryResult, Rule,
 )
 from doorman.settings import TestConfig
 
-from .factories import (NodeFactory, PackFactory, QueryFactory, TagFactory,
-    DistributedQueryFactory, DistributedQueryResultFactory,
-)
+from .factories import NodeFactory, PackFactory, QueryFactory, TagFactory
 
 
 SAMPLE_PACK = {
@@ -648,24 +646,24 @@ class TestDistributedRead:
         assert not resp.json['queries']
 
     def test_distributed_query_read_new(self, db, node, testapp):
-        q = DistributedQuery.create(sql='select * from osquery_info;',
-                                    node=node)
+        q = DistributedQuery.create(sql='select * from osquery_info;')
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
 
-        assert q.status == DistributedQuery.NEW
+        assert t.status == DistributedQueryTask.NEW
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
         })
 
-        assert q.status == DistributedQuery.PENDING
-        assert q.guid in resp.json['queries']
-        assert resp.json['queries'][q.guid] == q.sql
-        assert q.retrieved > q.timestamp
+        assert t.status == DistributedQueryTask.PENDING
+        assert t.guid in resp.json['queries']
+        assert resp.json['queries'][t.guid] == q.sql
+        assert t.timestamp > q.timestamp
 
     def test_distributed_query_read_pending(self, db, node, testapp):
-        q = DistributedQuery.create(sql='select * from osquery_info;',
-                                    node=node)
-        q.update(status=DistributedQuery.PENDING)
+        q = DistributedQuery.create(sql='select * from osquery_info;')
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
+        t.update(status=DistributedQueryTask.PENDING)
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
@@ -674,9 +672,9 @@ class TestDistributedRead:
         assert not resp.json['queries']
 
     def test_distributed_query_read_complete(self, db, node, testapp):
-        q = DistributedQuery.create(sql='select * from osquery_info;',
-                                    node=node)
-        q.update(status=DistributedQuery.COMPLETE)
+        q = DistributedQuery.create(sql='select * from osquery_info;')
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
+        t.update(status=DistributedQueryTask.COMPLETE)
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
@@ -691,8 +689,8 @@ class TestDistributedRead:
         not_before = now + dt.timedelta(days=1)
 
         q = DistributedQuery.create(sql='select * from osquery_info;',
-                                    node=node,
                                     not_before=not_before)
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
 
         assert q.not_before == not_before
 
@@ -713,10 +711,10 @@ class TestDistributedRead:
             'node_key': node.node_key,
         })
 
-        assert q.status == DistributedQuery.PENDING
-        assert q.retrieved == not_before + dt.timedelta(seconds=1)
-        assert q.guid in resp.json['queries']
-        assert resp.json['queries'][q.guid] == q.sql
+        assert t.status == DistributedQueryTask.PENDING
+        assert t.timestamp == not_before + dt.timedelta(seconds=1)
+        assert t.guid in resp.json['queries']
+        assert resp.json['queries'][t.guid] == q.sql
 
         datetime_patcher.stop()
 
@@ -738,24 +736,24 @@ class TestDistributedWrite:
 
     def test_distributed_query_write_state_new(self, db, node, testapp):
         q = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';",
-            node=node)
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': node.node_key,
             'queries': {
-                q.guid: '',
+                t.guid: '',
             }
         })
 
-        assert q.status == DistributedQuery.NEW
+        assert t.status == DistributedQueryTask.NEW
         assert not q.results
 
     def test_distributed_query_write_state_pending(self, db, node, testapp):
         q = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';",
-            node=node)
-        q.update(status=DistributedQuery.PENDING)
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
+        t.update(status=DistributedQueryTask.PENDING)
 
         data = [{
             "name": "osqueryd",
@@ -771,20 +769,20 @@ class TestDistributedWrite:
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': node.node_key,
             'queries': {
-                q.guid: data,
+                t.guid: data,
             }
         })
 
-        assert q.status == DistributedQuery.COMPLETE
+        assert t.status == DistributedQueryTask.COMPLETE
         assert q.results
         assert q.results[0].columns == data[0]
         assert q.results[1].columns == data[1]
 
     def test_distributed_query_write_state_complete(self, db, node, testapp):
         q = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';",
-            node=node)
-        q.update(status=DistributedQuery.PENDING)
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
+        t.update(status=DistributedQueryTask.PENDING)
 
         data = [{
             "name": "osqueryd",
@@ -798,13 +796,14 @@ class TestDistributedWrite:
         }]
 
         r = DistributedQueryResult.create(columns=data[0],
-                                          distributed_query=q)
-        q.update(status=DistributedQuery.COMPLETE)
+                                          distributed_query=q,
+                                          distributed_query_task=t)
+        t.update(status=DistributedQueryTask.COMPLETE)
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': node.node_key,
             'queries': {
-                q.guid: '',
+                t.guid: '',
             }
         })
 
@@ -816,18 +815,19 @@ class TestDistributedWrite:
     def test_malicious_node_distributed_query_write(self, db, node, testapp):
         foo = NodeFactory(host_identifier='foo')
         q1 = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';",
-            node=node)
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
         q2 = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';",
-            node=foo)
-        q1.update(status=DistributedQuery.PENDING)
-        q2.update(status=DistributedQuery.PENDING)
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t2 = DistributedQueryTask.create(node=foo, distributed_query=q2)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.PENDING)
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': foo.node_key,
             'queries': {
-                q1.guid: 'bar'
+                t1.guid: 'bar'
             }
         })
 
@@ -837,11 +837,11 @@ class TestDistributedWrite:
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': foo.node_key,
             'queries': {
-                q2.guid: 'bar'
+                t2.guid: 'bar'
             }
         })
 
-        assert q2.results
+        assert t2.results
 
 class TestCreateQueryPackFromUpload:
 

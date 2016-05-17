@@ -111,6 +111,7 @@ class CreateQueryForm(QueryForm):
 class AddDistributedQueryForm(Form):
 
     sql = TextAreaField('Query', validators=[DataRequired(), ValidSQL()])
+    description = TextAreaField('Description', validators=[Optional()])
     not_before = DateTimeField('Not Before', format="%Y-%m-%d %H:%M:%S",
                                validators=[Optional()])
     nodes = SelectMultipleField('Nodes', choices=[])

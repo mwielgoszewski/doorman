@@ -358,16 +358,34 @@ class StatusLog(SurrogatePK, Model):
 
 class DistributedQuery(SurrogatePK, Model):
 
+    description = Column(db.String, nullable=True)
+    sql = Column(db.String, nullable=False)
+    timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
+    not_before = Column(db.DateTime, default=dt.datetime.utcnow)
+
+    def __init___(self, sql, description=None, not_before=None):
+        self.sql = sql
+        self.description = description
+        self.not_before = not_before
+
+
+class DistributedQueryTask(SurrogatePK, Model):
+
     NEW = 0
     PENDING = 1
     COMPLETE = 2
 
     guid = Column(db.String, nullable=False, unique=True)
     status = Column(db.Integer, default=0, nullable=False)
-    sql = Column(db.String, nullable=False)
-    timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
-    not_before = Column(db.DateTime, default=dt.datetime.utcnow)
-    retrieved = Column(db.DateTime)
+    timestamp = Column(db.DateTime)
+
+    distributed_query_id = reference_col('distributed_query', nullable=False)
+    distributed_query = relationship(
+        'DistributedQuery',
+        backref=db.backref('tasks',
+                           cascade='all, delete-orphan',
+                           lazy='dynamic'),
+    )
 
     node_id = reference_col('node', nullable=False)
     node = relationship(
@@ -375,17 +393,31 @@ class DistributedQuery(SurrogatePK, Model):
         backref=db.backref('distributed_queries', lazy='dynamic'),
     )
 
-    def __init__(self, sql, node=None, not_before=None):
+    def __init__(self, node=None, node_id=None,
+                 distributed_query=None, distributed_query_id=None):
         self.guid = str(uuid.uuid4())
-        self.sql = sql
-        self.node = node
-        self.not_before = not_before
+        if node:
+            self.node = node
+        elif node_id:
+            self.node_id = node_id
+        if distributed_query:
+            self.distributed_query = distributed_query
+        elif distributed_query_id:
+            self.distributed_query_id = distributed_query_id
 
 
 class DistributedQueryResult(SurrogatePK, Model):
 
     columns = Column(JSONB)
     timestamp = Column(db.DateTime, default=dt.datetime.utcnow)
+
+    distributed_query_task_id = reference_col('distributed_query_task', nullable=False)
+    distributed_query_task = relationship(
+        'DistributedQueryTask',
+        backref=db.backref('results',
+                           cascade='all, delete-orphan',
+                           lazy='joined'),
+    )
 
     distributed_query_id = reference_col('distributed_query', nullable=False)
     distributed_query = relationship(
@@ -395,9 +427,10 @@ class DistributedQueryResult(SurrogatePK, Model):
                            lazy='joined'),
     )
 
-    def __init__(self, columns, distributed_query=None):
+    def __init__(self, columns, distributed_query=None, distributed_query_task=None):
         self.columns = columns
         self.distributed_query = distributed_query
+        self.distributed_query_task = distributed_query_task
 
 
 class Rule(SurrogatePK, Model):

@@ -130,6 +130,65 @@ class TestEnrolling:
         assert resp.json['node_invalid'] is False
         assert resp.json['node_key'] != existing.node_key
 
+    def test_default_tags_that_dont_exist_yet_are_created(self, db, testapp):
+        testapp.app.config['DOORMAN_ENROLL_DEFAULT_TAGS'] = ['foo', 'bar']
+        enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
+
+        node = Node.query.filter_by(host_identifier='kungfoo').first()
+
+        assert not node
+        assert not Tag.query.all()
+
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': enroll_secret,
+            'host_identifier': 'kungfoo',
+        })
+
+        node = Node.query.filter_by(host_identifier='kungfoo').first()
+        assert node
+        assert node.tags
+
+        t1 = Tag.query.filter_by(value='foo').first()
+        t2 = Tag.query.filter_by(value='bar').first()
+
+        assert t1 in node.tags
+        assert t2 in node.tags
+
+    def test_default_tags_that_exit_are_added(self, db, testapp):
+        testapp.app.config['DOORMAN_ENROLL_DEFAULT_TAGS'] = ['foobar']
+        enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
+
+        tag = TagFactory(value='foobar')
+
+        node = Node.query.filter_by(host_identifier='kungfoo').first()
+        assert not node
+
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': enroll_secret,
+            'host_identifier': 'kungfoo',
+        })
+
+        node = Node.query.filter_by(host_identifier='kungfoo').first()
+        assert node
+        assert node.tags
+        assert tag in node.tags
+
+    def test_reenrolling_node_does_not_get_new_tags(self, db, node, testapp):
+        testapp.app.config['DOORMAN_ENROLL_DEFAULT_TAGS'] = ['foo', 'bar']
+        enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
+
+        tag = TagFactory(value='foobar')
+        node.tags.append(tag)
+        node.save()
+
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': enroll_secret,
+            'host_identifier': node.host_identifier,
+        })
+
+        assert Tag.query.count() == 3
+        assert node.tags == [tag]
+
 
 class TestConfiguration:
 

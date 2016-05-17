@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 
 import requests
@@ -45,10 +46,12 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             "client_url": self.client_url,
             'details': details,
         })
-        r = requests.post(
+        resp = requests.post(
             'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
             headers=headers,
-            data=paylooad
+            data=payload
         )
-        if not r.ok:
+        if not resp.ok:
             self.logger.warn('Could not trigger PagerDuty alert!')
+
+        self.logger.debug('Response from PagerDuty: %r', resp.content)

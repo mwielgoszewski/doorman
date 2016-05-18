@@ -27,6 +27,8 @@ class Config(object):
     DOORMAN_CHECKIN_INTERVAL = 3600
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
+    DOORMAN_ENROLL_DEFAULT_TAGS = [
+    ]
 
     BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'

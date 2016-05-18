@@ -15,17 +15,17 @@
                             <td>
                                 <a href="{{ url_for('manage.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
                             </td>
-                            <td><code>{{ query.sql }}</code></td>
-                            <td>{{ query.timestamp }}</td>
+                            <td><code>{{ query.distributed_query.sql }}</code></td>
+                            <td>{{ query.distributed_query.timestamp }}</td>
                             <td>{{ query.not_before or 'immediately' }}</td>
-                            <td>{{ query.retrieved or '' }}</td>
+                            <td>{{ query.timestamp or '' }}</td>
                             {% if not status %}
                             <td>
-                                {%- if query.status == DistributedQuery.NEW -%}
+                                {%- if query.status == DistributedQueryTask.NEW -%}
                                 NEW
-                                {%- elif query.status == DistributedQuery.PENDING -%}
+                                {%- elif query.status == DistributedQueryTask.PENDING -%}
                                 PENDING
-                                {%- elif query.status == DistributedQuery.COMPLETE -%}
+                                {%- elif query.status == DistributedQueryTask.COMPLETE -%}
                                 COMPLETE
                                 {%- endif -%}
                             </td>
@@ -34,6 +34,8 @@
                             <td>
                                 {% if query.results %}
                                 <a href="{{ url_for('manage.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.results | first | attr('timestamp') }}</a>
+                                {% elif query.status == DistributedQueryTask.COMPLETE %}
+                                <p class="text-center">&mdash;</p>
                                 {% endif %}
                             </td>
 

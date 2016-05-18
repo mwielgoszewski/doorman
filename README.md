@@ -18,12 +18,18 @@ For example, it's possible to assign a set of packs and queries a `baseline` tag
 
 Click on any node to view its recent activity, original enrollment date, time of its last check-in, and the set of packs and queries that are configured for it. This view provides an "at-a-glance" view on the current state of a node.
 
-![nodes](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/node.png)
+![node](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/node.png)
+
+![recent_activity](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/recent_activity.png)
 
 
 # distributed queries
 
 With Doorman, you can distribute ad-hoc queries to one, some, or all nodes. A distributed query's status in Doorman is tracked based on whether the node has picked up the query and/or returned its results.
+
+![distributed_queries](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/distributed_queries.png)
+
+![distributed_query](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/distributed_query.png)
 
 
 # rules and alerts

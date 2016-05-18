@@ -13,6 +13,13 @@
                         </div>
 
                         <div class="form-group">
+                            {{ form.description.label(class_="col-sm-2 control-label") }}
+                            <div class="col-sm-10">
+                                {{ form.description(class_="form-control") }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             {{ form.not_before.label(class_="col-sm-2 control-label") }}
                             <div class="col-sm-10">
                                 {{ form.not_before(class_="datepicker form-control", placeholder=placeholder) }}

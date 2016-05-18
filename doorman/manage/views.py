@@ -19,7 +19,8 @@ from .forms import (
     UpdateRuleForm,
 )
 from doorman.database import db
-from doorman.models import DistributedQuery, FilePath, Node, Pack, Query, Tag, Rule
+from doorman.models import (DistributedQuery, DistributedQueryTask,
+    FilePath, Node, Pack, Query, Tag, Rule)
 from doorman.tasks import reload_rules
 from doorman.utils import create_query_pack_from_upload, flash_errors
 
@@ -32,7 +33,9 @@ blueprint = Blueprint('manage', __name__,
 @blueprint.context_processor
 def inject_models():
     return dict(Node=Node, Pack=Pack, Query=Query, Tag=Tag,
-                DistributedQuery=DistributedQuery)
+                Rule=Rule, FilePath=FilePath,
+                DistributedQuery=DistributedQuery,
+                DistributedQueryTask=DistributedQueryTask)
 
 
 @blueprint.route('/')
@@ -64,11 +67,14 @@ def nodes(page=1):
     order_by = getattr(order_by, sort)()
 
     nodes = Node.query.order_by(order_by).paginate(page=page, per_page=per_page)
+    display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
+
     pagination = Pagination(page=page,
                             per_page=per_page,
                             total=nodes.total,
                             alignment='center',
-                            show_single_page=True,
+                            show_single_page=False,
+                            display_msg=display_msg,
                             record_name='nodes',
                             bs_version=3)
 
@@ -123,9 +129,9 @@ def tag_node(node_id):
 @login_required
 def get_distributed_result(node_id, guid):
     node = Node.query.filter(Node.id == node_id).first_or_404()
-    query = DistributedQuery.query.filter(
-        DistributedQuery.guid == guid,
-        DistributedQuery.node == node,
+    query = DistributedQueryTask.query.filter(
+        DistributedQueryTask.guid == guid,
+        DistributedQueryTask.node == node,
     ).first_or_404()
     return render_template('distributed.result.html', node=node, query=query)
 
@@ -198,27 +204,61 @@ def add_query():
 
 
 @blueprint.route('/queries/distributed')
+@blueprint.route('/queries/distributed/<int:page>')
 @blueprint.route('/queries/distributed/<any(new, pending, complete):status>')
+@blueprint.route('/queries/distributed/<any(new, pending, complete):status>/<int:page>')
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>')
+@blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>/<int:page>')
 @login_required
-def distributed(node_id=None, status=None):
+def distributed(node_id=None, status=None, page=1):
     if status == 'new':
-        queries = DistributedQuery.query.filter(
-            DistributedQuery.status == DistributedQuery.NEW)
+        queries = DistributedQueryTask.query.filter(
+            DistributedQueryTask.status == DistributedQueryTask.NEW)
     elif status == 'pending':
-        queries = DistributedQuery.query.filter(
-            DistributedQuery.status == DistributedQuery.PENDING)
+        queries = DistributedQueryTask.query.filter(
+            DistributedQueryTask.status == DistributedQueryTask.PENDING)
     elif status == 'complete':
-        queries = DistributedQuery.query.filter(
-            DistributedQuery.status == DistributedQuery.COMPLETE)
+        queries = DistributedQueryTask.query.filter(
+            DistributedQueryTask.status == DistributedQueryTask.COMPLETE)
     else:
-        queries = DistributedQuery.query
+        queries = DistributedQueryTask.query
 
     if node_id:
         node = Node.query.filter(Node.id == node_id).first_or_404()
-        queries = queries.filter(DistributedQuery.node_id == node.id)
+        queries = queries.filter(DistributedQueryTask.node_id == node.id)
 
-    return render_template('distributed.html', queries=queries, status=status)
+    try:
+        per_page = int(request.args.get('pp', 20))
+    except Exception:
+        per_page = 20
+
+    per_page = max(0, min(20, per_page))
+
+    order_by = request.args.get('order_by', 'id')
+    if order_by not in ('id', 'status', 'timestamp'):
+        order_by = 'timestamp'
+    order_by = getattr(DistributedQueryTask, order_by)
+
+    sort = request.args.get('sort', 'desc')
+    if sort not in ('asc', 'desc'):
+        sort = 'desc'
+
+    order_by = getattr(order_by, sort)()
+    queries = queries.order_by(order_by).paginate(page=page, per_page=per_page)
+
+    display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
+
+    pagination = Pagination(page=page,
+                            per_page=per_page,
+                            total=queries.total,
+                            alignment='center',
+                            show_single_page=False,
+                            display_msg=display_msg,
+                            record_name='{0} distributed queries'.format(status or '').strip(),
+                            bs_version=3)
+
+    return render_template('distributed.html', queries=queries.items,
+                           status=status, pagination=pagination)
 
 
 @blueprint.route('/queries/distributed/add', methods=['GET', 'POST'])
@@ -250,11 +290,13 @@ def add_distributed():
                 ).all()
             )
 
+        query = DistributedQuery.create(sql=form.sql.data,
+                                        description=form.description.data,
+                                        not_before=form.not_before.data)
+
         for node in nodes:
-            query = DistributedQuery(sql=form.sql.data,
-                                     node=node,
-                                     not_before=form.not_before.data)
-            db.session.add(query)
+            task = DistributedQueryTask(node=node, distributed_query=query)
+            db.session.add(task)
         else:
             db.session.commit()
 
@@ -351,7 +393,7 @@ def tag_file(file_path_id):
 def tags():
     if request.is_xhr:
         return jsonify(tags=[t.value for t in Tag.query.all()])
-    return render_template('tags.html', tags=Tag.query)
+    return render_template('tags.html', tags=Tag.query.all())
 
 
 @blueprint.route('/tags/add', methods=['GET', 'POST'])

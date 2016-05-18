@@ -82,25 +82,25 @@ def assemble_distributed_queries(node):
     It is the responsibility of the caller to commit or rollback on the
     current database session.
     '''
-    from doorman.models import DistributedQuery
+    from doorman.models import DistributedQueryTask
     now = dt.datetime.utcnow()
 
     queries = {}
-    for query in node.distributed_queries.filter(
-        DistributedQuery.status == DistributedQuery.NEW):
+    for task in node.distributed_queries.filter(
+        DistributedQueryTask.status == DistributedQueryTask.NEW):
 
-        if query.not_before > now:
+        if task.distributed_query.not_before > now:
             continue
 
-        queries[query.guid] = query.sql
-        query.update(status=DistributedQuery.PENDING,
-                     retrieved=dt.datetime.utcnow(),
-                     commit=False)
+        queries[task.guid] = task.distributed_query.sql
+        task.update(status=DistributedQueryTask.PENDING,
+                    timestamp=dt.datetime.utcnow(),
+                    commit=False)
 
         # add this query to the session, but don't commit until we're
         # as sure as we possibly can be that it's been received by the
         # osqueryd client. unfortunately, there are no guarantees though.
-        db.session.add(query)
+        db.session.add(task)
     return queries
 
 

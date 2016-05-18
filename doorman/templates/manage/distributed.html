@@ -8,8 +8,14 @@
             <div class="col-md-12">
                 <h1>{% if status %}{{ status }} {% endif %}distributed queries</h1>
 
-                {% if queries.count() %}
+                {% if queries %}
                 {% include "tables/distributed.html" %}
+
+                <div class="text-center">
+                    <small>{{ pagination.info }}</small>
+                    {{ pagination.links }}
+                </div>
+
                 {% else %}
                 <p>No distributed queries in {{ status }} state.</p>
                 {% endif %}
@@ -19,6 +25,7 @@
                 {% include "forms/distributed.html" %}
             {% endif %}
             </div>
+
         </div>
     </div>
 

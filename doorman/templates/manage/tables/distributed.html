@@ -34,6 +34,8 @@
                             <td>
                                 {% if query.results %}
                                 <a href="{{ url_for('manage.get_distributed_result', node_id=query.node_id, guid=query.guid) }}">{{ query.results | first | attr('timestamp') }}</a>
+                                {% elif query.status == DistributedQueryTask.COMPLETE %}
+                                <p class="text-center">&mdash;</p>
                                 {% endif %}
                             </td>
 

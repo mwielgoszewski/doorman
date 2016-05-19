@@ -26,6 +26,6 @@ ratings:
   - "**.css"
   - "**.js"
 exclude_paths:
-  - "**/tests/**/*"
-  - "**/docs/**/*"
-  - "**/migrations/**/*"
+- "**/tests/**/*"
+- "**/docs/**/*"
+- "**/migrations/**/*"

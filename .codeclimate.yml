@@ -13,9 +13,15 @@
     checks:
       E501:
         enabled: false
+  csslist:
+    enabled: true
+  eslint:
+    enabled: true
 ratings:
   paths:
   - "**.py"
+  - "**.css"
+  - "**.js"
 exclude_paths:
   - "tests/*"
   - "docs/*"

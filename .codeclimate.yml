@@ -24,6 +24,7 @@
     enabled: true
 ratings:
   paths:
+  - "doorman/**"
   - "**.py"
   - "**.css"
   - "**.js"

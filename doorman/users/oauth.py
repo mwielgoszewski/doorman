@@ -16,7 +16,7 @@ class OAuthLogin(object):
                 provider = provider_class()
                 self.providers[provider.provider_name] = provider
         return self.providers[provider_name]
-    
+
     @property
     def client_id(self):
         return self.config.get('DOORMAN_OAUTH_CLIENT_ID')

@@ -90,12 +90,12 @@ class Tag(SurrogatePK, Model):
     def nodes_count(self):
         return db.session.object_session(self) \
             .query(Node.id).with_parent(self, 'nodes').count()
-    
+
     @property
     def queries_count(self):
         return db.session.object_session(self) \
             .query(Query.id).with_parent(self, 'queries').count()
-    
+
     @property
     def file_paths_count(self):
         return db.session.object_session(self) \

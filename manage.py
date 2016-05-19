@@ -80,7 +80,6 @@ def extract_ddl(specs_dir):
         f.write('\n'.join(ddl))
 
 
-
 @manager.option('username')
 @manager.option('--email', default=None)
 def adduser(username, email):

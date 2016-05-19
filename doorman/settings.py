@@ -53,9 +53,9 @@ class Config(object):
     # These are the configuration variables for the example logger plugin given
     # above.  Uncomment these to start logging results or status logs to the
     # given file.
-    #DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG = '/tmp/status.log'     # Default: do not log status logs
-    #DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'     # Default: do not log results
-    #DOORMAN_LOG_FILE_PLUGIN_APPEND = True                      # Default: True
+    # DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG = '/tmp/status.log'     # Default: do not log status logs
+    # DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'     # Default: do not log results
+    # DOORMAN_LOG_FILE_PLUGIN_APPEND = True                      # Default: True
 
     # You can specify a set of alerting plugins here.  These plugins can be
     # configured in rules to trigger alerts to a particular location.  Each
@@ -68,15 +68,15 @@ class Config(object):
             'level': 'error',
         }),
 
-        #'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
-        #    # Required
-        #    'access_key': 'foobar',
-        #    'service_key': 'foobar',
+        # 'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
+        #     # Required
+        #     'access_key': 'foobar',
+        #     'service_key': 'foobar',
         #
-        #    # Optional
-        #    'client_url': 'https://doorman.domain.com',
-        #    'key_format': 'doorman-security-{count}',
-        #}),
+        #     # Optional
+        #     'client_url': 'https://doorman.domain.com',
+        #     'key_format': 'doorman-security-{count}',
+        # }),
     }
 
     # Doorman uses the WatchedFileHandler in logging.handlers module.

@@ -1,4 +1,4 @@
- engines:
+engines:
   duplication:
     enabled: true
     config:

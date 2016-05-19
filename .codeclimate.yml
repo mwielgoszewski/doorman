@@ -16,6 +16,8 @@
     checks:
       E501:
         enabled: false
+    exclude_paths:
+    - "**/migrations/**/*"
   csslint:
     enabled: true
   eslint:
@@ -26,6 +28,5 @@ ratings:
   - "**.css"
   - "**.js"
 exclude_paths:
-- "**/tests/**/*"
 - "**/docs/**/*"
 - "**/migrations/**/*"

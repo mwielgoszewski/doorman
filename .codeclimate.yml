@@ -16,7 +16,7 @@
     checks:
       E501:
         enabled: false
-  csslist:
+  csslint:
     enabled: true
   eslint:
     enabled: true

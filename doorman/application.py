@@ -7,7 +7,7 @@ from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.manage import blueprint as backend
 from doorman.extensions import (
-    db, debug_toolbar, log_tee, login_manager, make_celery, metrics,
+    db, debug_toolbar, log_tee, login_manager, mail, make_celery, metrics,
     migrate, rule_manager
 )
 from doorman.settings import ProdConfig
@@ -50,6 +50,7 @@ def register_extensions(app):
     debug_toolbar.init_app(app)
     log_tee.init_app(app)
     rule_manager.init_app(app)
+    mail.init_app(app)
     make_celery(app, celery)
     metrics.init_app(app)
     login_manager.init_app(app)

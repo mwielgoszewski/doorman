@@ -5,14 +5,16 @@ from flask import current_app
 from flask_wtf import Form
 from flask_wtf.file import FileField, FileRequired
 
-from wtforms.fields import (BooleanField,
-                            DateTimeField,
-                            Field,
-                            IntegerField,
-                            SelectField,
-                            SelectMultipleField,
-                            StringField,
-                            TextAreaField)
+from wtforms.fields import (
+    BooleanField,
+    DateTimeField,
+    Field,
+    IntegerField,
+    SelectField,
+    SelectMultipleField,
+    StringField,
+    TextAreaField
+)
 from wtforms.validators import DataRequired, Optional, ValidationError
 from wtforms.widgets import TextArea
 

@@ -9,7 +9,7 @@ from .factories import NodeFactory, PackFactory, QueryFactory, TagFactory
 
 @pytest.mark.usefixtures('db')
 class TestNode:
-    
+
     def test_factory(self, db):
         node = NodeFactory(host_identifier='foo')
         db.session.commit()
@@ -66,7 +66,7 @@ class TestNode:
         assert query2.name in config['schedule']
         assert query2.sql == config['schedule'][query2.name]['query']
 
-        assert file_path.category in config['file_paths'] 
+        assert file_path.category in config['file_paths']
 
 
 @pytest.mark.usefixtures('db')
@@ -95,4 +95,3 @@ class TestFilePath:
         file_path.target_paths = '!!'.join(target_paths)
         file_path.save()
         assert file_path.to_dict() == {'foobar': target_paths}
-

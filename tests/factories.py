@@ -3,7 +3,8 @@ from factory import Sequence
 from factory.alchemy import SQLAlchemyModelFactory
 
 from doorman.database import db
-from doorman.models import (Node, Pack, Query, Tag, FilePath,
+from doorman.models import (
+    Node, Pack, Query, Tag, FilePath,
     DistributedQuery, DistributedQueryTask, DistributedQueryResult,
     ResultLog, StatusLog
 )

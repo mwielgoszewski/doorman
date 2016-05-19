@@ -108,11 +108,14 @@ class GoogleOAuthV2Login(OAuthLogin):
         code = request.args.get('code')
         state = session.pop('_oauth_state')
 
-        provider = OAuth2Session(self.client_id,
-                                 redirect_uri=self.redirect_uri,
-                                 state=state)
+        provider = OAuth2Session(
+            self.client_id,
+            redirect_uri=self.redirect_uri,
+            state=state
+        )
 
-        token = provider.fetch_token(self.token_url,
+        token = provider.fetch_token(
+            self.token_url,
             client_secret=self.client_secret,
             code=code,
             authorization_response=request.url,

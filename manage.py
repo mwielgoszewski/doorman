@@ -93,7 +93,8 @@ def adduser(username, email):
     password = getpass.getpass(stream=sys.stderr)
 
     try:
-        user = User.create(username=username,
+        user = User.create(
+            username=username,
             email=email or username,
             password=password,
         )

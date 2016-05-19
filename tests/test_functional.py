@@ -14,7 +14,8 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-from doorman.models import (Node, Pack, Query, Tag, FilePath,
+from doorman.models import (
+    Node, Pack, Query, Tag, FilePath,
     DistributedQuery, DistributedQueryTask, DistributedQueryResult, Rule,
 )
 from doorman.settings import TestConfig
@@ -95,7 +96,6 @@ class TestEnrolling:
     def test_duplicate_host_identifier_when_expecting_unique_ids(self, node, testapp):
         # When the application is configured DOORMAN_EXPECTS_UNIQUE_HOST_ID = True
         # then we're responsible for ensuring host_identifiers are unique.
-        # 
         # In osquery, this requires running osquery with the
         # `--host_identifier=uuid` command-line flag. Otherwise, there is
         # a possibility that more than one node will have the same hostname.
@@ -228,7 +228,7 @@ class TestConfiguration:
         assert resp.json['node_invalid'] is False
 
         assert pack.name in resp.json['packs']
-        assert list(resp.json['packs'].keys()) == [pack.name] # should be the only key
+        assert list(resp.json['packs'].keys()) == [pack.name]  # should be the only key
 
         assert query.name in resp.json['packs'][pack.name]['queries']
         assert list(resp.json['packs'][pack.name]['queries'].keys()) == [query.name]
@@ -312,8 +312,8 @@ class TestConfiguration:
         tag = Tag.create(value='foo')
         node.tags.append(tag)
 
-        assert not node.get_config()['packs'] # should be an empty {}
-        assert not node.get_config()['schedule'] # should be an empty {}
+        assert not node.get_config()['packs']  # should be an empty {}
+        assert not node.get_config()['schedule']  # should be an empty {}
 
         query = Query.create(name='foobar', sql='select * from osquery_info;')
         query.tags.append(tag)
@@ -321,7 +321,7 @@ class TestConfiguration:
 
         assert node.get_config()['schedule']
         assert query.name in node.get_config()['schedule']
-        assert not node.get_config()['packs'] # should be an empty {}
+        assert not node.get_config()['packs']  # should be an empty {}
 
 
 class TestLogging:
@@ -338,8 +338,8 @@ class TestLogging:
 
     def test_status_log_created_for_node(self, node, testapp):
         data = {
-            'line': 1, 
-            'message': 'This is a test of the emergency broadcast system.', 
+            'line': 1,
+            'message': 'This is a test of the emergency broadcast system.',
             'severity': 1,
             'filename': 'foobar.cpp'
         }
@@ -470,7 +470,6 @@ class TestLogging:
         assert removed.name == data[0]['name']
         assert removed.action == 'removed'
         assert removed.columns == data[0]['diffResults']['removed'][0]
-
 
     def test_no_result_log_created_when_data_is_empty(self, node, testapp):
         assert not node.result_logs.count()
@@ -842,6 +841,7 @@ class TestDistributedWrite:
         })
 
         assert t2.results
+
 
 class TestCreateQueryPackFromUpload:
 

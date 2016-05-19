@@ -4,8 +4,10 @@ try:
 except ImportError:
     from urllib.parse import urlparse, urljoin
 
-from flask import (Blueprint, abort, current_app, flash, redirect, render_template,
-    request, session, url_for)
+from flask import (
+    Blueprint, abort, current_app, flash, redirect, render_template,
+    request, session, url_for
+)
 from flask_login import current_user, login_user, logout_user, COOKIE_NAME
 
 from oauthlib.oauth2 import OAuth2Error

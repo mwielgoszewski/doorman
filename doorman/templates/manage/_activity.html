@@ -1,5 +1,5 @@
 
-                <ul class="nav nav-tabs">
+                <ul class="nav nav-tabs" role="tablist">
                     {% if queries.count() %}
                     <li class="active">
                         <a href="#distributed_queries" aria-controls="distributed_queries" role="tab" data-toggle="tab">distributed queries
@@ -10,7 +10,7 @@
 
                     {% for group in node.get_recent() | groupby('name') %}
                     <li class="{% if not queries.count() and loop.first %}active{% endif %}">
-                        <a href="#{{ group.grouper | replace('/', ':') }}" aria-controls="{{ group.grouper }}" role="tab" data-toggle="tab">{{ group.grouper }}
+                        <a href="#{{ loop.index }}" aria-controls="{{ loop.index }}" role="tab" data-toggle="tab">{{ group.grouper }}
                             <span class="badge">{{ group.list | count }}</span>
                         </a>
                     </li>
@@ -20,13 +20,13 @@
                 <div class="tab-content">
 
                     {% if queries.count() %}
-                    <div class="tab-pane active" id="distributed_queries">
+                    <div role="tabpanel" class="tab-pane active" id="distributed_queries">
                         {% include "tables/distributed.html" %}
                     </div>
                     {% endif %}
 
                     {% for grouper, results in node.get_recent() | groupby('name') %}
-                    <div class="tab-pane{% if not queries.count() and loop.first %} active{% endif %}" id="{{ grouper | replace('/', ':') }}">
+                    <div role="tabpanel" class="tab-pane{% if not queries.count() and loop.first %} active{% endif %}" id="{{ loop.index }}">
 
                         {% set columns = results | first | attr('columns') | list | sort %}
 
@@ -57,6 +57,6 @@
 
                     </div><!-- ./tab-pane -->
 
-                {% endfor %}
+                    {% endfor %}
 
                 </div><!-- ./tab-content -->

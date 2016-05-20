@@ -83,7 +83,8 @@ class Config(object):
         #         # 'security@example.com',
         #     ],
 
-        #     # Optional
+        #     # Optional, see doorman/plugins/alerters/emailer.py for templates
+        #     'subject_prefix': '[Doorman]',
         #     'subject_template': '',
         #     'message_template': '',
 
@@ -96,7 +97,7 @@ class Config(object):
     # MAIL_USE_SSL = False
     # MAIL_USERNAME = None
     # MAIL_PASSWORD = None
-    # MAIL_DEFAULT_SENDER = 'doorman@localhost.localdomain'
+    MAIL_DEFAULT_SENDER = 'doorman@localhost'
 
     # Doorman uses the WatchedFileHandler in logging.handlers module.
     # It is the responsibility of the system to rotate these logs on

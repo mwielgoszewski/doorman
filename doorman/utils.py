@@ -177,6 +177,7 @@ def get_node_health(node):
 # Since 'string.printable' includes control characters
 PRINTABLE = string.ascii_letters + string.digits + string.punctuation + ' '
 
+
 def quote(s, quote='"'):
     buf = [quote]
     for ch in s:
@@ -288,7 +289,6 @@ def flash_errors(form):
                 getattr(form, field).label.text, error
             )
             flash(message, 'danger')
-
 
 
 class DateTimeEncoder(json.JSONEncoder):

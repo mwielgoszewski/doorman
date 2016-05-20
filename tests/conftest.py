@@ -33,7 +33,7 @@ def api():
     # the mere presence of the env var should prevent the manage
     # blueprint from being registered
     os.environ['DOORMAN_NO_MANAGER'] = '1'
-    
+
     _app = create_app(config=TestConfig)
     ctx = _app.test_request_context()
     ctx.push()

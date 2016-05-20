@@ -19,8 +19,10 @@ from .forms import (
     UpdateRuleForm,
 )
 from doorman.database import db
-from doorman.models import (DistributedQuery, DistributedQueryTask,
-    FilePath, Node, Pack, Query, Tag, Rule)
+from doorman.models import (
+    DistributedQuery, DistributedQueryTask,
+    FilePath, Node, Pack, Query, Tag, Rule
+)
 from doorman.tasks import reload_rules
 from doorman.utils import create_query_pack_from_upload, flash_errors
 

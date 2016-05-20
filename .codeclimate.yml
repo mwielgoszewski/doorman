@@ -1,0 +1,32 @@
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+        python:
+          mass_threshold: 36
+  fixme:
+    enabled: true
+  radon:
+    enabled: true
+    config:
+      threshold: "C"
+  pep8:
+    enabled: true
+    checks:
+      E501:
+        enabled: false
+    exclude_paths:
+    - "**/migrations/**/*"
+  csslint:
+    enabled: true
+  eslint:
+    enabled: true
+ratings:
+  paths:
+  - "**.py"
+  - "**.css"
+  - "**.js"
+exclude_paths:
+- "**/docs/**/*"
+- "**/migrations/**/*"

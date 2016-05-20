@@ -5,7 +5,7 @@ $(function() {
     $(".tagsinput").tagsinput({
 
         tagClass: "label label-default",
-        trimValue: true,
+        trimValue: true
 
     });
 
@@ -22,7 +22,7 @@ $(function() {
             contentType: "application/json",
             data: data,
             dataType: "json",
-            type: "POST",
+            type: "POST"
         }).done(function (data, textStatus, jqXHR) {
             console.log(jqXHR.status);
         })
@@ -42,7 +42,7 @@ $(function() {
             contentType: "application/json",
             data: data,
             dataType: "json",
-            type: "POST",
+            type: "POST"
         }).done(function (data, textStatus, jqXHR) {
             console.log(jqXHR.status);
         })
@@ -57,7 +57,7 @@ $(function() {
         $.ajax({
             url: $(this).data('uri'),
             contentType: "application/json",
-            type: "DELETE",
+            type: "DELETE"
         }).done(function (data, textStatus, jqXHR) {
             $(tr).remove();
             console.log(jqXHR.status);

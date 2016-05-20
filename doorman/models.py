@@ -21,27 +21,32 @@ from doorman.database import (
 from doorman.extensions import bcrypt
 
 
-querypacks = Table('query_packs',
+querypacks = Table(
+    'query_packs',
     Column('pack.id', db.Integer, ForeignKey('pack.id')),
     Column('query.id', db.Integer, ForeignKey('query.id'))
 )
 
-pack_tags = Table('pack_tags',
+pack_tags = Table(
+    'pack_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('pack.id', db.Integer, ForeignKey('pack.id'))
 )
 
-node_tags = Table('node_tags',
+node_tags = Table(
+    'node_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('node.id', db.Integer, ForeignKey('node.id'))
 )
 
-query_tags = Table('query_tags',
+query_tags = Table(
+    'query_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('query.id', db.Integer, ForeignKey('query.id'))
 )
 
-file_path_tags = Table('file_path_tags',
+file_path_tags = Table(
+    'file_path_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
     Column('file_path.id', db.Integer, ForeignKey('file_path.id'))
 )
@@ -90,12 +95,12 @@ class Tag(SurrogatePK, Model):
     def nodes_count(self):
         return db.session.object_session(self) \
             .query(Node.id).with_parent(self, 'nodes').count()
-    
+
     @property
     def queries_count(self):
         return db.session.object_session(self) \
             .query(Query.id).with_parent(self, 'queries').count()
-    
+
     @property
     def file_paths_count(self):
         return db.session.object_session(self) \

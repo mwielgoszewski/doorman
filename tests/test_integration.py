@@ -28,7 +28,7 @@ class TestNoAuth:
         assert current_user is not None
         assert current_user.is_authenticated
         assert current_user.is_active
-        assert not current_user.username # no username for this faux user
+        assert not current_user.username  # no username for this faux user
 
 
 class TestDoormanAuth:

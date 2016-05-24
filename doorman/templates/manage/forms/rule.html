@@ -8,23 +8,9 @@
                         {{ form.csrf_token() }}
 
                         <div class="form-group">
-                            {{ form.type.label(class_="col-sm-2 control-label") }}
-                            <div class="col-sm-10">
-                                {{ form.type(class_="form-control") }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
                             {{ form.name.label(class_="col-sm-2 control-label") }}
                             <div class="col-sm-10">
                                 {{ form.name(class_="form-control") }}
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            {{ form.action.label(class_="col-sm-2 control-label") }}
-                            <div class="col-sm-10">
-                                {{ form.action(class_="form-control") }}
                             </div>
                         </div>
 
@@ -36,15 +22,16 @@
                         </div>
 
                         <div class="form-group">
-                            {{ form.config.label(class_="col-sm-2 control-label") }}
+                            {{ form.rules.label(class_="col-sm-2 control-label") }}
                             <div class="col-sm-10">
-                                {{ form.config(class_="form-control") }}
+                                <div id='query-builder'></div>
+                                {{ form.rules(id='rules-hidden') }}
                             </div>
                         </div>
 
                         <div class="form-group"> 
                             <div class="col-sm-10 col-sm-offset-2">
-                                <p><input class="btn-small btn-default btn-submit" type="submit" value="{% if rule is defined %}update{% else %}add{% endif %} rule"></p>
+                                <p><input id='submit-button' class="btn-small btn-default btn-submit" type="submit" value="{% if rule is defined %}update{% else %}add{% endif %} rule"></p>
                             </div>
                         </div>
 

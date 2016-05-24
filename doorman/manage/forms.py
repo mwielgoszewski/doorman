@@ -16,7 +16,7 @@ from wtforms.fields import (
     TextAreaField
 )
 from wtforms.validators import DataRequired, Optional, ValidationError
-from wtforms.widgets import TextArea
+from wtforms.widgets import HiddenInput
 
 from doorman.models import Rule
 from doorman.rules import RULE_TYPES
@@ -34,8 +34,8 @@ class ValidSQL(object):
             raise ValidationError(self.message)
 
 
-class JSONField(Field):
-    widget = TextArea()
+class HiddenJSONField(Field):
+    widget = HiddenInput()
 
     def _value(self):
         if self.data:
@@ -136,16 +136,10 @@ class FilePathForm(Form):
 
 class RuleForm(Form):
 
-    name = StringField('Name', validators=[DataRequired()])
-    type = SelectField('Type', choices=[(r, r.title()) for r in RULE_TYPES])
-    action = SelectField('Action', default=Rule.BOTH, choices=[
-        (Rule.ADDED, 'Added'),
-        (Rule.REMOVED, 'Removed'),
-        (Rule.BOTH, 'Both'),
+    name = StringField('Rule Name', validators=[DataRequired()])
+    alerters = SelectMultipleField('Alerters', default=None, choices=[
     ])
-    alerters = SelectMultipleField('alerters', default=None, choices=[
-    ])
-    config = JSONField("Config")
+    rules = HiddenJSONField("rules")
 
     def set_choices(self):
         alerter_ids = list(current_app.config.get('DOORMAN_ALERTER_PLUGINS', {}).keys())

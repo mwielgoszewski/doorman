@@ -139,7 +139,7 @@ class RuleForm(Form):
     name = StringField('Rule Name', validators=[DataRequired()])
     alerters = SelectMultipleField('Alerters', default=None, choices=[
     ])
-    rules = HiddenJSONField("rules")
+    rules = HiddenJSONField('Rules')
 
     def set_choices(self):
         alerter_ids = list(current_app.config.get('DOORMAN_ALERTER_PLUGINS', {}).keys())

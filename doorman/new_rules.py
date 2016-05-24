@@ -6,12 +6,6 @@ from collections import namedtuple
 RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
 
 
-OPERATOR_MAP = {
-    'equal': EqualRule,
-    'not_equal': NotEqualRule,
-}
-
-
 class Network(object):
     """
     A grouping of rule nodes.  Contains the base logic for running the rules on
@@ -97,30 +91,35 @@ class BaseRule(object):
     def __init__(self):
         self.evaluated = False
         self.cached_value = None
+        self.network = None
+
+    def init_network(self, network):
+        self.network = network
 
     def hash(self):
         """
         Returns a unique hash for this rule.  If a rule has the same has as
         another rule, then they should have identical behavior.
         """
-        h = hashlib.sha256()
+        h = sha256()
         h.update(self.__class__.__name__)
         self.local_hash(h)
         return h.hexdigest()[:10]
 
-    def run(self):
+    def run(self, input):
         """
         Runs this rule if it hasn't been evaluated.
         """
+        assert isinstance(input, RuleInput)
         if self.evaluated:
             return self.cached_value
 
-        ret = self.local_run()
+        ret = self.local_run(input)
         self.cached_value = ret
         self.evaluated = True
         return ret
 
-    def local_run(self):
+    def local_run(self, input):
         """
         Subclasses should implement this in order to run the rule's logic.
         """
@@ -149,11 +148,12 @@ class AlertRule(BaseRule):
         self.alert = alert
         self.upstream = upstream
 
-    def local_run(self):
-        return self.upstream.run()
+    def local_run(self, input):
+        return self.upstream.run(input)
 
     def local_hash(self, hasher):
         hasher.update(alert)
+        self.upstream.hash(hasher)
 
 
 class AndRule(BaseRule):
@@ -163,11 +163,11 @@ class AndRule(BaseRule):
 
     def local_hash(self, hasher):
         for u in self.upstream:
-            u.local_hash(hasher)
+            u.hash(hasher)
 
-    def local_run(self):
+    def local_run(self, input):
         for u in self.upstream:
-            if not u.run():
+            if not u.run(input):
                 return False
 
         return True
@@ -180,23 +180,23 @@ class OrRule(BaseRule):
 
     def local_hash(self, hasher):
         for u in self.upstream:
-            u.local_hash(hasher)
+            u.hash(hasher)
 
-    def local_run(self):
+    def local_run(self, input):
         for u in self.upstream:
-            if u.run():
+            if u.run(input):
                 return True
 
         return False
 
 
 class LogicRule(BaseRule):
-    def __init__(self, key, value):
+    def __init__(self, key, expected):
         super(LogicRule, self).__init__()
         self.key = key
-        self.value = value
+        self.expected = expected
 
-    def local_run(self):
+    def local_run(self, input):
         # TODO get the value from the input here
         value = None
 
@@ -212,9 +212,16 @@ class LogicRule(BaseRule):
 
 class EqualRule(LogicRule):
     def compare(self, value):
-        return self.value == value
+        return self.expected == value
 
 
 class NotEqualRule(LogicRule):
     def compare(self, value):
-        return self.value != value
+        return self.expected != value
+
+
+# Needs to go at the end
+OPERATOR_MAP = {
+    'equal': EqualRule,
+    'not_equal': NotEqualRule,
+}

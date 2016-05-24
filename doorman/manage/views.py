@@ -24,7 +24,9 @@ from doorman.models import (
     FilePath, Node, Pack, Query, Tag, Rule
 )
 from doorman.tasks import reload_rules
-from doorman.utils import create_query_pack_from_upload, flash_errors
+from doorman.utils import (
+    create_query_pack_from_upload, flash_errors, get_paginate_options
+)
 
 
 blueprint = Blueprint('manage', __name__,
@@ -50,29 +52,17 @@ def index():
 @blueprint.route('/nodes/<int:page>')
 @login_required
 def nodes(page=1):
-    try:
-        per_page = int(request.args.get('pp', 20))
-    except Exception:
-        per_page = 20
+    nodes = get_paginate_options(
+        request,
+        Node,
+        ('id', 'host_identifier', 'enrolled_on', 'last_checkin'),
+        page=page,
+    )
 
-    per_page = max(0, min(20, per_page))
-
-    order_by = request.args.get('order_by', 'id')
-    if order_by not in ('id', 'host_identifier', 'enrolled_on', 'last_checkin'):
-        order_by = 'id'
-    order_by = getattr(Node, order_by)
-
-    sort = request.args.get('sort', 'asc')
-    if sort not in ('asc', 'desc'):
-        sort = 'asc'
-
-    order_by = getattr(order_by, sort)()
-
-    nodes = Node.query.order_by(order_by).paginate(page=page, per_page=per_page)
     display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
 
     pagination = Pagination(page=page,
-                            per_page=per_page,
+                            per_page=nodes.per_page,
                             total=nodes.total,
                             alignment='center',
                             show_single_page=False,
@@ -213,53 +203,39 @@ def add_query():
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>/<int:page>')
 @login_required
 def distributed(node_id=None, status=None, page=1):
+    tasks = DistributedQueryTask.query
+
     if status == 'new':
-        queries = DistributedQueryTask.query.filter(
-            DistributedQueryTask.status == DistributedQueryTask.NEW)
+        tasks = tasks.filter_by(status=DistributedQueryTask.NEW)
     elif status == 'pending':
-        queries = DistributedQueryTask.query.filter(
-            DistributedQueryTask.status == DistributedQueryTask.PENDING)
+        tasks = tasks.filter_by(status=DistributedQueryTask.PENDING)
     elif status == 'complete':
-        queries = DistributedQueryTask.query.filter(
-            DistributedQueryTask.status == DistributedQueryTask.COMPLETE)
-    else:
-        queries = DistributedQueryTask.query
+        tasks = tasks.filter_by(status=DistributedQueryTask.COMPLETE)
 
     if node_id:
-        node = Node.query.filter(Node.id == node_id).first_or_404()
-        queries = queries.filter(DistributedQueryTask.node_id == node.id)
+        node = Node.query.filter_by(id=node_id).first_or_404()
+        tasks = tasks.filter_by(node_id=node.id)
 
-    try:
-        per_page = int(request.args.get('pp', 20))
-    except Exception:
-        per_page = 20
-
-    per_page = max(0, min(20, per_page))
-
-    order_by = request.args.get('order_by', 'id')
-    if order_by not in ('id', 'status', 'timestamp'):
-        order_by = 'timestamp'
-    order_by = getattr(DistributedQueryTask, order_by)
-
-    sort = request.args.get('sort', 'desc')
-    if sort not in ('asc', 'desc'):
-        sort = 'desc'
-
-    order_by = getattr(order_by, sort)()
-    queries = queries.order_by(order_by).paginate(page=page, per_page=per_page)
-
+    tasks = get_paginate_options(
+        request,
+        DistributedQueryTask,
+        ('id', 'status', 'timestamp'),
+        existing_query=tasks,
+        page=page,
+        default_sort='desc'
+    )
     display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
 
     pagination = Pagination(page=page,
-                            per_page=per_page,
-                            total=queries.total,
+                            per_page=tasks.per_page,
+                            total=tasks.total,
                             alignment='center',
                             show_single_page=False,
                             display_msg=display_msg,
-                            record_name='{0} distributed queries'.format(status or '').strip(),
+                            record_name='{0} distributed query tasks'.format(status or '').strip(),
                             bs_version=3)
 
-    return render_template('distributed.html', queries=queries.items,
+    return render_template('distributed.html', queries=tasks.items,
                            status=status, pagination=pagination)
 
 

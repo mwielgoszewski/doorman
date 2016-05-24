@@ -67,7 +67,6 @@ def assemble_schedule(node):
 
 
 def assemble_packs(node):
-    from doorman.models import Pack
     packs = {}
     for pack in node.packs:
         packs[pack.name] = pack.to_dict()
@@ -289,6 +288,36 @@ def flash_errors(form):
                 getattr(form, field).label.text, error
             )
             flash(message, 'danger')
+
+
+def get_paginate_options(request, model, choices, existing_query=None,
+                         default='id', page=1, max_pp=20, default_sort='asc'):
+
+    try:
+        per_page = int(request.args.get('pp', max_pp))
+    except Exception:
+        per_page = 20
+
+    per_page = max(0, min(max_pp, per_page))
+
+    order_by = request.args.get('order_by', 'id')
+    if order_by not in choices:
+        order_by = default
+    order_by = getattr(model, order_by, 'id')
+
+    sort = request.args.get('sort', default_sort)
+    if sort not in ('asc', 'desc'):
+        sort = default_sort
+
+    order_by = getattr(order_by, sort)()
+
+    if existing_query:
+        query = existing_query.order_by(order_by)
+    else:
+        query = model.query.order_by(order_by)
+
+    query = query.paginate(page=page, per_page=per_page)
+    return query
 
 
 class DateTimeEncoder(json.JSONEncoder):

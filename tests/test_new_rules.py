@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import datetime as dt
+from collections import defaultdict
 
 from doorman.new_rules import (
     BaseRule,
@@ -27,23 +28,23 @@ class TestNetwork:
 
     def test_will_parse_basic(self):
         query = json.loads("""
-	{
-	  "condition": "AND",
-	  "rules": [
-	    {
-	      "id": "column",
-	      "field": "column",
-	      "type": "string",
-	      "input": "text",
-	      "operator": "column_equal",
-	      "value": [
-		"model_id",
-		"5500"
-	      ]
-	    }
-	  ]
-	}
-	""")
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_equal",
+              "value": [
+                "model_id",
+                "5500"
+              ]
+            }
+          ]
+        }
+        """)
 
         network = Network()
         network.parse_query(query)
@@ -52,40 +53,128 @@ class TestNetwork:
         assert len(network.rules) == 2
 
     def test_will_reuse_identical_rules(self):
+        # Operators are equal in each rule
         query = json.loads("""
         {
-	  "condition": "AND",
-	  "rules": [
-	    {
-	      "condition": "AND",
-	      "rules": [
-		{
-		  "id": "query_name",
-		  "field": "query_name",
-		  "type": "string",
-		  "input": "text",
-		  "operator": "equal",
-		  "value": "asdf"
-		}
-	      ]
-	    },
-	    {
+          "condition": "AND",
+          "rules": [
+            {
+              "condition": "AND",
+              "rules": [
+                {
+                  "id": "query_name",
+                  "field": "query_name",
+                  "type": "string",
+                  "input": "text",
+                  "operator": "equal",
+                  "value": "asdf"
+                }
+              ]
+            },
+            {
               "id": "query_name",
               "field": "query_name",
               "type": "string",
               "input": "text",
               "operator": "equal",
               "value": "asdf"
-	    }
-	  ]
-	}""")
+            }
+          ]
+        }""")
 
         network = Network()
         network.parse_query(query)
 
-        # Top-level AND, AND group, reused column rule
-        assert len(network.rules) == 3
+        counts = defaultdict(int)
+        for rule in network.rules.values():
+            counts[rule.__class__.__name__] += 1
 
+        # Top-level AND, AND group, reused column rule
+        assert counts == {'AndRule': 2, 'EqualRule': 1}
+
+    def test_will_not_reuse_different_operators(self):
+        # Different operators in top-level and group
+        query = json.loads("""
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "condition": "AND",
+              "rules": [
+                {
+                  "id": "query_name",
+                  "field": "query_name",
+                  "type": "string",
+                  "input": "text",
+                  "operator": "not_equal",
+                  "value": "asdf"
+                }
+              ]
+            },
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "equal",
+              "value": "asdf"
+            }
+          ]
+        }""")
+
+        network = Network()
+        network.parse_query(query)
+
+        counts = defaultdict(int)
+        for rule in network.rules.values():
+            counts[rule.__class__.__name__] += 1
+
+        assert counts == {'AndRule': 2, 'EqualRule': 1, 'NotEqualRule': 1}
+
+    def test_will_not_reuse_different_groups(self):
+        # Different operators in each sub-group
+        query = json.loads("""
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "condition": "AND",
+              "rules": [
+                {
+                  "id": "query_name",
+                  "field": "query_name",
+                  "type": "string",
+                  "input": "text",
+                  "operator": "not_equal",
+                  "value": "asdf"
+                }
+              ]
+            },
+            {
+              "condition": "AND",
+              "rules": [
+                {
+                  "id": "query_name",
+                  "field": "query_name",
+                  "type": "string",
+                  "input": "text",
+                  "operator": "equal",
+                  "value": "asdf"
+                }
+              ]
+            }
+          ]
+        }""")
+
+        network = Network()
+        network.parse_query(query)
+
+        counts = defaultdict(int)
+        for rule in network.rules.values():
+            counts[rule.__class__.__name__] += 1
+
+        # Top level, each sub-group (not reused), each rule
+        assert counts == {'AndRule': 3, 'EqualRule': 1, 'NotEqualRule': 1}
 
 
 class TestBaseRule:

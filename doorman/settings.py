@@ -118,9 +118,12 @@ class Config(object):
     # only applicable when DOORMAN_AUTH_METHOD = 'doorman'
     SESSION_PROTECTION = "strong"
 
+    BCRYPT_LOG_ROUNDS = 13
+
     DOORMAN_AUTH_METHOD = None
     # DOORMAN_AUTH_METHOD = 'doorman'
     # DOORMAN_AUTH_METHOD = 'google'
+    # DOORMAN_AUTH_METHOD = 'ldap'
 
     DOORMAN_OAUTH_GOOGLE_ALLOWED_DOMAINS = [
     ]
@@ -131,7 +134,31 @@ class Config(object):
     DOORMAN_OAUTH_CLIENT_ID = ''
     DOORMAN_OAUTH_CLIENT_SECRET = ''
 
-    BCRYPT_LOG_ROUNDS = 13
+    # When using DOORMAN_AUTH_METHOD = 'ldap', see
+    # http://flask-ldap3-login.readthedocs.io/en/latest/configuration.html#core
+    # Note: not all configuration options are documented at the link
+    # provided above. A complete list of options can be groked by
+    # reviewing the the flask-ldap3-login code.
+
+    # LDAP_HOST = None
+    # LDAP_PORT = 636
+    # LDAP_USE_SSL = True
+    # LDAP_BASE_DN = 'dc=example,dc=org'
+    # LDAP_USER_DN = 'ou=People'
+    # LDAP_GROUP_DN = ''
+    # LDAP_USER_OBJECT_FILTER = '(objectClass=inetOrgPerson)'
+    # LDAP_USER_LOGIN_ATTR = 'uid'
+    # LDAP_USER_RDN_ATTR = 'uid'
+    # LDAP_GROUP_SEARCH_SCOPE = 'SEARCH_SCOPE_WHOLE_SUBTREE'
+    # LDAP_GROUP_OBJECT_FILTER = '(cn=*)(objectClass=groupOfUniqueNames)'
+    # LDAP_GROUP_MEMBERS_ATTR = 'uniquemember'
+    # LDAP_GET_GROUP_ATTRIBUTES = ['cn']
+    # LDAP_OPT_X_TLS_CACERTFILE = None
+    # LDAP_OPT_X_TLS_CERTIFICATE_FILE = None
+    # LDAP_OPT_X_TLS_PRIVATE_KEY_FILE = None
+    # LDAP_OPT_X_TLS_REQUIRE_CERT = 2  # ssl.CERT_REQUIRED
+    # LDAP_OPT_X_TLS_USE_VERSION = 3  # ssl.PROTOCOL_TLSv1
+    # LDAP_OPT_X_TLS_VALID_NAMES = []
 
 
 class ProdConfig(Config):

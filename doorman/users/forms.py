@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from flask import current_app
+from flask_ldap3_login import AuthenticationResponseStatus
 
 from flask_wtf import Form
 from wtforms import BooleanField, PasswordField, StringField
 from wtforms.validators import DataRequired, Optional
 
-from doorman.extensions import bcrypt
+from doorman.extensions import bcrypt, ldap_manager
 from doorman.models import User
 
 
@@ -42,10 +43,30 @@ class LoginForm(Form):
                 self.username.errors.append(error_message)
                 return False
 
-        elif current_app.config['DOORMAN_AUTH_METHOD'] == 'ldap':
-            pass
+            return True
 
-        return True
+        elif current_app.config['DOORMAN_AUTH_METHOD'] == 'ldap':
+            result = ldap_manager.authenticate(
+                self.username.data,
+                self.password.data
+            )
+
+            if result.status == AuthenticationResponseStatus.fail:
+                self.username.errors.append(error_message)
+                return False
+
+            self.user = ldap_manager._save_user(
+                result.user_dn,
+                result.user_id,
+                result.user_info,
+                result.user_groups
+            )
+            return True
+
+        elif current_app.config['DOORMAN_AUTH_METHOD'] is None:
+            return True
+
+        return False
 
     @property
     def auth_method(self):

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+import logging
 from collections import namedtuple
+
+
+logger = logging.getLogger(__name__)
 
 
 RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
@@ -65,12 +69,13 @@ class Network(object):
         # dependent chain of rules.  We then check if the rule has triggered.
         alerts = set()
         for rule in self.alert_rules:
-            if rule.run():
+            if rule.run(input):
                 alerts.add(rule.alert)
 
-        # TODO: trigger alerts
+        # Step 3: Return all alerts to the caller.
+        return alerts
 
-    def parse_query(self, query):
+    def parse_query(self, query, alerters=None):
         """
         Parse a query output from jQuery.QueryBuilder.
         """
@@ -114,7 +119,12 @@ class Network(object):
             return parse_rule(d)
 
         # The root is always a group
-        parse_group(query)
+        root = parse_group(query)
+
+        # Add alert rule(s) that trigger when this group does
+        if alerters is not None:
+            for alert in alerters:
+                self.make_rule(AlertRule, alert, root)
 
 
 class BaseRule(object):
@@ -135,10 +145,14 @@ class BaseRule(object):
         Runs this rule if it hasn't been evaluated.
         """
         assert isinstance(input, RuleInput)
+
+        logger.debug("Evaluating rule %r on input: %r", self, input)
         if self.evaluated:
+            logger.debug("Returning cached value: %r", self.cached_value)
             return self.cached_value
 
         ret = self.local_run(input)
+        logger.debug("Rule %r returned value: %r", self, ret)
         self.cached_value = ret
         self.evaluated = True
         return ret
@@ -173,7 +187,7 @@ class AlertRule(BaseRule):
 class AndRule(BaseRule):
     def __init__(self, upstream):
         super(AndRule, self).__init__()
-        self.upstream = []
+        self.upstream = upstream
 
     def local_run(self, input):
         for u in self.upstream:
@@ -186,7 +200,7 @@ class AndRule(BaseRule):
 class OrRule(BaseRule):
     def __init__(self, upstream):
         super(OrRule, self).__init__()
-        self.upstream = []
+        self.upstream = upstream
 
     def local_run(self, input):
         for u in self.upstream:
@@ -221,6 +235,7 @@ class LogicRule(BaseRule):
             raise KeyError('Unknown key: {0}'.format(self.key))
 
         # Pass to the actual logic function
+        logger.debug("Running logic rule %r: %r | %r", self, self.expected, value)
         return self.compare(value)
 
     def compare(self, value):

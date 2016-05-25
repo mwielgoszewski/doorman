@@ -51,6 +51,7 @@ class TestEmailerAlerter:
         self.recipients = ['test@example.com']
         self.config = {
             'recipients': self.recipients,
+            'subject_prefix': '[Doorman Test] '
         }
 
     def test_will_email(self, node, rule, testapp):
@@ -63,7 +64,7 @@ class TestEmailerAlerter:
             match={'boo': 'baz', 'kung': 'bloo'}
         )
 
-        expected_subject = '[Doorman] {host_identifier} {name} ({action})'.format(
+        expected_subject = '[Doorman Test] {host_identifier} {name} ({action})'.format(
             host_identifier=node.host_identifier,
             name=rule.name,
             action=match.action)

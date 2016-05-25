@@ -195,6 +195,63 @@ class TestNetwork:
             exc = e
 
         assert isinstance(exc, ValueError)
+        assert exc.message == "A group contains no rules"
+
+    def test_parse_error_unknown_condition(self):
+        # Different operators in each sub-group
+        query = json.loads("""
+        {
+          "condition": "XOR",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "equal",
+              "value": "foo"
+            }
+          ]
+        }""")
+
+        network = Network()
+
+        exc = None
+        try:
+            network.parse_query(query)
+        except Exception as e:
+            exc = e
+
+        assert isinstance(exc, ValueError)
+        assert exc.message == "Unknown condition: XOR"
+
+    def test_parse_error_unknown_operator(self):
+        # Different operators in each sub-group
+        query = json.loads("""
+        {
+          "condition": "OR",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "BAD OPERATOR",
+              "value": "foo"
+            }
+          ]
+        }""")
+
+        network = Network()
+
+        exc = None
+        try:
+            network.parse_query(query)
+        except Exception as e:
+            exc = e
+
+        assert isinstance(exc, ValueError)
+        assert exc.message == "Unsupported operator: BAD OPERATOR"
 
 
 class TestBaseCondition:

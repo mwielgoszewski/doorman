@@ -52,12 +52,12 @@ class Network(object):
         inst = klass(*args, **kwargs)
         inst.__network_memo_key = key
 
-        # Save the condition, optionally adding it to our alerter list
+        # Save the condition
         self.conditions[key] = inst
-        if isinstance(inst, AlertCondition):
-            self.alert_conditions.append(inst)
-
         return inst
+
+    def make_alert_condition(self, alert, dependent, rule_name=None):
+        self.alert_conditions.append((alert, dependent, rule_name))
 
     def process(self, input):
         # Step 1: Mark all conditions as 'not evaluated'.
@@ -69,9 +69,9 @@ class Network(object):
         # evaluate the dependent chain of conditions.  We then check if the
         # condition has triggered.
         alerts = set()
-        for condition in self.alert_conditions:
-            if condition.run(input):
-                alerts.add(condition.alert)
+        for (alert, upstream, rule_name) in self.alert_conditions:
+            if upstream.run(input):
+                alerts.add((alert, rule_name))
 
         # Step 3: Return all alerts to the caller.
         return alerts
@@ -125,7 +125,7 @@ class Network(object):
         # Add alert condition(s) that trigger when this group does
         if alerters is not None:
             for alert in alerters:
-                self.make_condition(AlertCondition, alert, root)
+                self.make_alert_condition(alert, root, rule_name)
 
 
 class BaseCondition(object):
@@ -169,20 +169,6 @@ class BaseCondition(object):
             self.__class__.__name__,
             self.evaluated
         )
-
-
-class AlertCondition(BaseCondition):
-    """
-    Alerting condition - any input that reaches this condition will trigger the
-    given alert.
-    """
-    def __init__(self, alert, upstream):
-        super(AlertCondition, self).__init__()
-        self.alert = alert
-        self.upstream = upstream
-
-    def local_run(self, input):
-        return self.upstream.run(input)
 
 
 class AndCondition(BaseCondition):

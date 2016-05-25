@@ -103,6 +103,9 @@ class Network(object):
             return inst
         
         def parse_group(d):
+            if len(d['rules']) == 0:
+                raise ValueError("A group contains no rules")
+
             upstreams = [parse(r) for r in d['rules']]
 
             condition = d['condition']

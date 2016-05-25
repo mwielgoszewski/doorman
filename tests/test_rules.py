@@ -177,6 +177,25 @@ class TestNetwork:
         # Top level, each sub-group (not reused), each condition
         assert counts == {'AndCondition': 3, 'EqualCondition': 1, 'NotEqualCondition': 1}
 
+    def test_parse_error_no_rules_in_group(self):
+        # Different operators in each sub-group
+        query = json.loads("""
+        {
+          "condition": "AND",
+          "rules": [
+          ]
+        }""")
+
+        network = Network()
+
+        exc = None
+        try:
+            network.parse_query(query)
+        except Exception as e:
+            exc = e
+
+        assert isinstance(exc, ValueError)
+
 
 class TestBaseCondition:
 
@@ -239,7 +258,7 @@ class TestFunctional:
         }""")
 
         network = Network()
-        network.parse_query(query, alerters=['debug'])
+        network.parse_query(query, alerters=['debug'], rule_name='test-rule')
 
         # Should trigger the top-level alert, above
         bad_input = RuleInput(result_log={
@@ -271,7 +290,7 @@ class TestFunctional:
         assert len(alerts) == 0
 
         alerts = network.process(bad_input)
-        assert list(alerts) == ['debug']
+        assert list(alerts) == [('debug', 'test-rule')]
 
         # Re-process the good input to assert that we don't continue to alert
         # on good input after a bad one...
@@ -280,4 +299,4 @@ class TestFunctional:
 
         # ... and that we *do* continue to alert on bad input.
         alerts = network.process(bad_input)
-        assert list(alerts) == ['debug']
+        assert list(alerts) == [('debug', 'test-rule')]

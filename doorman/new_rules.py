@@ -5,11 +5,6 @@ from collections import namedtuple
 RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
 
 
-def column_extract_value(column, input):
-    columns = input.result_log.columns
-    return columns.get(column)
-
-
 class Network(object):
     """
     A grouping of rule nodes.  Contains the base logic for running the rules on
@@ -21,21 +16,40 @@ class Network(object):
 
     def make_rule(self, klass, *args, **kwargs):
         """
-        Memoizing constructor for rules.
+        Memoizing constructor for rules.  Uses the input config as the cache key.
         """
-        # dicts are not hashable, so we need to turn the kwargs into a tuple.
-        # Must ensure they're sorted, because dict iteration order is not
-        # guaranteed by Python.
-        kwargs_tuple = tuple(sorted(kwargs.items()))
+        # Calculate the memoization key.  We do this by creating a 3-tuple of
+        # (rule class name, args, kwargs).  There is some nuance to this,
+        # though: we need to put args/kwargs in the right format.  We
+        # recursively iterate through lists/dicts and convert them to tuples,
+        # and extract the memoization key from instances of BaseRule.
+        def tupleify(obj):
+            if isinstance(obj, BaseRule):
+                return obj.__network_memo_key
+            elif isinstance(obj, tuple):
+                return tuple(tupleify(x) for x in obj)
+            elif isinstance(obj, list):
+                return tuple(tupleify(x) for x in obj)
+            elif isinstance(obj, dict):
+                items = ((tupleify(k), tupleify(v)) for k, v in obj.items())
+                return tuple(sorted(items))
+            else:
+                return obj
 
-        # Calculate the memoization key
-        key = (klass.__name__, args, kwargs_tuple)
+        args_tuple = tupleify(args)
+        kwargs_tuple = tupleify(kwargs)
+
+        key = (klass.__name__, args_tuple, kwargs_tuple)
         if key in self.rules:
             return self.rules[key]
 
+        # Instantiate the rule class.  Also, save the memoization key on the
+        # class, so it can be retrieved (above).
         inst = klass(*args, **kwargs)
-        self.rules[key] = inst
+        inst.__network_memo_key = key
 
+        # Save the rule, optionally adding it to our alerter list
+        self.rules[key] = inst
         if isinstance(inst, AlertRule):
             self.alert_rules.append(inst)
 
@@ -62,25 +76,24 @@ class Network(object):
         """
         def parse_rule(d):
             op = d['operator']
-            expected = d['value']
+            value = d['value']
             
             # If this is a "column operator" - i.e. operating on a particular
             # value in a column - then we need to give a custom extraction
             # function that knows how to get this value from a query.
-            extract_value = None
+            column_name = None
             if d['field'] == 'column':
-                # Strip 'column_' prefix
+                # Strip 'column_' prefix to get the 'real' operator.
                 op = op[7:]
 
                 # The 'value' array will look like ['column_name', 'actual value']
-                extract_value = lambda i: column_extract_value(value[0])
-                value = value[1]
+                column_name, value = value
 
             klass = OPERATOR_MAP.get(op)
             if not klass:
                 raise ValueError("Unsupported operator: {0}".format(op))
             
-            inst = self.make_rule(klass, d['field'], value, extract_value=extract_value)
+            inst = self.make_rule(klass, d['field'], value, column_name=column_name)
             return inst
         
         def parse_group(d):
@@ -184,18 +197,18 @@ class OrRule(BaseRule):
 
 
 class LogicRule(BaseRule):
-    def __init__(self, key, expected, extract_value=None):
+    def __init__(self, key, expected, column_name=None):
         super(LogicRule, self).__init__()
         self.key = key
         self.expected = expected
-        self.extract_value = extract_value
+        self.column_name = column_name
 
     def local_run(self, input):
-        # If we have the 'extract_value' function, we should use that to
-        # extract the input (e.g. for column rules).  Otherwise, we have a
-        # whitelist of what we can get from the input.
-        if self.extract_value:
-            value = self.extract_value(input)
+        # If we have a 'column_name', we should use that to extract the value
+        # from the input's columns.  Otherwise, we have a whitelist of what we
+        # can get from the input.
+        if self.column_name is not None:
+            value = input.result_log['columns'].get(self.key)
         elif self.key == 'query_name':
             value = input.result_log['name']
         elif self.key == 'timestamp':

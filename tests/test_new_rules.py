@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import datetime as dt
 
 from doorman.new_rules import (
@@ -23,6 +24,68 @@ class TestNetwork:
         two = network.make_rule(TestRule)
 
         assert one is two
+
+    def test_will_parse_basic(self):
+        query = json.loads("""
+	{
+	  "condition": "AND",
+	  "rules": [
+	    {
+	      "id": "column",
+	      "field": "column",
+	      "type": "string",
+	      "input": "text",
+	      "operator": "column_equal",
+	      "value": [
+		"model_id",
+		"5500"
+	      ]
+	    }
+	  ]
+	}
+	""")
+
+        network = Network()
+        network.parse_query(query)
+
+        # AND rule, single column rule
+        assert len(network.rules) == 2
+
+    def test_will_reuse_identical_rules(self):
+        query = json.loads("""
+        {
+	  "condition": "AND",
+	  "rules": [
+	    {
+	      "condition": "AND",
+	      "rules": [
+		{
+		  "id": "query_name",
+		  "field": "query_name",
+		  "type": "string",
+		  "input": "text",
+		  "operator": "equal",
+		  "value": "asdf"
+		}
+	      ]
+	    },
+	    {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "equal",
+              "value": "asdf"
+	    }
+	  ]
+	}""")
+
+        network = Network()
+        network.parse_query(query)
+
+        # Top-level AND, AND group, reused column rule
+        assert len(network.rules) == 3
+
 
 
 class TestBaseRule:

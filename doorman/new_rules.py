@@ -11,24 +11,24 @@ RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
 
 class Network(object):
     """
-    A grouping of rule nodes.  Contains the base logic for running the rules on
-    some input.
+    A grouping of condition nodes.  Contains the base logic for running the
+    conditions on some input.
     """
     def __init__(self):
-        self.rules = {}
-        self.alert_rules = []
+        self.conditions = {}
+        self.alert_conditions = []
 
-    def make_rule(self, klass, *args, **kwargs):
+    def make_condition(self, klass, *args, **kwargs):
         """
-        Memoizing constructor for rules.  Uses the input config as the cache key.
+        Memoizing constructor for conditions.  Uses the input config as the cache key.
         """
         # Calculate the memoization key.  We do this by creating a 3-tuple of
-        # (rule class name, args, kwargs).  There is some nuance to this,
+        # (condition class name, args, kwargs).  There is some nuance to this,
         # though: we need to put args/kwargs in the right format.  We
         # recursively iterate through lists/dicts and convert them to tuples,
-        # and extract the memoization key from instances of BaseRule.
+        # and extract the memoization key from instances of BaseCondition.
         def tupleify(obj):
-            if isinstance(obj, BaseRule):
+            if isinstance(obj, BaseCondition):
                 return obj.__network_memo_key
             elif isinstance(obj, tuple):
                 return tuple(tupleify(x) for x in obj)
@@ -44,42 +44,43 @@ class Network(object):
         kwargs_tuple = tupleify(kwargs)
 
         key = (klass.__name__, args_tuple, kwargs_tuple)
-        if key in self.rules:
-            return self.rules[key]
+        if key in self.conditions:
+            return self.conditions[key]
 
-        # Instantiate the rule class.  Also, save the memoization key on the
-        # class, so it can be retrieved (above).
+        # Instantiate the condition class.  Also, save the memoization key on
+        # the class, so it can be retrieved (above).
         inst = klass(*args, **kwargs)
         inst.__network_memo_key = key
 
-        # Save the rule, optionally adding it to our alerter list
-        self.rules[key] = inst
-        if isinstance(inst, AlertRule):
-            self.alert_rules.append(inst)
+        # Save the condition, optionally adding it to our alerter list
+        self.conditions[key] = inst
+        if isinstance(inst, AlertCondition):
+            self.alert_conditions.append(inst)
 
         return inst
 
     def process(self, input):
-        # Step 1: Mark all rules as 'not evaluated'.
-        for rule in self.rules.values():
-            rule.evaluated = False
+        # Step 1: Mark all conditions as 'not evaluated'.
+        for condition in self.conditions.values():
+            condition.evaluated = False
 
-        # Step 2: For each alerter rule, we tell it to 'process' a new input.
-        # This will propagate "upstream" to each rule node and evaluate the
-        # dependent chain of rules.  We then check if the rule has triggered.
+        # Step 2: For each alerter condition, we tell it to 'process' a new
+        # input.  This will propagate "upstream" to each condition node and
+        # evaluate the dependent chain of conditions.  We then check if the
+        # condition has triggered.
         alerts = set()
-        for rule in self.alert_rules:
-            if rule.run(input):
-                alerts.add(rule.alert)
+        for condition in self.alert_conditions:
+            if condition.run(input):
+                alerts.add(condition.alert)
 
         # Step 3: Return all alerts to the caller.
         return alerts
 
-    def parse_query(self, query, alerters=None):
+    def parse_query(self, query, alerters=None, rule_name=None):
         """
         Parse a query output from jQuery.QueryBuilder.
         """
-        def parse_rule(d):
+        def parse_condition(d):
             op = d['operator']
             value = d['value']
             
@@ -98,7 +99,7 @@ class Network(object):
             if not klass:
                 raise ValueError("Unsupported operator: {0}".format(op))
             
-            inst = self.make_rule(klass, d['field'], value, column_name=column_name)
+            inst = self.make_condition(klass, d['field'], value, column_name=column_name)
             return inst
         
         def parse_group(d):
@@ -106,9 +107,9 @@ class Network(object):
 
             condition = d['condition']
             if condition == 'AND':
-                return self.make_rule(AndRule, upstreams)
+                return self.make_condition(AndCondition, upstreams)
             elif condition == 'OR':
-                return self.make_rule(OrRule, upstreams)
+                return self.make_condition(OrCondition, upstreams)
 
             raise ValueError("Unknown condition: {0}".format(condition))
 
@@ -116,21 +117,21 @@ class Network(object):
             if 'condition' in d:
                 return parse_group(d)
             
-            return parse_rule(d)
+            return parse_condition(d)
 
         # The root is always a group
         root = parse_group(query)
 
-        # Add alert rule(s) that trigger when this group does
+        # Add alert condition(s) that trigger when this group does
         if alerters is not None:
             for alert in alerters:
-                self.make_rule(AlertRule, alert, root)
+                self.make_condition(AlertCondition, alert, root)
 
 
-class BaseRule(object):
+class BaseCondition(object):
     """
-    Base class for rules.  Contains the logic for adding a dependency to a
-    rule and pretty-printing one.
+    Base class for conditions.  Contains the logic for adding a dependency to a
+    condition and pretty-printing one.
     """
     def __init__(self):
         self.evaluated = False
@@ -142,24 +143,24 @@ class BaseRule(object):
 
     def run(self, input):
         """
-        Runs this rule if it hasn't been evaluated.
+        Runs this condition if it hasn't been evaluated.
         """
         assert isinstance(input, RuleInput)
 
-        logger.debug("Evaluating rule %r on input: %r", self, input)
+        logger.debug("Evaluating condition %r on input: %r", self, input)
         if self.evaluated:
             logger.debug("Returning cached value: %r", self.cached_value)
             return self.cached_value
 
         ret = self.local_run(input)
-        logger.debug("Rule %r returned value: %r", self, ret)
+        logger.debug("Condition %r returned value: %r", self, ret)
         self.cached_value = ret
         self.evaluated = True
         return ret
 
     def local_run(self, input):
         """
-        Subclasses should implement this in order to run the rule's logic.
+        Subclasses should implement this in order to run the condition's logic.
         """
         raise NotImplementedError()
 
@@ -170,13 +171,13 @@ class BaseRule(object):
         )
 
 
-class AlertRule(BaseRule):
+class AlertCondition(BaseCondition):
     """
-    Alerting rule - any input that reaches this rule will trigger the
+    Alerting condition - any input that reaches this condition will trigger the
     given alert.
     """
     def __init__(self, alert, upstream):
-        super(AlertRule, self).__init__()
+        super(AlertCondition, self).__init__()
         self.alert = alert
         self.upstream = upstream
 
@@ -184,9 +185,9 @@ class AlertRule(BaseRule):
         return self.upstream.run(input)
 
 
-class AndRule(BaseRule):
+class AndCondition(BaseCondition):
     def __init__(self, upstream):
-        super(AndRule, self).__init__()
+        super(AndCondition, self).__init__()
         self.upstream = upstream
 
     def local_run(self, input):
@@ -197,9 +198,9 @@ class AndRule(BaseRule):
         return True
 
 
-class OrRule(BaseRule):
+class OrCondition(BaseCondition):
     def __init__(self, upstream):
-        super(OrRule, self).__init__()
+        super(OrCondition, self).__init__()
         self.upstream = upstream
 
     def local_run(self, input):
@@ -210,9 +211,9 @@ class OrRule(BaseRule):
         return False
 
 
-class LogicRule(BaseRule):
+class LogicCondition(BaseCondition):
     def __init__(self, key, expected, column_name=None):
-        super(LogicRule, self).__init__()
+        super(LogicCondition, self).__init__()
         self.key = key
         self.expected = expected
         self.column_name = column_name
@@ -235,7 +236,7 @@ class LogicRule(BaseRule):
             raise KeyError('Unknown key: {0}'.format(self.key))
 
         # Pass to the actual logic function
-        logger.debug("Running logic rule %r: %r | %r", self, self.expected, value)
+        logger.debug("Running logic condition %r: %r | %r", self, self.expected, value)
         return self.compare(value)
 
     def compare(self, value):
@@ -245,90 +246,90 @@ class LogicRule(BaseRule):
         raise NotImplementedError()
 
 
-class EqualRule(LogicRule):
+class EqualCondition(LogicCondition):
     def compare(self, value):
         return self.expected == value
 
 
-class NotEqualRule(LogicRule):
+class NotEqualCondition(LogicCondition):
     def compare(self, value):
         return self.expected != value
 
 
-class BeginsWithRule(LogicRule):
+class BeginsWithCondition(LogicCondition):
     def compare(self, value):
         return value.startswith(self.expected)
 
 
-class NotBeginsWithRule(LogicRule):
+class NotBeginsWithCondition(LogicCondition):
     def compare(self, value):
         return not value.startswith(self.expected)
 
 
-class ContainsRule(LogicRule):
+class ContainsCondition(LogicCondition):
     def compare(self, value):
         return self.expected in value
 
 
-class NotContainsRule(LogicRule):
+class NotContainsCondition(LogicCondition):
     def compare(self, value):
         return self.expected not in value
 
 
-class EndsWithRule(LogicRule):
+class EndsWithCondition(LogicCondition):
     def compare(self, value):
         return value.endswith(self.expected)
 
 
-class NotEndsWithRule(LogicRule):
+class NotEndsWithCondition(LogicCondition):
     def compare(self, value):
         return not value.endswith(self.expected)
 
 
-class IsEmptyRule(LogicRule):
+class IsEmptyCondition(LogicCondition):
     def compare(self, value):
         return value == ''
 
 
-class IsNotEmptyRule(LogicRule):
+class IsNotEmptyCondition(LogicCondition):
     def compare(self, value):
         return value != ''
 
 
-class LessRule(LogicRule):
+class LessCondition(LogicCondition):
     def compare(self, value):
         return self.expected < value
 
 
-class LessEqualRule(LogicRule):
+class LessEqualCondition(LogicCondition):
     def compare(self, value):
         return self.expected <= value
 
 
-class GreaterRule(LogicRule):
+class GreaterCondition(LogicCondition):
     def compare(self, value):
         return self.expected > value
 
 
-class GreaterEqualRule(LogicRule):
+class GreaterEqualCondition(LogicCondition):
     def compare(self, value):
         return self.expected >= value
 
 
 # Needs to go at the end
 OPERATOR_MAP = {
-    'equal': EqualRule,
-    'not_equal': NotEqualRule,
-    'begins_with': BeginsWithRule,
-    'not_begins_with': NotBeginsWithRule,
-    'contains': ContainsRule,
-    'not_contains': NotContainsRule,
-    'ends_with': EndsWithRule,
-    'not_ends_with': NotEndsWithRule,
-    'is_empty': IsEmptyRule,
-    'is_not_empty': IsNotEmptyRule,
-    'less': LessRule,
-    'less_or_equal': LessEqualRule,
-    'greater': GreaterRule,
-    'greater_or_equal': GreaterEqualRule,
+    'equal': EqualCondition,
+    'not_equal': NotEqualCondition,
+    'begins_with': BeginsWithCondition,
+    'not_begins_with': NotBeginsWithCondition,
+    'contains': ContainsCondition,
+    'not_contains': NotContainsCondition,
+    'ends_with': EndsWithCondition,
+    'not_ends_with': NotEndsWithCondition,
+    'is_empty': IsEmptyCondition,
+    'is_not_empty': IsNotEmptyCondition,
+    'less': LessCondition,
+    'less_or_equal': LessEqualCondition,
+    'greater': GreaterCondition,
+    'greater_or_equal': GreaterEqualCondition,
 }

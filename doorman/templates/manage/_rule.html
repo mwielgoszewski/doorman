@@ -8,26 +8,16 @@
                     <tbody>
 
                         <tr>
-                            <th width="15%">Type</th>
-                            <td width="85%">{{ rule.type }}</td>
-                        </tr>
-
-                        <tr>
-                            <th width="15%">Action</th>
-                            <td width="85%">{{ rule.action }}</td>
-                        </tr>
-
-                        <tr>
                             <th width="15%">Alerters</th>
                             <td width="85%">{{ rule.alerters | join(', ') }}</td>
                         </tr>
 
                         <tr>
-                            <th width="15%">Config</th>
-                            {% if rule.config %}
-                            <td width="85%"><pre><code>{{ rule.config }}</code></pre></td>
+                            <th width="15%">Conditions</th>
+                            {% if rule.conditions %}
+                            <td width="85%"><pre><code>{{ rule.conditions | tojson }}</code></pre></td>
                             {% else %}
-                            <td width="85%"><i>No config</i></td>
+                            <td width="85%"><i>No conditions</i></td>
                             {% endif %}
                         </tr>
 

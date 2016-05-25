@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
-from hashlib import sha256
 from collections import namedtuple
 
 
 RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
+
+
+def column_extract_value(column, input):
+    columns = input.result_log.columns
+    return columns.get(column)
 
 
 class Network(object):
@@ -15,17 +19,27 @@ class Network(object):
         self.rules = {}
         self.alert_rules = []
 
-    def add_rule(self, rule):
-        hash = rule.hash()
-        if hash in self.rules:
-            return self.rules[hash]
+    def make_rule(self, klass, *args, **kwargs):
+        """
+        Memoizing constructor for rules.
+        """
+        # dicts are not hashable, so we need to turn the kwargs into a tuple.
+        # Must ensure they're sorted, because dict iteration order is not
+        # guaranteed by Python.
+        kwargs_tuple = tuple(sorted(kwargs.items()))
 
-        self.rules[hash] = rule
+        # Calculate the memoization key
+        key = (klass.__name__, args, kwargs_tuple)
+        if key in self.rules:
+            return self.rules[key]
 
-        if isinstance(rule, AlertRule):
-            self.alert_rules.append(rule)
+        inst = klass(*args, **kwargs)
+        self.rules[key] = inst
 
-        return rule
+        if isinstance(inst, AlertRule):
+            self.alert_rules.append(inst)
+
+        return inst
 
     def process(self, input):
         # Step 1: Mark all rules as 'not evaluated'.
@@ -46,14 +60,27 @@ class Network(object):
         """
         Parse a query output from jQuery.QueryBuilder.
         """
-
         def parse_rule(d):
             op = d['operator']
+            expected = d['value']
+            
+            # If this is a "column operator" - i.e. operating on a particular
+            # value in a column - then we need to give a custom extraction
+            # function that knows how to get this value from a query.
+            extract_value = None
+            if d['field'] == 'column':
+                # Strip 'column_' prefix
+                op = op[7:]
+
+                # The 'value' array will look like ['column_name', 'actual value']
+                extract_value = lambda i: column_extract_value(value[0])
+                value = value[1]
+
             klass = OPERATOR_MAP.get(op)
             if not klass:
                 raise ValueError("Unsupported operator: {0}".format(op))
             
-            inst = klass(d['field'], d['value'])
+            inst = self.make_rule(klass, d['field'], value, extract_value=extract_value)
             return inst
         
         def parse_group(d):
@@ -61,9 +88,9 @@ class Network(object):
 
             condition = d['condition']
             if condition == 'AND':
-                return AndRule(upstreams)
+                return self.make_rule(AndRule, upstreams)
             elif condition == 'OR':
-                return OrRule(upstreams)
+                return self.make_rule(OrRule, upstreams)
 
             raise ValueError("Unknown condition: {0}".format(condition))
 
@@ -74,19 +101,13 @@ class Network(object):
             return parse_rule(d)
 
         # The root is always a group
-        tree = parse_group(query)
-        # TODO: what do we do with the parsed tree?  need to de-dupe
-        # Other notes:
-        #   - Can we add to the network here?
-        #   - Should AND/OR depend on directly, or on 'hashes'?
-        #   - 
-        raise NotImplementedError()
+        parse_group(query)
 
 
 class BaseRule(object):
     """
     Base class for rules.  Contains the logic for adding a dependency to a
-    rule, for computing a hash of a rule, and pretty-printing one.
+    rule and pretty-printing one.
     """
     def __init__(self):
         self.evaluated = False
@@ -95,16 +116,6 @@ class BaseRule(object):
 
     def init_network(self, network):
         self.network = network
-
-    def hash(self):
-        """
-        Returns a unique hash for this rule.  If a rule has the same has as
-        another rule, then they should have identical behavior.
-        """
-        h = sha256()
-        h.update(self.__class__.__name__)
-        self.local_hash(h)
-        return h.hexdigest()[:10]
 
     def run(self, input):
         """
@@ -122,12 +133,6 @@ class BaseRule(object):
     def local_run(self, input):
         """
         Subclasses should implement this in order to run the rule's logic.
-        """
-        raise NotImplementedError()
-
-    def local_hash(self, hasher):
-        """
-        Subclasses should implement this to hash data local to this rule.
         """
         raise NotImplementedError()
 
@@ -151,19 +156,11 @@ class AlertRule(BaseRule):
     def local_run(self, input):
         return self.upstream.run(input)
 
-    def local_hash(self, hasher):
-        hasher.update(alert)
-        self.upstream.hash(hasher)
-
 
 class AndRule(BaseRule):
     def __init__(self, upstream):
         super(AndRule, self).__init__()
         self.upstream = []
-
-    def local_hash(self, hasher):
-        for u in self.upstream:
-            u.hash(hasher)
 
     def local_run(self, input):
         for u in self.upstream:
@@ -178,10 +175,6 @@ class OrRule(BaseRule):
         super(OrRule, self).__init__()
         self.upstream = []
 
-    def local_hash(self, hasher):
-        for u in self.upstream:
-            u.hash(hasher)
-
     def local_run(self, input):
         for u in self.upstream:
             if u.run(input):
@@ -191,14 +184,28 @@ class OrRule(BaseRule):
 
 
 class LogicRule(BaseRule):
-    def __init__(self, key, expected):
+    def __init__(self, key, expected, extract_value=None):
         super(LogicRule, self).__init__()
         self.key = key
         self.expected = expected
+        self.extract_value = extract_value
 
     def local_run(self, input):
-        # TODO get the value from the input here
-        value = None
+        # If we have the 'extract_value' function, we should use that to
+        # extract the input (e.g. for column rules).  Otherwise, we have a
+        # whitelist of what we can get from the input.
+        if self.extract_value:
+            value = self.extract_value(input)
+        elif self.key == 'query_name':
+            value = input.result_log['name']
+        elif self.key == 'timestamp':
+            value = input.result_log['timestamp']
+        elif self.key == 'action':
+            value = input.result_log['action']
+        elif self.key == 'host_identifier':
+            value = input.node['host_identifier']
+        else:
+            raise KeyError('Unknown key: {0}'.format(self.key))
 
         # Pass to the actual logic function
         return self.compare(value)
@@ -220,8 +227,80 @@ class NotEqualRule(LogicRule):
         return self.expected != value
 
 
+class BeginsWithRule(LogicRule):
+    def compare(self, value):
+        return value.startswith(self.expected)
+
+
+class NotBeginsWithRule(LogicRule):
+    def compare(self, value):
+        return not value.startswith(self.expected)
+
+
+class ContainsRule(LogicRule):
+    def compare(self, value):
+        return self.expected in value
+
+
+class NotContainsRule(LogicRule):
+    def compare(self, value):
+        return self.expected not in value
+
+
+class EndsWithRule(LogicRule):
+    def compare(self, value):
+        return value.endswith(self.expected)
+
+
+class NotEndsWithRule(LogicRule):
+    def compare(self, value):
+        return not value.endswith(self.expected)
+
+
+class IsEmptyRule(LogicRule):
+    def compare(self, value):
+        return value == ''
+
+
+class IsNotEmptyRule(LogicRule):
+    def compare(self, value):
+        return value != ''
+
+
+class LessRule(LogicRule):
+    def compare(self, value):
+        return self.expected < value
+
+
+class LessEqualRule(LogicRule):
+    def compare(self, value):
+        return self.expected <= value
+
+
+class GreaterRule(LogicRule):
+    def compare(self, value):
+        return self.expected > value
+
+
+class GreaterEqualRule(LogicRule):
+    def compare(self, value):
+        return self.expected >= value
+
+
 # Needs to go at the end
 OPERATOR_MAP = {
     'equal': EqualRule,
     'not_equal': NotEqualRule,
+    'begins_with': BeginsWithRule,
+    'not_begins_with': NotBeginsWithRule,
+    'contains': ContainsRule,
+    'not_contains': NotContainsRule,
+    'ends_with': EndsWithRule,
+    'not_ends_with': NotEndsWithRule,
+    'is_empty': IsEmptyRule,
+    'is_not_empty': IsNotEmptyRule,
+    'less': LessRule,
+    'less_or_equal': LessEqualRule,
+    'greater': GreaterRule,
+    'greater_or_equal': GreaterEqualRule,
 }

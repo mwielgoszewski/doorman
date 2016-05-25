@@ -19,7 +19,6 @@ from wtforms.validators import DataRequired, Optional, ValidationError
 from wtforms.widgets import HiddenInput
 
 from doorman.models import Rule
-from doorman.rules import RULE_TYPES
 from doorman.utils import validate_osquery_query
 
 
@@ -139,7 +138,7 @@ class RuleForm(Form):
     name = StringField('Rule Name', validators=[DataRequired()])
     alerters = SelectMultipleField('Alerters', default=None, choices=[
     ])
-    rules = HiddenJSONField('Rules')
+    conditions = HiddenJSONField('Conditions')
 
     def set_choices(self):
         alerter_ids = list(current_app.config.get('DOORMAN_ALERTER_PLUGINS', {}).keys())

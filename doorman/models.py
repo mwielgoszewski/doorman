@@ -441,22 +441,14 @@ class DistributedQueryResult(SurrogatePK, Model):
 
 class Rule(SurrogatePK, Model):
 
-    ADDED = 'added'
-    REMOVED = 'removed'
-    BOTH = 'both'
-
-    type = Column(db.String, nullable=False)
     name = Column(db.String, nullable=False)
-    action = Column(db.Enum(ADDED, REMOVED, BOTH, name='rule_actions'), nullable=False)
     alerters = Column(ARRAY(db.String), nullable=False)
-    config = Column(JSONB)
+    conditions = Column(JSONB)
 
-    def __init__(self, type, name, action, alerters, config=None):
-        self.type = type
+    def __init__(self, name, alerters, conditions=None):
         self.name = name
-        self.action = action
         self.alerters = alerters
-        self.config = config
+        self.conditions = conditions
 
 
 class User(UserMixin, SurrogatePK, Model):

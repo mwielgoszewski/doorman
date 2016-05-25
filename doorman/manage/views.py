@@ -21,7 +21,7 @@ from .forms import (
 from doorman.database import db
 from doorman.models import (
     DistributedQuery, DistributedQueryTask,
-    FilePath, Node, Pack, Query, Tag, Rule
+    FilePath, Node, Pack, Query, Tag, Rule, StatusLog
 )
 from doorman.tasks import reload_rules
 from doorman.utils import (
@@ -103,6 +103,35 @@ def get_node(node_id):
 def node_activity(node_id):
     node = Node.query.filter(Node.id == node_id).first_or_404()
     return render_template('activity.html', node=node)
+
+
+@blueprint.route('/node/<int:node_id>/logs')
+@blueprint.route('/node/<int:node_id>/logs/<int:page>')
+def node_logs(node_id, page=1):
+    node = Node.query.filter(Node.id == node_id).first_or_404()
+    status_logs = StatusLog.query.filter_by(node=node)
+
+    status_logs = get_paginate_options(
+        request,
+        StatusLog,
+        ('line', 'message', 'severity', 'filename'),
+        existing_query=status_logs,
+        page=page,
+        max_pp=50,
+        default_sort='desc'
+    )
+
+    pagination = Pagination(page=page,
+                            per_page=status_logs.per_page,
+                            total=status_logs.total,
+                            alignment='center',
+                            show_single_page=False,
+                            record_name='status logs',
+                            bs_version=3)
+
+    return render_template('logs.html', node=node,
+                           status_logs=status_logs.items,
+                           pagination=pagination)
 
 
 @blueprint.route('/node/<int:node_id>/tags', methods=['GET', 'POST'])

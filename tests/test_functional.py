@@ -1000,12 +1000,24 @@ class TestUpdateRule:
     def test_will_reload_rules(self, db, node, app, testapp):
         from doorman.tasks import reload_rules
 
+        rule_conds = {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "equal",
+              "value": "foo",
+            },
+          ],
+        }
+
         r = Rule(
-            type='blacklist',
-            name='Test Rule',
-            action=Rule.BOTH,
+            name='Test-Rule',
             alerters=['debug'],
-            config={"field_name": "foo", "blacklist": []}
+            conditions=rule_conds
         )
         db.session.add(r)
         db.session.commit()
@@ -1013,26 +1025,27 @@ class TestUpdateRule:
         # Manually reload the rules here, and verify that we have the right
         # rule in our list
         app.rule_manager.load_rules()
-        assert len(app.rule_manager.rules) == 1
-        assert app.rule_manager.rules[0][0].action == Rule.BOTH
+        assert len(app.rule_manager.network.conditions) == 2
+
+        condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
+        assert sorted(condition_classes) == ['AndCondition', 'EqualCondition']
 
         # Fake wrapper that just calls reload
         def real_reload(*args, **kwargs):
             app.rule_manager.load_rules()
 
         # Update the rule
+        rule_conds['condition'] = 'OR'
         with mock.patch.object(reload_rules, 'delay', wraps=real_reload) as mock_delay:
             resp = testapp.post(url_for('manage.rule', rule_id=r.id), {
-                'name': 'Test Rule',
-                'type': 'blacklist',
-                'action': Rule.ADDED,
+                'name': 'Test-Rule',
                 'alerters': 'debug',
-                'config': '{"field_name": "foo", "blacklist": []}',
+                'conditions': json.dumps(rule_conds),
             })
 
         assert mock_delay.called
 
         # Trigger a manual reload again, and verify that it's been updated
         app.rule_manager.load_rules()
-        assert len(app.rule_manager.rules) == 1
-        assert app.rule_manager.rules[0][0].action == Rule.ADDED
+        condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
+        assert sorted(condition_classes) == ['EqualCondition', 'OrCondition']

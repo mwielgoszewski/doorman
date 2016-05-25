@@ -49,6 +49,8 @@ class LogTee(object):
 class RuleManager(object):
     def __init__(self, app=None):
         self.loaded_rules = False
+        self.network = None
+
         if app is not None:
             self.init_app(app)
 
@@ -83,8 +85,8 @@ class RuleManager(object):
 
     def load_rules(self):
         """ Load rules from the database. """
+        from doorman.rules import Network
         from doorman.models import Rule
-        from doorman.rules import RULE_MAPPINGS
         from sqlalchemy.exc import SQLAlchemyError
 
         self.rules = []
@@ -98,15 +100,15 @@ class RuleManager(object):
                 else:
                     raise
 
+        self.network = Network()
         for rule in all_rules:
             # Verify the alerters
             for alerter in rule.alerters:
                 if alerter not in self.alerters:
                     raise ValueError('No such alerter: "{0}"'.format(alerter))
 
-            klass = RULE_MAPPINGS[rule.type]
-            rule_instance = klass(rule.id, rule.action, rule.config or {})
-            self.rules.append((rule_instance, rule.alerters))
+            # Create the rule.
+            self.network.parse_query(rule.conditions, alerters=rule.alerters, rule_name=rule.name)
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """
@@ -115,20 +117,13 @@ class RuleManager(object):
             self.load_rules()
             self.loaded_rules = True
 
-        alerts = defaultdict(list)
-        for rule, alerters in self.rules:
-            matches = rule.handle_log_entry(entry, node)
-            if not matches:
-                continue
+        alerts = self.network.process(RuleInput(
+            result_log=entry.to_dict(),
+            node=node.to_dict(),
+        ))
 
-            # Trigger alerts for each alerter on this rule
-            for alerter in alerters:
-                alerts[alerter].append((node, matches))
-
-        for alerter, curr_alerts in alerts.items():
-            for (node, matches) in curr_alerts:
-                for match in matches:
-                    self.alerters[alerter].handle_alert(node, match)
+        for alerter, rule_name in alerts:
+            self.alerters[alerter].handle_alert(node, result_log.to_dict())
 
 
 def make_celery(app, celery):

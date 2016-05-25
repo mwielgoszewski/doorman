@@ -7,7 +7,6 @@ from webtest import TestApp
 from doorman.application import create_app
 from doorman.database import db as _db
 from doorman.models import Rule
-from doorman.rules import BaseRule, EachResultRule
 from doorman.settings import TestConfig
 
 from .factories import NodeFactory, RuleFactory
@@ -75,43 +74,3 @@ def node(db):
     node = NodeFactory(host_identifier='foobar', enroll_secret='foobar')
     db.session.commit()
     return node
-
-
-@pytest.fixture
-def rule(db):
-    rule = RuleFactory(type='testrule', name='testrule', action='both',
-        alerters=[], config=[])
-    db.session.commit()
-    return rule
-
-
-class _FakeBaseRule(BaseRule):
-    def __init__(self, *args, **kwargs):
-        super(_FakeBaseRule, self).__init__(*args, **kwargs)
-        self.calls = []
-
-    def handle_result(self, result, node):
-        self.calls.append((result, node))
-
-
-@pytest.fixture(scope='function')
-def FakeBaseRule():
-    def create_rule(rule_id=0, action=Rule.BOTH, config=None):
-        return _FakeBaseRule(rule_id, action, config or {})
-    return create_rule
-
-
-class _FakeEachResultRule(EachResultRule):
-    def __init__(self, *args, **kwargs):
-        super(_FakeEachResultRule, self).__init__(*args, **kwargs)
-        self.calls = []
-
-    def handle_columns(self, action, item, node):
-        self.calls.append((action, item, node))
-
-
-@pytest.fixture(scope='function')
-def FakeEachResultRule():
-    def create_rule(rule_id=0, action=Rule.BOTH, config=None):
-        return _FakeEachResultRule(rule_id, action, config or {})
-    return create_rule

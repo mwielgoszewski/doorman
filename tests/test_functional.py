@@ -1068,6 +1068,7 @@ class TestUpdateRule:
         r = Rule(
             name='Test-Rule',
             alerters=['debug'],
+            description='A test rule',
             conditions=rule_conds
         )
         db.session.add(r)

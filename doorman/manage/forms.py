@@ -138,6 +138,7 @@ class RuleForm(Form):
     name = StringField('Rule Name', validators=[DataRequired()])
     alerters = SelectMultipleField('Alerters', default=None, choices=[
     ])
+    description = TextAreaField('Description', validators=[Optional()])
     conditions = HiddenJSONField('Conditions')
 
     def set_choices(self):

@@ -8,6 +8,11 @@
                     <tbody>
 
                         <tr>
+                            <th width="15%">Description</th>
+                            <td width="85%">{{ rule.description }}</td>
+                        </tr>
+
+                        <tr>
                             <th width="15%">Alerters</th>
                             <td width="85%">{{ rule.alerters | join(', ') }}</td>
                         </tr>

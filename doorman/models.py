@@ -443,10 +443,12 @@ class Rule(SurrogatePK, Model):
 
     name = Column(db.String, nullable=False)
     alerters = Column(ARRAY(db.String), nullable=False)
+    description = Column(db.String, nullable=True)
     conditions = Column(JSONB)
 
-    def __init__(self, name, alerters, conditions=None):
+    def __init__(self, name, alerters, description=None, conditions=None):
         self.name = name
+        self.description = description
         self.alerters = alerters
         self.conditions = conditions
 

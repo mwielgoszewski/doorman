@@ -468,6 +468,7 @@ def add_rule():
     if form.validate_on_submit():
         rule = Rule(name=form.name.data,
                     alerters=form.alerters.data,
+                    description=form.description.data,
                     conditions=form.conditions.data)
         rule.save()
         reload_rules.delay()
@@ -487,6 +488,7 @@ def rule(rule_id):
     if form.validate_on_submit():
         rule = rule.update(name=form.name.data,
                            alerters=form.alerters.data,
+                           description=form.description.data,
                            conditions=form.conditions.data)
         reload_rules.delay()
         return redirect(url_for('manage.rule', rule_id=rule.id))

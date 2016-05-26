@@ -335,15 +335,6 @@ class ResultLog(SurrogatePK, Model):
         elif node_id:
             self.node_id = node_id
 
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'timestamp': self.timestamp,
-            'action': self.action,
-            'columns': self.columns,
-            'node': self.node.to_dict(),
-        }
-
 
 class StatusLog(SurrogatePK, Model):
 

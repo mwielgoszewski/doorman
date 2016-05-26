@@ -1049,3 +1049,102 @@ class TestUpdateRule:
         app.rule_manager.load_rules()
         condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
         assert sorted(condition_classes) == ['EqualCondition', 'OrCondition']
+
+
+class TestRuleEndToEnd:
+
+    def test_rule_end_to_end(self, db, node, app, testapp):
+        """
+        This test is rather complicated, but is aimed at testing the end-to-end
+        behavior of a rule.  Essentially, we create a dummy alerter that saves
+        when it's called, and then perform the following steps:
+            - Add a rule to the application through the API
+            - Send a result log that should trigger this rule
+            - Verify that the alerter was called with the appropriate arguments
+        """
+        from doorman.models import Rule
+        from doorman.plugins import AbstractAlerterPlugin
+        from doorman.tasks import analyze_result
+
+        # Add a dummy alerter
+        class DummyAlerter(AbstractAlerterPlugin):
+            def __init__(self, *args, **kwargs):
+                super(DummyAlerter, self).__init__(*args, **kwargs)
+                self.calls = []
+
+            def handle_alert(self, node, match):
+                self.calls.append((node, match))
+
+        # This is a bit ugly :-(
+        dummy_alerter = DummyAlerter()
+        app.config['DOORMAN_ALERTER_PLUGINS']['dummy'] = ('fake', {})
+        app.rule_manager.alerters = {
+            'dummy': dummy_alerter,
+        }
+
+        # Add a rule to the application
+        rule = """
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "equal",
+              "value": "dummy-query"
+            }
+          ]
+        }
+        """
+
+        resp = testapp.post(url_for('manage.add_rule'), {
+            'name': 'Test-Rule',
+            'alerters': 'dummy',
+            'conditions': rule,
+        })
+        assert resp.status_int == 302       # Redirect on success
+        assert Rule.query.count() == 1
+
+        # Send a log that should trigger this rule.
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "diffResults": {
+                "added": [
+                  {
+                    "column_name": "column_value",
+                  }
+                ],
+                "removed": ""
+              },
+              "name": "dummy-query",
+              "hostIdentifier": "hostname.local",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s')
+            }
+        ]
+
+        # Patch the task function to just call directly - i.e. not delay
+        def immediately_analyze(*args, **kwargs):
+            return analyze_result(*args, **kwargs)
+
+        with mock.patch.object(analyze_result, 'delay', new=immediately_analyze):
+            resp = testapp.post_json(url_for('api.logger'), {
+                'node_key': node.node_key,
+                'data': data,
+                'log_type': 'result',
+            })
+
+        # Assert that the alerter has triggered, and that it gave the right arguments.
+        assert len(dummy_alerter.calls) == 1
+        assert dummy_alerter.calls[0][0] == node.to_dict()
+        assert dummy_alerter.calls[0][1] == {
+            'name': 'dummy-query',
+            'action': 'added',
+            'timestamp': now.replace(microsecond=0),
+            'columns': {
+              'column_name': 'column_value',
+            },
+        }

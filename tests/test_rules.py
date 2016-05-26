@@ -290,7 +290,7 @@ class TestFunctional:
     def setup_method(self, _method):
         logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    def test_will_alert(self):
+    def test_will_alert(self, node):
         query = json.loads("""
         {
           "condition": "AND",
@@ -318,42 +318,39 @@ class TestFunctional:
         network.parse_query(query, alerters=['debug'], rule_name='test-rule')
 
         # Should trigger the top-level alert, above
-        bad_input = RuleInput(result_log={
+        now = dt.datetime.utcnow()
+        bad_input = {
             'name': 'packs/osx-attacks/Whitesmoke',
-            'timestamp': dt.datetime.now(),
             'action': 'added',
+            'timestamp': now,
             'columns': {
                 'path': '/LaunchAgents/com.whitesmoke.uploader.plist',
                 'name': 'com.whitesmoke.uploader.plist',
                 # Remainder omitted
             },
-        }, node={
-            'host_identifier': 'foo',
-        })
+        }
 
         # Should *not* trigger the alert, above.
-        good_input = RuleInput(result_log={
+        good_input = {
             'name': 'other-query',
-            'timestamp': dt.datetime.now(),
             'action': 'added',
+            'timestamp': now,
             'columns': {
-                'a_column': 'column_value',
+                'a_column': 'the_value',
             },
-        }, node={
-            'host_identifier': 'foo',
-        })
+        }
 
-        alerts = network.process(good_input)
+        alerts = network.process(good_input, node)
         assert len(alerts) == 0
 
-        alerts = network.process(bad_input)
+        alerts = network.process(bad_input, node)
         assert list(alerts) == [('debug', 'test-rule')]
 
         # Re-process the good input to assert that we don't continue to alert
         # on good input after a bad one...
-        alerts = network.process(good_input)
+        alerts = network.process(good_input, node)
         assert len(alerts) == 0
 
         # ... and that we *do* continue to alert on bad input.
-        alerts = network.process(bad_input)
+        alerts = network.process(bad_input, node)
         assert list(alerts) == [('debug', 'test-rule')]

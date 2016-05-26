@@ -112,18 +112,28 @@ class RuleManager(object):
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """
+        from doorman.utils import extract_results
+
         # Need to lazy-load rules
         if not self.loaded_rules:
             self.load_rules()
             self.loaded_rules = True
 
-        alerts = self.network.process(RuleInput(
-            result_log=entry.to_dict(),
-            node=node.to_dict(),
-        ))
+        to_trigger = []
+        for name, action, columns, timestamp in extract_results(entry):
+            entry = {
+                'name': name,
+                'action': action,
+                'timestamp': timestamp,
+                'columns': columns,
+            }
+            alerts = self.network.process(entry, node)
+            to_trigger.append((alerts, entry))
 
-        for alerter, rule_name in alerts:
-            self.alerters[alerter].handle_alert(node, result_log.to_dict())
+        for alerts, entry in to_trigger:
+            for alerter, rule_name in alerts:
+                # TODO: pass 'rule_name' somehow
+                self.alerters[alerter].handle_alert(node, entry)
 
 
 def make_celery(app, celery):

@@ -59,7 +59,9 @@ class Network(object):
     def make_alert_condition(self, alert, dependent, rule_name=None):
         self.alert_conditions.append((alert, dependent, rule_name))
 
-    def process(self, input):
+    def process(self, entry, node):
+        input = RuleInput(result_log=entry, node=node)
+
         # Step 1: Mark all conditions as 'not evaluated'.
         for condition in self.conditions.values():
             condition.evaluated = False

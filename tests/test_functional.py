@@ -994,6 +994,58 @@ class TestAddRule:
 
         assert mock_delay.called
 
+    def test_supports_custom_operators(self, node, app, testapp):
+        # Add a rule to the application
+        rule = """
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "matches_regex",
+              "value": ".*"
+            },
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "not_matches_regex",
+              "value": ".*"
+            },
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_matches_regex",
+              "value": ".*"
+            },
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_not_matches_regex",
+              "value": ".*"
+            },
+          ]
+        }
+        """
+
+        resp = testapp.post(url_for('manage.add_rule'), {
+            'name': 'Example-Rule',
+            'alerters': 'debug',
+            'conditions': json.dumps(rule),
+        })
+
+        print resp.body
+        assert resp.status_int == 302       # Redirect on success
+        assert Rule.query.count() == 1
+
 
 class TestUpdateRule:
 

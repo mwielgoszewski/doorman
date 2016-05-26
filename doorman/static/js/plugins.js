@@ -123,6 +123,43 @@ $(function() {
             CUSTOM_LANG['column_' + op] = QueryBuilder.regional.en.operators[op];
         });
 
+        // Custom operators
+        Array.prototype.push.apply(SUPPORTED_OPERATOR_NAMES, ['matches_regex', 'not_matches_regex']);
+        Array.prototype.push.apply(SUPPORTED_OPERATORS, [
+            {
+                type: 'matches_regex',
+                nb_inputs: 1,
+                multiple: true,
+                apply_to: ['string'],
+            },
+            {
+                type: 'not_matches_regex',
+                nb_inputs: 1,
+                multiple: true,
+                apply_to: ['string'],
+            },
+        ]);
+        CUSTOM_LANG['matches_regex'] = 'matches regex';
+        CUSTOM_LANG['not_matches_regex'] = "doesn't match regex";
+
+        Array.prototype.push.apply(SUPPORTED_COLUMN_OPERATORS, ['column_matches_regex', 'column_not_matches_regex']);
+        Array.prototype.push.apply(COLUMN_OPERATORS, [
+            {
+                type: 'column_matches_regex',
+                nb_inputs: 2,
+                multiple: true,
+                apply_to: ['string'],
+            },
+            {
+                type: 'column_not_matches_regex',
+                nb_inputs: 2,
+                multiple: true,
+                apply_to: ['string'],
+            },
+        ]);
+        CUSTOM_LANG['column_matches_regex'] = 'matches regex';
+        CUSTOM_LANG['column_not_matches_regex'] = "doesn't match regex";
+
         // Get existing rules, if any.
         var existingRules;
         try {

@@ -7,7 +7,9 @@ from collections import defaultdict
 from doorman.rules import (
     BaseCondition,
     EqualCondition,
+    MatchesRegexCondition,
     Network,
+    NotMatchesRegexCondition,
     RuleInput,
 )
 
@@ -283,6 +285,19 @@ class TestBaseCondition:
         condition.run(DUMMY_INPUT)
 
         assert condition.runs == 1
+
+
+class TestRegexConditions:
+
+    def test_matches_regex(self):
+        cond = MatchesRegexCondition('unused', r'a+b+')
+        assert cond.compare('aaaaaabb') is True
+        assert cond.compare('caaaabbb') is False
+
+    def test_not_matches_regex(self):
+        cond = NotMatchesRegexCondition('unused', r'c+d')
+        assert cond.compare('ccccccd') is False
+        assert cond.compare('abcdddd') is True
 
 
 class TestFunctional:

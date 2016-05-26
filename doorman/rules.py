@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import logging
 from collections import namedtuple
 
@@ -308,6 +309,26 @@ class GreaterEqualCondition(LogicCondition):
         return self.expected >= value
 
 
+class MatchesRegexCondition(LogicCondition):
+    def __init__(self, key, expected, **kwargs):
+        # Pre-compile the 'expected' value - the regex.
+        expected = re.compile(expected)
+        super(MatchesRegexCondition, self).__init__(key, expected, **kwargs)
+
+    def compare(self, value):
+        return self.expected.match(value) is not None
+
+
+class NotMatchesRegexCondition(LogicCondition):
+    def __init__(self, key, expected, **kwargs):
+        # Pre-compile the 'expected' value - the regex.
+        expected = re.compile(expected)
+        super(NotMatchesRegexCondition, self).__init__(key, expected, **kwargs)
+
+    def compare(self, value):
+        return self.expected.match(value) is None
+
+
 # Needs to go at the end
 OPERATOR_MAP = {
     'equal': EqualCondition,
@@ -324,4 +345,6 @@ OPERATOR_MAP = {
     'less_or_equal': LessEqualCondition,
     'greater': GreaterCondition,
     'greater_or_equal': GreaterEqualCondition,
+    'matches_regex': MatchesRegexCondition,
+    'not_matches_regex': NotMatchesRegexCondition,
 }

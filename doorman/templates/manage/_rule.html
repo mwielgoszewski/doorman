@@ -15,7 +15,26 @@
                         <tr>
                             <th width="15%">Conditions</th>
                             {% if rule.conditions %}
-                            <td width="85%"><pre><code>{{ rule.conditions | tojson }}</code></pre></td>
+                            <td width="85%">
+                                {{ rule.conditions.condition }}
+                                <ul>
+                                {% set group = rule.conditions %}
+                                {%- for item in group.rules recursive %}
+                                    <li>
+                                        {%- if item.rules -%}
+                                            {{ item.condition }}<br/>
+                                            <ul>{{ loop(item.rules) }}</ul>
+                                        {%- else -%}
+                                            {%- if item.operator.startswith('column_') %}
+                                                Column "{{ item.value[0] }}" {{ item.operator[7:] | pretty_operator }} "{{ item.value[1] }}"
+                                            {%- else -%}
+                                                {{ item.id | pretty_field }} {{ item.operator | pretty_operator }} "{{ item.value }}"
+                                            {%- endif %}
+                                        {%- endif -%}
+                                    </li>
+                                {%- endfor %}
+                                </ul>
+                            </td>
                             {% else %}
                             <td width="85%"><i>No conditions</i></td>
                             {% endif %}

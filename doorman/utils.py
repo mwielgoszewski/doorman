@@ -173,6 +173,43 @@ def get_node_health(node):
         return ''
 
 
+# Not super-happy that we're duplicating this both here and in the JS, but I
+# couldn't think of a nice way to pass from JS --> Python (or the other
+# direction).
+PRETTY_OPERATORS = {
+    'equal': 'equals',
+    'not_equal': "doesn't equal",
+    'begins_with': 'begins with',
+    'not_begins_with': "doesn't begins with",
+    'contains': 'contains',
+    'not_contains': "doesn't contain",
+    'ends_with': 'ends with',
+    'not_ends_with': "doesn't end with",
+    'is_empty': 'is empty',
+    'is_not_empty': 'is not empty',
+    'less': 'less than',
+    'less_or_equal': 'less than or equal',
+    'greater': 'greater than',
+    'greater_or_equal': 'greater than or equal',
+    'matches_regex': 'matches regex',
+    'not_matches_regex': "doesn't match regex",
+}
+
+def pretty_operator(cond):
+    return PRETTY_OPERATORS.get(cond, cond)
+
+
+PRETTY_FIELDS = {
+    'query_name': 'Query name',
+    'action': 'Action',
+    'host_identifier': 'Host identifier',
+    'timestamp': 'Timestamp',
+}
+
+def pretty_field(field):
+    return PRETTY_FIELDS.get(field, field)
+
+
 # Since 'string.printable' includes control characters
 PRINTABLE = string.ascii_letters + string.digits + string.punctuation + ' '
 

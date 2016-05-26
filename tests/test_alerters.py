@@ -19,25 +19,49 @@ class TestPagerDutyAlerter:
             'service_key': self.service_key,
         }
 
-    def test_will_make_request(self):
+    def test_will_make_request(self, node, rule):
         """ Simple test to ensure that there's no serialization or syntax errors. """
-        resp = MockResponse(ok=True, content='blah')
+        match = RuleMatch(
+            rule=rule,
+            node=node.to_dict(),
+            result={
+                'name': 'foo',
+                'action': 'added',
+                'timestamp': 'bar',
+                'columns': {'boo': 'baz', 'kung': 'bloo'},
+            }
+        )
 
+        resp = MockResponse(ok=True, content='blah')
         with mock.patch('requests.post', return_value=resp) as pmock:
             alerter = PagerDutyAlerter(self.config)
-            alerter.handle_alert({'node': True}, {'match': True})
+            alerter.handle_alert(node.to_dict(), match)
 
         assert pmock.called
 
-        args, _ = pmock.call_args
+        args, kwargs = pmock.call_args
         assert args[0] == 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'
 
-    def test_will_pass_service_key(self):
-        resp = MockResponse(ok=True, content='blah')
+        assert rule.name in kwargs['data']
+        assert 'boo' in kwargs['data']
+        assert 'baz' in kwargs['data']
 
+    def test_will_pass_service_key(self, node, rule):
+        match = RuleMatch(
+            rule=rule,
+            node=node.to_dict(),
+            result={
+                'name': 'foo',
+                'action': 'added',
+                'timestamp': 'bar',
+                'columns': {'boo': 'baz', 'kung': 'bloo'},
+            }
+        )
+
+        resp = MockResponse(ok=True, content='blah')
         with mock.patch('requests.post', return_value=resp) as pmock:
             alerter = PagerDutyAlerter(self.config)
-            alerter.handle_alert({'node': True}, {'match': True})
+            alerter.handle_alert(node.to_dict(), match)
 
         assert pmock.called
 

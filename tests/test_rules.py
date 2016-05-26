@@ -345,7 +345,7 @@ class TestFunctional:
         assert len(alerts) == 0
 
         alerts = network.process(bad_input, node)
-        assert list(alerts) == [('debug', 1), ('debug', 2)]
+        assert sorted(alerts, key=lambda v: v[1]) == [('debug', 1), ('debug', 2)]
 
         # Re-process the good input to assert that we don't continue to alert
         # on good input after a bad one...
@@ -354,4 +354,4 @@ class TestFunctional:
 
         # ... and that we *do* continue to alert on bad input.
         alerts = network.process(bad_input, node)
-        assert list(alerts) == [('debug', 1), ('debug', 2)]
+        assert sorted(alerts, key=lambda v: v[1]) == [('debug', 1), ('debug', 2)]

@@ -466,11 +466,10 @@ def add_rule():
     form.set_choices()
 
     if form.validate_on_submit():
-        rule = Rule(type=form.type.data,
-                    name=form.name.data,
-                    action=form.action.data,
+        rule = Rule(name=form.name.data,
                     alerters=form.alerters.data,
-                    config=form.config.data)
+                    description=form.description.data,
+                    conditions=form.conditions.data)
         rule.save()
         reload_rules.delay()
 
@@ -487,11 +486,10 @@ def rule(rule_id):
     form = UpdateRuleForm(request.form)
 
     if form.validate_on_submit():
-        rule = rule.update(type=form.type.data,
-                           name=form.name.data,
-                           action=form.action.data,
+        rule = rule.update(name=form.name.data,
                            alerters=form.alerters.data,
-                           config=form.config.data)
+                           description=form.description.data,
+                           conditions=form.conditions.data)
         reload_rules.delay()
         return redirect(url_for('manage.rule', rule_id=rule.id))
 

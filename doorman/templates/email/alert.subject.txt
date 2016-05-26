@@ -1,1 +1,1 @@
-{{ prefix | trim }} {{ node.host_identifier }} {{ rule.name }} ({{ match.action }})
+{{ prefix | trim }} {{ node.host_identifier }} {{ match.rule.name }} ({{ match.result.action }})

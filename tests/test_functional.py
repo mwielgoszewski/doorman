@@ -994,18 +994,82 @@ class TestAddRule:
 
         assert mock_delay.called
 
+    def test_supports_custom_operators(self, node, app, testapp):
+        # Add a rule to the application
+        rule = """
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "matches_regex",
+              "value": ".*"
+            },
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "not_matches_regex",
+              "value": ".*"
+            },
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_matches_regex",
+              "value": ".*"
+            },
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_not_matches_regex",
+              "value": ".*"
+            },
+          ]
+        }
+        """
+
+        resp = testapp.post(url_for('manage.add_rule'), {
+            'name': 'Example-Rule',
+            'alerters': 'debug',
+            'conditions': json.dumps(rule),
+        })
+
+        assert resp.status_int == 302       # Redirect on success
+        assert Rule.query.count() == 1
+
 
 class TestUpdateRule:
 
     def test_will_reload_rules(self, db, node, app, testapp):
         from doorman.tasks import reload_rules
 
+        rule_conds = {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "query_name",
+              "field": "query_name",
+              "type": "string",
+              "input": "text",
+              "operator": "equal",
+              "value": "foo",
+            },
+          ],
+        }
+
         r = Rule(
-            type='blacklist',
-            name='Test Rule',
-            action=Rule.BOTH,
+            name='Test-Rule',
             alerters=['debug'],
-            config={"field_name": "foo", "blacklist": []}
+            description='A test rule',
+            conditions=rule_conds
         )
         db.session.add(r)
         db.session.commit()
@@ -1013,26 +1077,133 @@ class TestUpdateRule:
         # Manually reload the rules here, and verify that we have the right
         # rule in our list
         app.rule_manager.load_rules()
-        assert len(app.rule_manager.rules) == 1
-        assert app.rule_manager.rules[0][0].action == Rule.BOTH
+        assert len(app.rule_manager.network.conditions) == 2
+
+        condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
+        assert sorted(condition_classes) == ['AndCondition', 'EqualCondition']
 
         # Fake wrapper that just calls reload
         def real_reload(*args, **kwargs):
             app.rule_manager.load_rules()
 
         # Update the rule
+        rule_conds['condition'] = 'OR'
         with mock.patch.object(reload_rules, 'delay', wraps=real_reload) as mock_delay:
             resp = testapp.post(url_for('manage.rule', rule_id=r.id), {
-                'name': 'Test Rule',
-                'type': 'blacklist',
-                'action': Rule.ADDED,
+                'name': 'Test-Rule',
                 'alerters': 'debug',
-                'config': '{"field_name": "foo", "blacklist": []}',
+                'conditions': json.dumps(rule_conds),
             })
 
         assert mock_delay.called
 
         # Trigger a manual reload again, and verify that it's been updated
         app.rule_manager.load_rules()
-        assert len(app.rule_manager.rules) == 1
-        assert app.rule_manager.rules[0][0].action == Rule.ADDED
+        condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
+        assert sorted(condition_classes) == ['EqualCondition', 'OrCondition']
+
+
+class TestRuleEndToEnd:
+
+    def test_rule_end_to_end(self, db, node, app, testapp):
+        """
+        This test is rather complicated, but is aimed at testing the end-to-end
+        behavior of a rule.  Essentially, we create a dummy alerter that saves
+        when it's called, and then perform the following steps:
+            - Add a rule to the application through the API
+            - Send a result log that should trigger this rule
+            - Verify that the alerter was called with the appropriate arguments
+        """
+        from doorman.models import Rule
+        from doorman.plugins import AbstractAlerterPlugin
+        from doorman.rules import RuleMatch
+        from doorman.tasks import analyze_result
+
+        # Add a dummy alerter
+        class DummyAlerter(AbstractAlerterPlugin):
+            def __init__(self, *args, **kwargs):
+                super(DummyAlerter, self).__init__(*args, **kwargs)
+                self.calls = []
+
+            def handle_alert(self, node, match):
+                self.calls.append((node, match))
+
+        dummy_alerter = DummyAlerter()
+
+        # This patches the appropriate config to create the 'dummy' alerter.  This is a bit ugly :-(
+        # NOTE: we must use the patch methods here, or it will scribble over
+        # the app configuration for future tests (which we don't want).
+        with mock.patch.dict(app.config, {'DOORMAN_ALERTER_PLUGINS': {'dummy': ('fake', {})}}):
+            with mock.patch.dict(app.rule_manager.alerters, {'dummy': dummy_alerter}, clear=True):
+
+                # Add a rule to the application
+                rule = """
+                {
+                  "condition": "AND",
+                  "rules": [
+                    {
+                      "id": "query_name",
+                      "field": "query_name",
+                      "type": "string",
+                      "input": "text",
+                      "operator": "equal",
+                      "value": "dummy-query"
+                    }
+                  ]
+                }
+                """
+
+                resp = testapp.post(url_for('manage.add_rule'), {
+                    'name': 'Test-Rule',
+                    'alerters': 'dummy',
+                    'conditions': rule,
+                })
+
+                assert resp.status_int == 302       # Redirect on success
+                assert Rule.query.count() == 1
+
+                # Send a log that should trigger this rule.
+                now = dt.datetime.utcnow()
+                data = [
+                    {
+                      "diffResults": {
+                        "added": [
+                          {
+                            "column_name": "column_value",
+                          }
+                        ],
+                        "removed": ""
+                      },
+                      "name": "dummy-query",
+                      "hostIdentifier": "hostname.local",
+                      "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+                      "unixTime": now.strftime('%s')
+                    }
+                ]
+
+                # Patch the task function to just call directly - i.e. not delay
+                def immediately_analyze(*args, **kwargs):
+                    return analyze_result(*args, **kwargs)
+
+                with mock.patch.object(analyze_result, 'delay', new=immediately_analyze):
+                    resp = testapp.post_json(url_for('api.logger'), {
+                        'node_key': node.node_key,
+                        'data': data,
+                        'log_type': 'result',
+                    })
+
+                # Assert that the alerter has triggered, and that it gave the right arguments.
+                assert len(dummy_alerter.calls) == 1
+                assert dummy_alerter.calls[0][0] == node.to_dict()
+
+                rule = Rule.query.first()
+                assert dummy_alerter.calls[0][1].rule.id == rule.id
+                assert dummy_alerter.calls[0][1].node == node.to_dict()
+                assert dummy_alerter.calls[0][1].result == {
+                    'name': 'dummy-query',
+                    'action': 'added',
+                    'timestamp': now.replace(microsecond=0),
+                    'columns': {
+                      'column_name': 'column_value',
+                    },
+                }

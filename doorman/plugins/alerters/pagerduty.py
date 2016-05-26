@@ -32,7 +32,9 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
 
         details = {
             'node': node,
-            'match': match,
+            'rule_name': match.rule.name,
+            'action': match.result['action'],
+            'match': match.result['columns'],
         }
         headers = {
             'Content-type': 'application/json',

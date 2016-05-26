@@ -1,186 +1,350 @@
 # -*- coding: utf-8 -*-
+import re
+import logging
 from collections import namedtuple
 
-from doorman.models import Rule
-from doorman.utils import extract_results
+
+logger = logging.getLogger(__name__)
 
 
-# Note: the fields are:
-#   - rule_id               The ID of the Rule that created this match
-#   - node                  The node that this Rule match applies to
-#   - action                The action that took place ('added', 'removed', or None)
-#   - match                 Some additional details about this match (any type)
-RuleMatch = namedtuple('RuleMatch', ['rule_id', 'node', 'action', 'match'])
+RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
+RuleMatch = namedtuple('RuleMatch', ['rule', 'result', 'node'])
 
 
-class BaseRule(object):
+class Network(object):
     """
-    BaseRule is the base class for all rules in Doorman. It defines the
-    interface that should be implemented by classes that know how to take
-    incoming log data and determine if a rule has been triggered.
+    A grouping of condition nodes.  Contains the base logic for running the
+    conditions on some input.
     """
-    def __init__(self, rule_id, action, config):
-        self.rule_id = rule_id
-        self.node_name = config.get('node_name')
+    def __init__(self):
+        self.conditions = {}
+        self.alert_conditions = []
 
-    def handle_log_entry(self, entry, node):
+    def make_condition(self, klass, *args, **kwargs):
         """
-        This function processes an incoming log entry.  It normalizes the data,
-        validates the node name (if that filter was given), and then dispatches
-        to the underlying rule.
-
-        Note: the entry passed in contains a `hostIdentifier` field sent by the
-        client, and `node` contains a `host_identifier` field that was
-        originally stored when the node enrolled.  Note that the
-        `hostIdentifier` field in the incoming entry may have changed, e.g. if
-        the user changes their hostname.  All the rules here use the node's
-        (original) `host_identifier` value for comparisons.
-
-        :param entry: The full request received from the client (i.e. including "node_key", etc.)
-        :param node: Information about the sending node, retrieved from the database.
-        :type entry: dict
-        :type node: dict, created from the Node model
-
-        :returns: A list of matches
+        Memoizing constructor for conditions.  Uses the input config as the cache key.
         """
-        if self.node_name is not None and node['host_identifier'] != self.node_name:
-            return []
+        # Calculate the memoization key.  We do this by creating a 3-tuple of
+        # (condition class name, args, kwargs).  There is some nuance to this,
+        # though: we need to put args/kwargs in the right format.  We
+        # recursively iterate through lists/dicts and convert them to tuples,
+        # and extract the memoization key from instances of BaseCondition.
+        def tupleify(obj):
+            if isinstance(obj, BaseCondition):
+                return obj.__network_memo_key
+            elif isinstance(obj, tuple):
+                return tuple(tupleify(x) for x in obj)
+            elif isinstance(obj, list):
+                return tuple(tupleify(x) for x in obj)
+            elif isinstance(obj, dict):
+                items = ((tupleify(k), tupleify(v)) for k, v in obj.items())
+                return tuple(sorted(items))
+            else:
+                return obj
 
-        matches = []
-        for result in extract_results(entry):
-            res = self.handle_result(result, node)
-            if res is not None:
-                matches.extend(res)
+        args_tuple = tupleify(args)
+        kwargs_tuple = tupleify(kwargs)
 
-        return matches
+        key = (klass.__name__, args_tuple, kwargs_tuple)
+        if key in self.conditions:
+            return self.conditions[key]
 
-    def handle_result(self, result, node):
+        # Instantiate the condition class.  Also, save the memoization key on
+        # the class, so it can be retrieved (above).
+        inst = klass(*args, **kwargs)
+        inst.__network_memo_key = key
+
+        # Save the condition
+        self.conditions[key] = inst
+        return inst
+
+    def make_alert_condition(self, alert, dependent, rule_id=None):
+        self.alert_conditions.append((alert, dependent, rule_id))
+
+    def process(self, entry, node):
+        input = RuleInput(result_log=entry, node=node)
+
+        # Step 1: Mark all conditions as 'not evaluated'.
+        for condition in self.conditions.values():
+            condition.evaluated = False
+
+        # Step 2: For each alerter condition, we tell it to 'process' a new
+        # input.  This will propagate "upstream" to each condition node and
+        # evaluate the dependent chain of conditions.  We then check if the
+        # condition has triggered.
+        alerts = set()
+        for (alert, upstream, rule_id) in self.alert_conditions:
+            if upstream.run(input):
+                alerts.add((alert, rule_id))
+
+        # Step 3: Return all alerts to the caller.
+        return alerts
+
+    def parse_query(self, query, alerters=None, rule_id=None):
         """
-        This function should be implemented by anything that wishes to handle a
-        single result from a log entry.
+        Parse a query output from jQuery.QueryBuilder.
+        """
+        def parse_condition(d):
+            op = d['operator']
+            value = d['value']
+            
+            # If this is a "column operator" - i.e. operating on a particular
+            # value in a column - then we need to give a custom extraction
+            # function that knows how to get this value from a query.
+            column_name = None
+            if d['field'] == 'column':
+                # Strip 'column_' prefix to get the 'real' operator.
+                op = op[7:]
 
-        :param result: A single query result, as returned by extract_results
-        :param node: Information about the sending node, retrieved from the database.
-        :type result: Field
-        :type node: dict, created from the Node model
+                # The 'value' array will look like ['column_name', 'actual value']
+                column_name, value = value
+
+            klass = OPERATOR_MAP.get(op)
+            if not klass:
+                raise ValueError("Unsupported operator: {0}".format(op))
+            
+            inst = self.make_condition(klass, d['field'], value, column_name=column_name)
+            return inst
+        
+        def parse_group(d):
+            if len(d['rules']) == 0:
+                raise ValueError("A group contains no rules")
+
+            upstreams = [parse(r) for r in d['rules']]
+
+            condition = d['condition']
+            if condition == 'AND':
+                return self.make_condition(AndCondition, upstreams)
+            elif condition == 'OR':
+                return self.make_condition(OrCondition, upstreams)
+
+            raise ValueError("Unknown condition: {0}".format(condition))
+
+        def parse(d):
+            if 'condition' in d:
+                return parse_group(d)
+            
+            return parse_condition(d)
+
+        # The root is always a group
+        root = parse_group(query)
+
+        # Add alert condition(s) that trigger when this group does
+        if alerters is not None:
+            for alert in alerters:
+                self.make_alert_condition(alert, root, rule_id)
+
+
+class BaseCondition(object):
+    """
+    Base class for conditions.  Contains the logic for adding a dependency to a
+    condition and pretty-printing one.
+    """
+    def __init__(self):
+        self.evaluated = False
+        self.cached_value = None
+        self.network = None
+
+    def init_network(self, network):
+        self.network = network
+
+    def run(self, input):
+        """
+        Runs this condition if it hasn't been evaluated.
+        """
+        assert isinstance(input, RuleInput)
+
+        logger.debug("Evaluating condition %r on input: %r", self, input)
+        if self.evaluated:
+            logger.debug("Returning cached value: %r", self.cached_value)
+            return self.cached_value
+
+        ret = self.local_run(input)
+        logger.debug("Condition %r returned value: %r", self, ret)
+        self.cached_value = ret
+        self.evaluated = True
+        return ret
+
+    def local_run(self, input):
+        """
+        Subclasses should implement this in order to run the condition's logic.
         """
         raise NotImplementedError()
 
-    def make_match(self, action, node, match):
-        """ Helper function to create a RuleMatch """
-        return RuleMatch(
-            rule_id=self.rule_id,
-            action=action,
-            node=node,
-            match=match
+    def __repr__(self):
+        return '<{0} (evaluated={1})>'.format(
+            self.__class__.__name__,
+            self.evaluated
         )
 
-    @staticmethod
-    def from_model(model):
-        """
-        Create a Rule from a model.
-        """
-        klass = RULE_MAPPINGS.get(model.type)
-        if klass is None:
-            # Warn instead of raising?  We shouldn't get here, since it
-            # shouldn't be possible to have saved a rule with an invalid type.
-            raise ValueError('Invalid rule type: {0}'.format(model.type))
 
-        # TODO: should validate required fields of config
-        return klass(model.id, model.action, model.config)
+class AndCondition(BaseCondition):
+    def __init__(self, upstream):
+        super(AndCondition, self).__init__()
+        self.upstream = upstream
 
-
-class EachResultRule(BaseRule):
-    """
-    Base class for rules that want to compare against every result in a query's
-    output.
-    """
-    def __init__(self, rule_id, action, config):
-        super(EachResultRule, self).__init__(rule_id, action, config)
-        self.action = action
-        self.query_name = config.get('query_name')
-
-    def handle_result(self, result, node):
-        if self.query_name is not None and result.name != self.query_name:
-            return []
-
-        if self.action != Rule.BOTH and self.action != result.action:
-            return []
-
-        res = self.handle_columns(result.action, result.columns, node)
-        if not res:
-            return []
-
-        return [res]
-
-    def handle_columns(self, action, columns, node):
-        """
-        This function should be implemented to match against each set of
-        columns that has been extracted.
-        """
-        raise NotImplementedError()
-
-
-class CompareRule(EachResultRule):
-    """
-    This is a simple helper class that will extract a value from the given
-    column set and pass it to a comparison function.  If it compares, it will
-    create and return a match.
-    """
-    def handle_columns(self, action, columns, node):
-        val = columns.get(self.field_name)
-        if self.compare(action, val, node):
-            return self.make_match(action, node, columns)
-
-    def compare(self, action, value, node):
-        raise NotImplementedError()
-
-
-class BlacklistRule(CompareRule):
-    """
-    BlacklistRule is a rule that will alert if the value of a field in a query
-    matches any item in a blacklist.
-    """
-    def __init__(self, rule_id, action, config):
-        super(BlacklistRule, self).__init__(rule_id, action, config)
-
-        self.field_name = config['field_name']
-        self.blacklist = config['blacklist']
-
-    def compare(self, action, value, node):
-        if value is None:
-            return False
-
-        return value in self.blacklist
-
-
-class WhitelistRule(CompareRule):
-    """
-    WhitelistRule is a rule that will alert if the value of a field in a query
-    does not matche any entry in a whitelist.
-    """
-    def __init__(self, rule_id, action, config):
-        super(WhitelistRule, self).__init__(rule_id, action, config)
-
-        self.field_name = config['field_name']
-        self.whitelist = config['whitelist']
-        self.ignore_null = config.get('ignore_null', False)
-
-    def compare(self, action, value, node):
-        if value is None:
-            # If we're ignoring null, we return "False" to indicate that this
-            # is not a 'match' of the rule.
-            if self.ignore_null:
+    def local_run(self, input):
+        for u in self.upstream:
+            if not u.run(input):
                 return False
 
-            return True
-
-        return value not in self.whitelist
+        return True
 
 
-# Note: should be at the end of the file
-RULE_MAPPINGS = {
-    'blacklist': BlacklistRule,
-    'whitelist': WhitelistRule,
+class OrCondition(BaseCondition):
+    def __init__(self, upstream):
+        super(OrCondition, self).__init__()
+        self.upstream = upstream
+
+    def local_run(self, input):
+        for u in self.upstream:
+            if u.run(input):
+                return True
+
+        return False
+
+
+class LogicCondition(BaseCondition):
+    def __init__(self, key, expected, column_name=None):
+        super(LogicCondition, self).__init__()
+        self.key = key
+        self.expected = expected
+        self.column_name = column_name
+
+    def local_run(self, input):
+        # If we have a 'column_name', we should use that to extract the value
+        # from the input's columns.  Otherwise, we have a whitelist of what we
+        # can get from the input.
+        if self.column_name is not None:
+            value = input.result_log['columns'].get(self.key)
+        elif self.key == 'query_name':
+            value = input.result_log['name']
+        elif self.key == 'timestamp':
+            value = input.result_log['timestamp']
+        elif self.key == 'action':
+            value = input.result_log['action']
+        elif self.key == 'host_identifier':
+            value = input.node['host_identifier']
+        else:
+            raise KeyError('Unknown key: {0}'.format(self.key))
+
+        # Pass to the actual logic function
+        logger.debug("Running logic condition %r: %r | %r", self, self.expected, value)
+        return self.compare(value)
+
+    def compare(self, value):
+        """
+        Subclasses should implement this to run the actual comparison.
+        """
+        raise NotImplementedError()
+
+
+class EqualCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected == value
+
+
+class NotEqualCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected != value
+
+
+class BeginsWithCondition(LogicCondition):
+    def compare(self, value):
+        return value.startswith(self.expected)
+
+
+class NotBeginsWithCondition(LogicCondition):
+    def compare(self, value):
+        return not value.startswith(self.expected)
+
+
+class ContainsCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected in value
+
+
+class NotContainsCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected not in value
+
+
+class EndsWithCondition(LogicCondition):
+    def compare(self, value):
+        return value.endswith(self.expected)
+
+
+class NotEndsWithCondition(LogicCondition):
+    def compare(self, value):
+        return not value.endswith(self.expected)
+
+
+class IsEmptyCondition(LogicCondition):
+    def compare(self, value):
+        return value == ''
+
+
+class IsNotEmptyCondition(LogicCondition):
+    def compare(self, value):
+        return value != ''
+
+
+class LessCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected < value
+
+
+class LessEqualCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected <= value
+
+
+class GreaterCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected > value
+
+
+class GreaterEqualCondition(LogicCondition):
+    def compare(self, value):
+        return self.expected >= value
+
+
+class MatchesRegexCondition(LogicCondition):
+    def __init__(self, key, expected, **kwargs):
+        # Pre-compile the 'expected' value - the regex.
+        expected = re.compile(expected)
+        super(MatchesRegexCondition, self).__init__(key, expected, **kwargs)
+
+    def compare(self, value):
+        return self.expected.match(value) is not None
+
+
+class NotMatchesRegexCondition(LogicCondition):
+    def __init__(self, key, expected, **kwargs):
+        # Pre-compile the 'expected' value - the regex.
+        expected = re.compile(expected)
+        super(NotMatchesRegexCondition, self).__init__(key, expected, **kwargs)
+
+    def compare(self, value):
+        return self.expected.match(value) is None
+
+
+# Needs to go at the end
+OPERATOR_MAP = {
+    'equal': EqualCondition,
+    'not_equal': NotEqualCondition,
+    'begins_with': BeginsWithCondition,
+    'not_begins_with': NotBeginsWithCondition,
+    'contains': ContainsCondition,
+    'not_contains': NotContainsCondition,
+    'ends_with': EndsWithCondition,
+    'not_ends_with': NotEndsWithCondition,
+    'is_empty': IsEmptyCondition,
+    'is_not_empty': IsNotEmptyCondition,
+    'less': LessCondition,
+    'less_or_equal': LessEqualCondition,
+    'greater': GreaterCondition,
+    'greater_or_equal': GreaterEqualCondition,
+    'matches_regex': MatchesRegexCondition,
+    'not_matches_regex': NotMatchesRegexCondition,
 }
-RULE_TYPES = list(RULE_MAPPINGS.keys())

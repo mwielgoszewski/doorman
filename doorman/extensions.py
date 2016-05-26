@@ -49,6 +49,8 @@ class LogTee(object):
 class RuleManager(object):
     def __init__(self, app=None):
         self.loaded_rules = False
+        self.network = None
+
         if app is not None:
             self.init_app(app)
 
@@ -83,8 +85,8 @@ class RuleManager(object):
 
     def load_rules(self):
         """ Load rules from the database. """
+        from doorman.rules import Network
         from doorman.models import Rule
-        from doorman.rules import RULE_MAPPINGS
         from sqlalchemy.exc import SQLAlchemyError
 
         self.rules = []
@@ -98,37 +100,54 @@ class RuleManager(object):
                 else:
                     raise
 
+        self.network = Network()
         for rule in all_rules:
             # Verify the alerters
             for alerter in rule.alerters:
                 if alerter not in self.alerters:
                     raise ValueError('No such alerter: "{0}"'.format(alerter))
 
-            klass = RULE_MAPPINGS[rule.type]
-            rule_instance = klass(rule.id, rule.action, rule.config or {})
-            self.rules.append((rule_instance, rule.alerters))
+            # Create the rule.
+            self.network.parse_query(rule.conditions, alerters=rule.alerters, rule_id=rule.id)
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """
+        from doorman.models import Rule
+        from doorman.rules import RuleMatch
+        from doorman.utils import extract_results
+
         # Need to lazy-load rules
         if not self.loaded_rules:
             self.load_rules()
             self.loaded_rules = True
 
-        alerts = defaultdict(list)
-        for rule, alerters in self.rules:
-            matches = rule.handle_log_entry(entry, node)
-            if not matches:
+        to_trigger = []
+        for name, action, columns, timestamp in extract_results(entry):
+            result = {
+                'name': name,
+                'action': action,
+                'timestamp': timestamp,
+                'columns': columns,
+            }
+            alerts = self.network.process(result, node)
+            if len(alerts) == 0:
                 continue
 
-            # Trigger alerts for each alerter on this rule
-            for alerter in alerters:
-                alerts[alerter].append((node, matches))
+            # Alerts is a set of (alerter name, rule id) tuples.  We convert
+            # these into RuleMatch instances, which is what our alerters are
+            # actually expecting.
+            for alerter, rule_id in alerts:
+                rule = Rule.get_by_id(rule_id)
 
-        for alerter, curr_alerts in alerts.items():
-            for (node, matches) in curr_alerts:
-                for match in matches:
-                    self.alerters[alerter].handle_alert(node, match)
+                to_trigger.append((alerter, RuleMatch(
+                    rule=rule,
+                    result=result,
+                    node=node
+                )))
+
+        # Now that we've collected all results, start triggering them.
+        for alerter, match in to_trigger:
+            self.alerters[alerter].handle_alert(node, match)
 
 
 def make_celery(app, celery):

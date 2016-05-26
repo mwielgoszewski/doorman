@@ -1042,7 +1042,6 @@ class TestAddRule:
             'conditions': json.dumps(rule),
         })
 
-        print resp.body
         assert resp.status_int == 302       # Redirect on success
         assert Rule.query.count() == 1
 

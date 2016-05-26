@@ -273,6 +273,7 @@ class Node(SurrogatePK, Model):
     def to_dict(self):
         # NOTE: deliberately not including any secret values in here, for now.
         return {
+            'id': self.id,
             'enrolled_on': self.enrolled_on,
             'host_identifier': self.host_identifier,
             'last_checkin': self.last_checkin,

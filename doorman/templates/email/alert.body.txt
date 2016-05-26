@@ -1,0 +1,13 @@
+A doorman alert was triggered: {{ rule.name }}
+
+Timestamp: {{ timestamp }}
+   Action: {{ match.action }}
+  Content:
+{%- for key, value in match.match | dictsort %}
+           {{ key }}: {{ value }}
+{%- endfor %}
+
+Review most recent activity for {{ node.host_identifier }} at {{ url_for('manage.node_activity', node_id=node.id, _external=True) }}.
+This rule's configuration may be reviewed at {{ url_for('manage.rule', rule_id=rule.id, _external=True) }}.
+
+---END doorman notification

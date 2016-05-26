@@ -3,6 +3,8 @@ from collections import namedtuple
 import json
 import mock
 
+from doorman.rules import RuleMatch
+from doorman.plugins.alerters.emailer import EmailAlerter
 from doorman.plugins.alerters.pagerduty import PagerDutyAlerter
 
 
@@ -42,3 +44,38 @@ class TestPagerDutyAlerter:
         _, kwargs = pmock.call_args
         data = json.loads(kwargs['data'])
         assert data['service_key'] == self.service_key
+
+
+class TestEmailerAlerter:
+    def setup_method(self, _method):
+        self.recipients = ['test@example.com']
+        self.config = {
+            'recipients': self.recipients,
+            'subject_prefix': '[Doorman Test] '
+        }
+
+    def test_will_email(self, node, rule, testapp):
+        from flask_mail import email_dispatched
+
+        match = RuleMatch(
+            rule_id=rule.id,
+            node=node.to_dict(),
+            action='added',
+            match={'boo': 'baz', 'kung': 'bloo'}
+        )
+
+        expected_subject = '[Doorman Test] {host_identifier} {name} ({action})'.format(
+            host_identifier=node.host_identifier,
+            name=rule.name,
+            action=match.action)
+
+        @email_dispatched.connect
+        def verify(message, app):
+            assert message.subject == expected_subject
+            assert self.recipients == message.recipients
+            assert rule.name in message.body
+            assert 'boo' in message.body
+            assert 'baz' in message.body
+
+        alerter = EmailAlerter(self.config)
+        alerter.handle_alert(node.to_dict(), match)

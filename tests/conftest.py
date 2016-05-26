@@ -10,7 +10,7 @@ from doorman.models import Rule
 from doorman.rules import BaseRule, EachResultRule
 from doorman.settings import TestConfig
 
-from .factories import NodeFactory
+from .factories import NodeFactory, RuleFactory
 
 
 @pytest.yield_fixture(scope='function')
@@ -75,6 +75,14 @@ def node(db):
     node = NodeFactory(host_identifier='foobar', enroll_secret='foobar')
     db.session.commit()
     return node
+
+
+@pytest.fixture
+def rule(db):
+    rule = RuleFactory(type='testrule', name='testrule', action='both',
+        alerters=[], config=[])
+    db.session.commit()
+    return rule
 
 
 class _FakeBaseRule(BaseRule):

@@ -6,7 +6,7 @@ from doorman.database import db
 from doorman.models import (
     Node, Pack, Query, Tag, FilePath,
     DistributedQuery, DistributedQueryTask, DistributedQueryResult,
-    ResultLog, StatusLog
+    ResultLog, StatusLog, Rule
 )
 
 
@@ -74,3 +74,9 @@ class StatusLogFactory(BaseFactory):
 
     class Meta:
         model = StatusLog
+
+
+class RuleFactory(BaseFactory):
+
+    class Meta:
+        model = Rule

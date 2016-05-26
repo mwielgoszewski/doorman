@@ -43,8 +43,8 @@ If you're not acting on the information you collect, what's the point? Doorman a
 Doorman allows supports alerting via the following methods:
 
 * PagerDuty
+* Email
 * Slack (coming soon!)
-* Email (coming soon!)
 * Log file (primarily for development)
 
 
@@ -88,6 +88,24 @@ The callback URL by default is `https://SERVER_NAME/oauth2callback`. The `SERVER
 # configuration
 
 Doorman's [default configuration](https://github.com/mwielgoszewski/doorman/blob/master/doorman/settings.py) can be overridden by setting the `DOORMAN_SETTINGS` environment variable to a configuration file.
+
+The following settings should be configured to get up and running:
+
+Setting       | Description
+--------------|------------
+`SECRET_KEY`  |  Flask's [secret_key](http://flask.pocoo.org/docs/0.10/api/#flask.Flask.secret_key). |
+`SQLALCHEMY_DATABASE_URI` |  The database URI that should be used for the connection. Example: <p><ul><li>`postgresql://localhost:5432/doorman`</li></ul></p> See the [Flask-SQLAlchemy](http://flask-sqlalchemy.pocoo.org/2.1/config/#configuration-keys) documentation for additional configuration settings.
+`BROKER_URL`  |  The Celery [broker URL](http://docs.celeryproject.org/en/latest/configuration.html#broker-url). Default: `redis://localhost:6379/0`
+`CELERY_RESULT_BACKEND`  |  The Celery [result backend URL](http://docs.celeryproject.org/en/latest/configuration.html#celery-result-backend). Default: `redis://localhost:6379/0`
+`DOORMAN_ENROLL_SECRET`  |  A list of valid enrollment keys to use. See osquery TLS [remoting settings](https://osquery.readthedocs.io/en/stable/deployment/remote/) for more information. By default, this list is empty.
+`DOORMAN_EXPECTS_UNIQUE_HOST_ID`  |  If osquery is deployed on endpoints to start with the `--host_identifier=uuid` cli flag, set this value to `True`. Default is `True`.
+`DOORMAN_CHECKIN_INTERVAL`  |  Time (in seconds) nodes are expected to check-in for configurations or call the distributed read endpoint. Nodes that fail to check-in within this time will be highlighted in red on the main nodes page.
+`DOORMAN_ENROLL_DEFAULT_TAGS`  |  A default set of tags to apply to newly enrolled nodes.
+`DOORMAN_AUTH_METHOD`  |  The authentication backend used to authenticate Doorman users (not osquery endpoints). May be one of: <p><ul><li>`None`</li><li>`google`</li><li>`doorman`</li></ul></p> Note, google and doorman must be wrapped in quotes. Default is `None`. See the [authentication] (#authentication) section above for more information.
+`DOORMAN_ALERTER_PLUGINS`  |
+`MAIL_DEFAULT_SENDER`  |
+
+
 
 # up and running (development mode)
 

@@ -70,14 +70,34 @@ class Config(object):
 
         # 'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
         #     # Required
-        #     'access_key': 'foobar',
         #     'service_key': 'foobar',
-        #
+        
         #     # Optional
         #     'client_url': 'https://doorman.domain.com',
         #     'key_format': 'doorman-security-{count}',
         # }),
+
+        # 'email': ('doorman.plugins.alerters.emailer.EmailAlerter', {
+        #     # Required
+        #     'recipients': [
+        #         # 'security@example.com',
+        #     ],
+
+        #     # Optional, see doorman/plugins/alerters/emailer.py for templates
+        #     'subject_prefix': '[Doorman]',
+        #     'subject_template': '',
+        #     'message_template': '',
+
+        # }),
     }
+
+    # MAIL_SERVER = 'localhost'
+    # MAIL_PORT = 25
+    # MAIL_USE_TLS = False
+    # MAIL_USE_SSL = False
+    # MAIL_USERNAME = None
+    # MAIL_PASSWORD = None
+    MAIL_DEFAULT_SENDER = 'doorman@localhost'
 
     # Doorman uses the WatchedFileHandler in logging.handlers module.
     # It is the responsibility of the system to rotate these logs on
@@ -129,14 +149,6 @@ class ProdConfig(Config):
 
     BROKER_URL = ''
     CELERY_RESULT_BACKEND = ''
-
-    GRAPHITE_ENABLED = True
-    GRAPHITE_PREFIX = 'prod.doorman'
-    GRAPHITE_HOST = ""
-    GRAPHITE_PORT = 2003
-    GRAPHITE_ALLOW = [
-        'api.*',
-    ]
 
 
 class DevConfig(Config):

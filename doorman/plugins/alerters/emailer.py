@@ -20,7 +20,6 @@ class EmailAlerter(AbstractAlerterPlugin):
         subject = render_template(
             self.subject_template,
             prefix=self.subject_prefix,
-            rule=match.rule,
             match=match,
             timestamp=dt.datetime.utcnow(),
             node=node
@@ -28,7 +27,6 @@ class EmailAlerter(AbstractAlerterPlugin):
 
         body = render_template(
             self.message_template,
-            rule=match.rule,
             match=match,
             timestamp=dt.datetime.utcnow(),
             node=node

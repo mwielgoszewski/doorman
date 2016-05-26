@@ -74,3 +74,14 @@ def node(db):
     node = NodeFactory(host_identifier='foobar', enroll_secret='foobar')
     db.session.commit()
     return node
+
+
+@pytest.fixture
+def rule(db):
+    rule = RuleFactory(
+        name='testrule',
+        alerters=[],
+        conditions={}
+    )
+    db.session.commit()
+    return rule

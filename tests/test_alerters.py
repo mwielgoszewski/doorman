@@ -58,16 +58,21 @@ class TestEmailerAlerter:
         from flask_mail import email_dispatched
 
         match = RuleMatch(
-            rule_id=rule.id,
+            rule=rule,
             node=node.to_dict(),
-            action='added',
-            match={'boo': 'baz', 'kung': 'bloo'}
+            result={
+                'name': 'foo',
+                'action': 'added',
+                'timestamp': 'bar',
+                'columns': {'boo': 'baz', 'kung': 'bloo'},
+            }
         )
 
         expected_subject = '[Doorman Test] {host_identifier} {name} ({action})'.format(
             host_identifier=node.host_identifier,
             name=rule.name,
-            action=match.action)
+            action=match.result['action']
+        )
 
         @email_dispatched.connect
         def verify(message, app):

@@ -315,8 +315,8 @@ class TestFunctional:
         }""")
 
         network = Network()
-        network.parse_query(query, alerters=['debug'], rule_name='test-rule')
-        network.parse_query(query, alerters=['debug'], rule_name='second-rule')
+        network.parse_query(query, alerters=['debug'], rule_id=1)
+        network.parse_query(query, alerters=['debug'], rule_id=2)
 
         # Should trigger the top-level alert, above
         now = dt.datetime.utcnow()
@@ -345,7 +345,7 @@ class TestFunctional:
         assert len(alerts) == 0
 
         alerts = network.process(bad_input, node)
-        assert list(alerts) == [('debug', 'test-rule'), ('debug', 'second-rule')]
+        assert list(alerts) == [('debug', 1), ('debug', 2)]
 
         # Re-process the good input to assert that we don't continue to alert
         # on good input after a bad one...
@@ -354,4 +354,4 @@ class TestFunctional:
 
         # ... and that we *do* continue to alert on bad input.
         alerts = network.process(bad_input, node)
-        assert list(alerts) == [('debug', 'test-rule'), ('debug', 'second-rule')]
+        assert list(alerts) == [('debug', 1), ('debug', 2)]

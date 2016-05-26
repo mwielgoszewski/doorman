@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 RuleInput = namedtuple('RuleInput', ['result_log', 'node'])
+RuleMatch = namedtuple('RuleMatch', ['rule', 'result', 'node'])
 
 
 class Network(object):
@@ -56,8 +57,8 @@ class Network(object):
         self.conditions[key] = inst
         return inst
 
-    def make_alert_condition(self, alert, dependent, rule_name=None):
-        self.alert_conditions.append((alert, dependent, rule_name))
+    def make_alert_condition(self, alert, dependent, rule_id=None):
+        self.alert_conditions.append((alert, dependent, rule_id))
 
     def process(self, entry, node):
         input = RuleInput(result_log=entry, node=node)
@@ -71,14 +72,14 @@ class Network(object):
         # evaluate the dependent chain of conditions.  We then check if the
         # condition has triggered.
         alerts = set()
-        for (alert, upstream, rule_name) in self.alert_conditions:
+        for (alert, upstream, rule_id) in self.alert_conditions:
             if upstream.run(input):
-                alerts.add((alert, rule_name))
+                alerts.add((alert, rule_id))
 
         # Step 3: Return all alerts to the caller.
         return alerts
 
-    def parse_query(self, query, alerters=None, rule_name=None):
+    def parse_query(self, query, alerters=None, rule_id=None):
         """
         Parse a query output from jQuery.QueryBuilder.
         """
@@ -130,7 +131,7 @@ class Network(object):
         # Add alert condition(s) that trigger when this group does
         if alerters is not None:
             for alert in alerters:
-                self.make_alert_condition(alert, root, rule_name)
+                self.make_alert_condition(alert, root, rule_id)
 
 
 class BaseCondition(object):

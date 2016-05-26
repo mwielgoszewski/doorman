@@ -5,7 +5,6 @@ from flask import render_template
 from flask_mail import Message
 
 from doorman.extensions import mail
-from doorman.models import Rule
 from .base import AbstractAlerterPlugin
 
 
@@ -18,12 +17,10 @@ class EmailAlerter(AbstractAlerterPlugin):
         self.subject_prefix = config.get('subject_prefix', '[Doorman]')
 
     def handle_alert(self, node, match):
-        rule = Rule.get_by_id(match.rule_id)
-
         subject = render_template(
             self.subject_template,
             prefix=self.subject_prefix,
-            rule=rule,
+            rule=match.rule,
             match=match,
             timestamp=dt.datetime.utcnow(),
             node=node
@@ -31,7 +28,7 @@ class EmailAlerter(AbstractAlerterPlugin):
 
         body = render_template(
             self.message_template,
-            rule=rule,
+            rule=match.rule,
             match=match,
             timestamp=dt.datetime.utcnow(),
             node=node

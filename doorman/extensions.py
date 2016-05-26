@@ -108,10 +108,12 @@ class RuleManager(object):
                     raise ValueError('No such alerter: "{0}"'.format(alerter))
 
             # Create the rule.
-            self.network.parse_query(rule.conditions, alerters=rule.alerters, rule_name=rule.name)
+            self.network.parse_query(rule.conditions, alerters=rule.alerters, rule_id=rule.id)
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """
+        from doorman.models import Rule
+        from doorman.rules import RuleMatch
         from doorman.utils import extract_results
 
         # Need to lazy-load rules
@@ -121,19 +123,31 @@ class RuleManager(object):
 
         to_trigger = []
         for name, action, columns, timestamp in extract_results(entry):
-            entry = {
+            result = {
                 'name': name,
                 'action': action,
                 'timestamp': timestamp,
                 'columns': columns,
             }
-            alerts = self.network.process(entry, node)
-            to_trigger.append((alerts, entry))
+            alerts = self.network.process(result, node)
+            if len(alerts) == 0:
+                continue
 
-        for alerts, entry in to_trigger:
-            for alerter, rule_name in alerts:
-                # TODO: pass 'rule_name' somehow
-                self.alerters[alerter].handle_alert(node, entry)
+            # Alerts is a set of (alerter name, rule id) tuples.  We convert
+            # these into RuleMatch instances, which is what our alerters are
+            # actually expecting.
+            for alerter, rule_id in alerts:
+                rule = Rule.get_by_id(rule_id)
+
+                to_trigger.append((alerter, RuleMatch(
+                    rule=rule,
+                    result=result,
+                    node=node
+                )))
+
+        # Now that we've collected all results, start triggering them.
+        for alerter, match in to_trigger:
+            self.alerters[alerter].handle_alert(node, match)
 
 
 def make_celery(app, celery):

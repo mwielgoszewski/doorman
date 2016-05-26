@@ -1,9 +1,9 @@
 A doorman alert was triggered: {{ rule.name }}
 
 Timestamp: {{ timestamp }}
-   Action: {{ match.action }}
+   Action: {{ match.result['action'] }}
   Content:
-{%- for key, value in match.match | dictsort %}
+{%- for key, value in match.result['columns'] | dictsort %}
            {{ key }}: {{ value }}
 {%- endfor %}
 

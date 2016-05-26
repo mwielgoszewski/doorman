@@ -1064,6 +1064,7 @@ class TestRuleEndToEnd:
         """
         from doorman.models import Rule
         from doorman.plugins import AbstractAlerterPlugin
+        from doorman.rules import RuleMatch
         from doorman.tasks import analyze_result
 
         # Add a dummy alerter
@@ -1075,76 +1076,82 @@ class TestRuleEndToEnd:
             def handle_alert(self, node, match):
                 self.calls.append((node, match))
 
-        # This is a bit ugly :-(
         dummy_alerter = DummyAlerter()
-        app.config['DOORMAN_ALERTER_PLUGINS']['dummy'] = ('fake', {})
-        app.rule_manager.alerters = {
-            'dummy': dummy_alerter,
-        }
 
-        # Add a rule to the application
-        rule = """
-        {
-          "condition": "AND",
-          "rules": [
-            {
-              "id": "query_name",
-              "field": "query_name",
-              "type": "string",
-              "input": "text",
-              "operator": "equal",
-              "value": "dummy-query"
-            }
-          ]
-        }
-        """
+        # This patches the appropriate config to create the 'dummy' alerter.  This is a bit ugly :-(
+        # NOTE: we must use the patch methods here, or it will scribble over
+        # the app configuration for future tests (which we don't want).
+        with mock.patch.dict(app.config, {'DOORMAN_ALERTER_PLUGINS': {'dummy': ('fake', {})}}):
+            with mock.patch.dict(app.rule_manager.alerters, {'dummy': dummy_alerter}, clear=True):
 
-        resp = testapp.post(url_for('manage.add_rule'), {
-            'name': 'Test-Rule',
-            'alerters': 'dummy',
-            'conditions': rule,
-        })
-        assert resp.status_int == 302       # Redirect on success
-        assert Rule.query.count() == 1
+                # Add a rule to the application
+                rule = """
+                {
+                  "condition": "AND",
+                  "rules": [
+                    {
+                      "id": "query_name",
+                      "field": "query_name",
+                      "type": "string",
+                      "input": "text",
+                      "operator": "equal",
+                      "value": "dummy-query"
+                    }
+                  ]
+                }
+                """
 
-        # Send a log that should trigger this rule.
-        now = dt.datetime.utcnow()
-        data = [
-            {
-              "diffResults": {
-                "added": [
-                  {
-                    "column_name": "column_value",
-                  }
-                ],
-                "removed": ""
-              },
-              "name": "dummy-query",
-              "hostIdentifier": "hostname.local",
-              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
-              "unixTime": now.strftime('%s')
-            }
-        ]
+                resp = testapp.post(url_for('manage.add_rule'), {
+                    'name': 'Test-Rule',
+                    'alerters': 'dummy',
+                    'conditions': rule,
+                })
 
-        # Patch the task function to just call directly - i.e. not delay
-        def immediately_analyze(*args, **kwargs):
-            return analyze_result(*args, **kwargs)
+                assert resp.status_int == 302       # Redirect on success
+                assert Rule.query.count() == 1
 
-        with mock.patch.object(analyze_result, 'delay', new=immediately_analyze):
-            resp = testapp.post_json(url_for('api.logger'), {
-                'node_key': node.node_key,
-                'data': data,
-                'log_type': 'result',
-            })
+                # Send a log that should trigger this rule.
+                now = dt.datetime.utcnow()
+                data = [
+                    {
+                      "diffResults": {
+                        "added": [
+                          {
+                            "column_name": "column_value",
+                          }
+                        ],
+                        "removed": ""
+                      },
+                      "name": "dummy-query",
+                      "hostIdentifier": "hostname.local",
+                      "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+                      "unixTime": now.strftime('%s')
+                    }
+                ]
 
-        # Assert that the alerter has triggered, and that it gave the right arguments.
-        assert len(dummy_alerter.calls) == 1
-        assert dummy_alerter.calls[0][0] == node.to_dict()
-        assert dummy_alerter.calls[0][1] == {
-            'name': 'dummy-query',
-            'action': 'added',
-            'timestamp': now.replace(microsecond=0),
-            'columns': {
-              'column_name': 'column_value',
-            },
-        }
+                # Patch the task function to just call directly - i.e. not delay
+                def immediately_analyze(*args, **kwargs):
+                    return analyze_result(*args, **kwargs)
+
+                with mock.patch.object(analyze_result, 'delay', new=immediately_analyze):
+                    resp = testapp.post_json(url_for('api.logger'), {
+                        'node_key': node.node_key,
+                        'data': data,
+                        'log_type': 'result',
+                    })
+
+                # Assert that the alerter has triggered, and that it gave the right arguments.
+                assert len(dummy_alerter.calls) == 1
+                assert dummy_alerter.calls[0][0] == node.to_dict()
+
+                rule = Rule.query.first()
+                assert dummy_alerter.calls[0][1].rule.id == rule.id
+                assert dummy_alerter.calls[0][1].node == node.to_dict()
+                assert dummy_alerter.calls[0][1].result == {
+                    'name': 'dummy-query',
+                    'action': 'added',
+                    'timestamp': now.replace(microsecond=0),
+                    'columns': {
+                      'column_name': 'column_value',
+                    },
+                }

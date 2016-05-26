@@ -195,7 +195,7 @@ class TestNetwork:
             exc = e
 
         assert isinstance(exc, ValueError)
-        assert exc.message == "A group contains no rules"
+        assert exc.args == ("A group contains no rules",)
 
     def test_parse_error_unknown_condition(self):
         # Different operators in each sub-group
@@ -223,7 +223,7 @@ class TestNetwork:
             exc = e
 
         assert isinstance(exc, ValueError)
-        assert exc.message == "Unknown condition: XOR"
+        assert exc.args == ("Unknown condition: XOR",)
 
     def test_parse_error_unknown_operator(self):
         # Different operators in each sub-group
@@ -251,7 +251,7 @@ class TestNetwork:
             exc = e
 
         assert isinstance(exc, ValueError)
-        assert exc.message == "Unsupported operator: BAD OPERATOR"
+        assert exc.args == ("Unsupported operator: BAD OPERATOR",)
 
 
 class TestBaseCondition:

@@ -37,7 +37,7 @@ With Doorman, you can distribute ad-hoc queries to one, some, or all nodes. A di
 
 If you're not acting on the information you collect, what's the point? Doorman allows fleet managers to configure custom rules to trigger alerts on specific events (for example, an unauthorized browser plugin is installed, or a removable USB storage device is inserted). Doorman allows building complex rule sets that can use arbitrary boolean logic and a variety of operators to test the results of a query.  For example:
 
-![distributed_queries](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/rules.png)
+![rule builder](https://raw.githubusercontent.com/mwielgoszewski/doorman/master/docs/screenshots/rules.png)
 
 Doorman allows supports alerting via the following methods:
 

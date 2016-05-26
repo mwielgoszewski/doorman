@@ -180,6 +180,9 @@ $(function() {
                     delay: 100,
                     placement: 'bottom',
                 },
+                'sortable': {
+                    icon: 'glyphicon glyphicon-move',
+                },
             },
 
             // Existing rules (if any)

@@ -17,7 +17,7 @@
                             </td>
                             <td><code>{{ query.distributed_query.sql }}</code></td>
                             <td>{{ query.distributed_query.timestamp }}</td>
-                            <td>{{ query.not_before or 'immediately' }}</td>
+                            <td>{{ query.distributed_query.not_before or 'immediately' }}</td>
                             <td>{{ query.timestamp or '' }}</td>
                             {% if not status %}
                             <td>

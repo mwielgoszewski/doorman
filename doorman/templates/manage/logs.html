@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>
+                    <h1><a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.host_identifier }}</a> / <a href="{{ url_for('manage.node_activity', node_id=node.id) }}">recent activity</a> / logs</h1>
+                </h1>
+
+                {% if status_logs %}
+                {% set logs = status_logs %}
+                {% include "tables/logs.html" %}
+
+                <div class="text-center">
+                    <small>{{ pagination.info }}</small>
+                    {{ pagination.links }}
+                </div>
+
+                {% else %}
+                <p>No status logs for this node.</p>
+                {% endif %}
+
+        </div>
+    </div>
+
+{% endblock %}

@@ -4,7 +4,7 @@
     <div class="body-content">
         <div class="row">
             <div class="col-md-12">
-                <h1><a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.host_identifier }}</a> / recent activity</h1>
+                <h1><a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.host_identifier }}</a> / recent activity / <a href="{{ url_for('manage.node_logs', node_id=node.id) }}">logs</a></h1>
 
                 {% if node.get_recent().count() or node.distributed_queries.count() %}
                 {% set queries = node.distributed_queries.order_by(DistributedQueryTask.timestamp.desc()) %}

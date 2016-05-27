@@ -125,7 +125,7 @@ class RuleManager(object):
                 id=rule.id,
                 updated_at=str(rule.updated_at)
             )
-            hash.update(key)
+            hash.update(key.encode('utf-8'))
         return hash.hexdigest()
 
     def load_rules(self):

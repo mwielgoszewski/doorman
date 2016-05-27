@@ -1046,7 +1046,7 @@ class TestRuleManager:
         mgr = app.rule_manager
         now = dt.datetime.utcnow()
 
-	with mock.patch.object(mgr, 'load_rules', wraps=lambda: []) as mock_load_rules:
+        with mock.patch.object(mgr, 'load_rules', wraps=lambda: []) as mock_load_rules:
             with mock.patch.object(mgr, 'network', wraps=Network()) as mock_network:
                 for i in range(0, 2):
                     mgr.handle_log_entry({

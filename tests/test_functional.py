@@ -980,20 +980,6 @@ class TestCreateTag:
 
 class TestAddRule:
 
-    def test_will_reload_rules(self, node, app, testapp):
-        from doorman.tasks import reload_rules
-
-        with mock.patch.object(reload_rules, 'delay', return_value=None) as mock_delay:
-            resp = testapp.post(url_for('manage.add_rule'), {
-                'name': 'Test Rule',
-                'type': 'blacklist',
-                'action': 'both',
-                'alerters': 'debug',
-                'config': '{"field_name": "foo", "blacklist": []}',
-            })
-
-        assert mock_delay.called
-
     def test_supports_custom_operators(self, node, app, testapp):
         # Add a rule to the application
         rule = """
@@ -1047,60 +1033,79 @@ class TestAddRule:
 
 
 class TestUpdateRule:
+    pass
 
-    def test_will_reload_rules(self, db, node, app, testapp):
-        from doorman.tasks import reload_rules
 
-        rule_conds = {
-          "condition": "AND",
-          "rules": [
-            {
-              "id": "query_name",
-              "field": "query_name",
-              "type": "string",
-              "input": "text",
-              "operator": "equal",
-              "value": "foo",
-            },
-          ],
+class TestRuleManager:
+    def test_will_load_rules_on_each_call(self, app, db):
+        """
+        Verifies that each call to handle_log_entry will result in a call to load_rules.
+        """
+        from doorman.rules import Network
+
+        mgr = app.rule_manager
+        now = dt.datetime.utcnow()
+
+	with mock.patch.object(mgr, 'load_rules', wraps=lambda: []) as mock_load_rules:
+            with mock.patch.object(mgr, 'network', wraps=Network()) as mock_network:
+                for i in range(0, 2):
+                    mgr.handle_log_entry({
+                        'data': [
+                            {
+                                "diffResults": {
+                                    "added": [{'op': 'added'}],
+                                    "removed": "",
+                                },
+                                "name": "fake",
+                                "hostIdentifier": "hostname.local",
+                                "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+                                "unixTime": now.strftime('%s')
+                            }
+                        ]
+                    }, {'host_identifier': 'yes'})
+
+                assert mock_load_rules.call_count == 2
+
+    def test_will_reload_when_changed(self, app, db):
+        from doorman.models import Rule
+
+        mgr = app.rule_manager
+        dummy_rule = {
+            "id": "query_name",
+            "field": "query_name",
+            "type": "string",
+            "input": "text",
+            "operator": "equal",
+            "value": "dummy-query",
         }
 
-        r = Rule(
-            name='Test-Rule',
-            alerters=['debug'],
-            description='A test rule',
-            conditions=rule_conds
+        # Insert a first rule.
+        rule = Rule(
+            name='foo',
+            alerters=[],
+            conditions={'condition': 'AND', 'rules': [dummy_rule]}
         )
-        db.session.add(r)
+        db.session.add(rule)
         db.session.commit()
 
-        # Manually reload the rules here, and verify that we have the right
-        # rule in our list
-        app.rule_manager.load_rules()
-        assert len(app.rule_manager.network.conditions) == 2
+        # Verify that we will reload these rules
+        assert mgr.should_reload_rules() is True
 
-        condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
-        assert sorted(condition_classes) == ['AndCondition', 'EqualCondition']
+        # Actually load them
+        mgr.load_rules()
 
-        # Fake wrapper that just calls reload
-        def real_reload(*args, **kwargs):
-            app.rule_manager.load_rules()
+        # Verify that (with no changes made), we should NOT reload.
+        assert mgr.should_reload_rules() is False
 
-        # Update the rule
-        rule_conds['condition'] = 'OR'
-        with mock.patch.object(reload_rules, 'delay', wraps=real_reload) as mock_delay:
-            resp = testapp.post(url_for('manage.rule', rule_id=r.id), {
-                'name': 'Test-Rule',
-                'alerters': 'debug',
-                'conditions': json.dumps(rule_conds),
-            })
+        # Make a change to a rule.
+        rule.update(
+            conditions={'condition': 'OR', 'rules': [dummy_rule]},
+            updated_at=dt.datetime.utcnow())
+        db.session.add(rule)
+        db.session.commit()
 
-        assert mock_delay.called
-
-        # Trigger a manual reload again, and verify that it's been updated
-        app.rule_manager.load_rules()
-        condition_classes = [x.__class__.__name__ for x in app.rule_manager.network.conditions.values()]
-        assert sorted(condition_classes) == ['EqualCondition', 'OrCondition']
+        # Verify that we will now reload
+        assert mgr.should_reload_rules() is True
 
 
 class TestRuleEndToEnd:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import datetime as dt
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import login_required
@@ -23,7 +24,6 @@ from doorman.models import (
     DistributedQuery, DistributedQueryTask,
     FilePath, Node, Pack, Query, Tag, Rule, StatusLog
 )
-from doorman.tasks import reload_rules
 from doorman.utils import (
     create_query_pack_from_upload, flash_errors, get_paginate_options
 )
@@ -469,9 +469,9 @@ def add_rule():
         rule = Rule(name=form.name.data,
                     alerters=form.alerters.data,
                     description=form.description.data,
-                    conditions=form.conditions.data)
+                    conditions=form.conditions.data,
+                    updated_at=dt.datetime.utcnow())
         rule.save()
-        reload_rules.delay()
 
         return redirect(url_for('manage.rule', rule_id=rule.id))
 
@@ -489,8 +489,8 @@ def rule(rule_id):
         rule = rule.update(name=form.name.data,
                            alerters=form.alerters.data,
                            description=form.description.data,
-                           conditions=form.conditions.data)
-        reload_rules.delay()
+                           conditions=form.conditions.data,
+                           updated_at=dt.datetime.utcnow())
         return redirect(url_for('manage.rule', rule_id=rule.id))
 
     form = UpdateRuleForm(request.form, obj=rule)

@@ -445,12 +445,14 @@ class Rule(SurrogatePK, Model):
     alerters = Column(ARRAY(db.String), nullable=False)
     description = Column(db.String, nullable=True)
     conditions = Column(JSONB)
+    updated_at = Column(db.DateTime, nullable=False, default=dt.datetime.utcnow)
 
-    def __init__(self, name, alerters, description=None, conditions=None):
+    def __init__(self, name, alerters, description=None, conditions=None, updated_at=None):
         self.name = name
         self.description = description
         self.alerters = alerters
         self.conditions = conditions
+        self.updated_at = updated_at
 
 
 class User(UserMixin, SurrogatePK, Model):

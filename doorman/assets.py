@@ -3,6 +3,7 @@ from flask_assets import Bundle, Environment
 
 css = Bundle(
     Bundle('css/bootstrap.less',
+           depends=('**/*.less'),
            output='css/bootstrap.css',
            filters='less',
     ),

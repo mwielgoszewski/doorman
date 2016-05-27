@@ -34,7 +34,13 @@ def save_user(dn, username, userdata, memberships):
     user = User.query.filter_by(username=username).first()
     kwargs = {}
     kwargs['username'] = username
-    kwargs['dn'] = dn
+
+    if 'givenName' in userdata:
+        kwargs['first_name'] = userdata['givenName'][0]
+
+    if 'sn' in userdata:
+        kwargs['last_name'] = userdata['sn'][0]
+
     return user.update(**kwargs) if user else User.create(**kwargs)
 
 

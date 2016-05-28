@@ -13,12 +13,6 @@ def analyze_result(result, node):
 
 
 @celery.task()
-def reload_rules():
-    current_app.rule_manager.load_rules()
-    return
-
-
-@celery.task()
 def example_task(one, two):
     print('Adding {0} and {1}'.format(one, two))
     return one + two

@@ -49,8 +49,8 @@ class LogTee(object):
 
 class RuleManager(object):
     def __init__(self, app=None):
-        self.loaded_rules = False
         self.network = None
+        self.last_update = None
 
         if app is not None:
             self.init_app(app)
@@ -70,19 +70,31 @@ class RuleManager(object):
         alerters = self.app.config.get('DOORMAN_ALERTER_PLUGINS', {})
 
         self.alerters = {}
-        with self.app.app_context():
-            for name, (plugin, config) in alerters.items():
-                package, classname = plugin.rsplit('.', 1)
-                module = import_module(package)
-                klass = getattr(module, classname, None)
+        for name, (plugin, config) in alerters.items():
+            package, classname = plugin.rsplit('.', 1)
+            module = import_module(package)
+            klass = getattr(module, classname, None)
 
-                if klass is None:
-                    raise ValueError('Could not find a class named "{0}" in package "{1}"'.format(classname, package))
+            if klass is None:
+                raise ValueError('Could not find a class named "{0}" in package "{1}"'.format(classname, package))
 
-                if not issubclass(klass, AbstractAlerterPlugin):
-                    raise ValueError('{0} is not a subclass of AbstractAlerterPlugin'.format(name))
+            if not issubclass(klass, AbstractAlerterPlugin):
+                raise ValueError('{0} is not a subclass of AbstractAlerterPlugin'.format(name))
 
-                self.alerters[name] = klass(config)
+            self.alerters[name] = klass(config)
+
+    def should_reload_rules(self):
+        """ Checks if we need to reload the set of rules. """
+        from doorman.models import Rule
+
+        if self.last_update is None:
+            return True
+
+        newest_rule = Rule.query.order_by(Rule.updated_at.desc()).limit(1).first()
+        if self.last_update < newest_rule.updated_at:
+            return True
+
+        return False
 
     def load_rules(self):
         """ Load rules from the database. """
@@ -90,16 +102,10 @@ class RuleManager(object):
         from doorman.models import Rule
         from sqlalchemy.exc import SQLAlchemyError
 
-        self.rules = []
-        with self.app.app_context():
-            try:
-                all_rules = list(Rule.query.all())
-            except SQLAlchemyError:
-                # Ignore DB errors when testing
-                if self.app.config['TESTING']:
-                    all_rules = []
-                else:
-                    raise
+        if not self.should_reload_rules():
+            return
+
+        all_rules = list(Rule.query.all())
 
         self.network = Network()
         for rule in all_rules:
@@ -111,16 +117,19 @@ class RuleManager(object):
             # Create the rule.
             self.network.parse_query(rule.conditions, alerters=rule.alerters, rule_id=rule.id)
 
+        # Save the last updated date
+        # Note: we do this here, and not in should_reload_rules, because it's
+        # possible that we've reloaded a rule in between the two functions, and
+        # thus we accidentally don't reload when we should.
+        self.last_update = max(r.updated_at for r in all_rules)
+
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """
         from doorman.models import Rule
         from doorman.rules import RuleMatch
         from doorman.utils import extract_results
 
-        # Need to lazy-load rules
-        if not self.loaded_rules:
-            self.load_rules()
-            self.loaded_rules = True
+        self.load_rules()
 
         to_trigger = []
         for name, action, columns, timestamp in extract_results(entry):

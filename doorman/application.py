@@ -7,8 +7,8 @@ from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.manage import blueprint as backend
 from doorman.extensions import (
-    db, debug_toolbar, log_tee, login_manager, mail, make_celery, metrics,
-    migrate, rule_manager
+    db, debug_toolbar, ldap_manager, log_tee, login_manager, mail,
+    make_celery, metrics, migrate, rule_manager
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
@@ -104,6 +104,12 @@ def register_auth_method(app):
 
     login_manager.login_view = 'users.login'
     login_manager.login_message_category = 'warning'
+
+    if app.config['DOORMAN_AUTH_METHOD'] == 'ldap':
+        ldap_manager.init_app(app)
+        return
+
+    # no other authentication methods left, falling back to OAuth
 
     if app.config['DOORMAN_AUTH_METHOD'] != 'doorman':
         login_manager.login_message = None

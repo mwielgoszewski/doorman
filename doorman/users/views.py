@@ -13,7 +13,7 @@ from flask_login import current_user, login_user, logout_user, COOKIE_NAME
 from oauthlib.oauth2 import OAuth2Error
 
 from .forms import LoginForm
-from doorman.extensions import login_manager
+from doorman.extensions import ldap_manager, login_manager
 from doorman.models import User
 from doorman.utils import flash_errors
 
@@ -27,6 +27,21 @@ def load_user(user_id):
         from doorman.users.mixins import NoAuthUserMixin
         return NoAuthUserMixin()
     return User.get_by_id(int(user_id))
+
+
+@ldap_manager.save_user
+def save_user(dn, username, userdata, memberships):
+    user = User.query.filter_by(username=username).first()
+    kwargs = {}
+    kwargs['username'] = username
+
+    if 'givenName' in userdata:
+        kwargs['first_name'] = userdata['givenName'][0]
+
+    if 'sn' in userdata:
+        kwargs['last_name'] = userdata['sn'][0]
+
+    return user.update(**kwargs) if user else User.create(**kwargs)
 
 
 @blueprint.route('/login', methods=['GET', 'POST'])

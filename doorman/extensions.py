@@ -4,6 +4,7 @@ from collections import defaultdict
 from celery import Celery
 from flask_bcrypt import Bcrypt
 from flask_debugtoolbar import DebugToolbarExtension
+from flask_ldap3_login import LDAP3LoginManager
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
@@ -229,6 +230,7 @@ mail = Mail()
 migrate = Migrate()
 debug_toolbar = DebugToolbarExtension()
 log_tee = LogTee()
+ldap_manager = LDAP3LoginManager()
 login_manager = LoginManager()
 metrics = Metrics()
 rule_manager = RuleManager()

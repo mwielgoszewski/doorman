@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import time
-from hashlib import sha256
 from collections import defaultdict
 
 from celery import Celery
@@ -52,7 +50,7 @@ class LogTee(object):
 class RuleManager(object):
     def __init__(self, app=None):
         self.network = None
-        self.rules_hash = None
+        self.last_update = None
 
         if app is not None:
             self.init_app(app)
@@ -87,46 +85,23 @@ class RuleManager(object):
                 self.alerters[name] = klass(config)
 
     def should_reload_rules(self):
-        """
-        Checks if we need to reload the set of rules.  Essentially, since
-        creating a rules network might be expensive, we want to avoid reloading
-        for every incoming log line.  We get around this by storing a hash of
-        the current rules, and querying if the rules in the database have
-        differed from this hash on every new log entry.  If they have, we then
-        re-build our network.
-        """
+        """ Checks if we need to reload the set of rules. """
         from doorman.models import Rule
-        from sqlalchemy.exc import SQLAlchemyError
 
-        if self.rules_hash is None:
-            return True
-
-        limited_rules = []
         with self.app.app_context():
             try:
-                limited_rules = (Rule.query
-                    .with_entities(Rule.id, Rule.updated_at)
-                    .order_by(Rule.id).all())
+                last_update = Rule.query.order_by(Rule.updated_at.desc()).limit(1).first()
             except SQLAlchemyError:
                 # Ignore DB errors when testing
-                if self.app.config['TESTING']:
-                    return False
-                else:
+                if not self.app.config['TESTING']:
                     raise
 
-        # Feed everything into a hash
-        rules_hash = self.make_rules_hash(limited_rules)
-        return rules_hash != self.rules_hash
+                return False
 
-    def make_rules_hash(self, rules):
-        hash = sha256()
-        for rule in rules:
-            key = '{id} {updated_at}'.format(
-                id=rule.id,
-                updated_at=str(rule.updated_at)
-            )
-            hash.update(key.encode('utf-8'))
-        return hash.hexdigest()
+        if self.last_update < last_update:
+            return True
+
+        return False
 
     def load_rules(self):
         """ Load rules from the database. """
@@ -157,11 +132,11 @@ class RuleManager(object):
             # Create the rule.
             self.network.parse_query(rule.conditions, alerters=rule.alerters, rule_id=rule.id)
 
-        # Recalculate the rules hash and save it.
+        # Save the last updated date
         # Note: we do this here, and not in should_reload_rules, because it's
         # possible that we've reloaded a rule in between the two functions, and
         # thus we accidentally don't reload when we should.
-        self.rules_hash = self.make_rules_hash(all_rules)
+        self.last_update = max(all_rules, key=lambda r: r.updated_at)
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """

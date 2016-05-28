@@ -1079,11 +1079,15 @@ class TestRuleManager:
             "value": "dummy-query",
         }
 
+        now = dt.datetime.utcnow()
+        next = now + dt.timedelta(minutes=5)
+
         # Insert a first rule.
         rule = Rule(
             name='foo',
             alerters=[],
-            conditions={'condition': 'AND', 'rules': [dummy_rule]}
+            conditions={'condition': 'AND', 'rules': [dummy_rule]},
+            updated_at=now
         )
         db.session.add(rule)
         db.session.commit()
@@ -1100,7 +1104,7 @@ class TestRuleManager:
         # Make a change to a rule.
         rule.update(
             conditions={'condition': 'OR', 'rules': [dummy_rule]},
-            updated_at=dt.datetime.utcnow())
+            updated_at=next)
         db.session.add(rule)
         db.session.commit()
 

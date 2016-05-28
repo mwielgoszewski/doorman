@@ -70,35 +70,28 @@ class RuleManager(object):
         alerters = self.app.config.get('DOORMAN_ALERTER_PLUGINS', {})
 
         self.alerters = {}
-        with self.app.app_context():
-            for name, (plugin, config) in alerters.items():
-                package, classname = plugin.rsplit('.', 1)
-                module = import_module(package)
-                klass = getattr(module, classname, None)
+        for name, (plugin, config) in alerters.items():
+            package, classname = plugin.rsplit('.', 1)
+            module = import_module(package)
+            klass = getattr(module, classname, None)
 
-                if klass is None:
-                    raise ValueError('Could not find a class named "{0}" in package "{1}"'.format(classname, package))
+            if klass is None:
+                raise ValueError('Could not find a class named "{0}" in package "{1}"'.format(classname, package))
 
-                if not issubclass(klass, AbstractAlerterPlugin):
-                    raise ValueError('{0} is not a subclass of AbstractAlerterPlugin'.format(name))
+            if not issubclass(klass, AbstractAlerterPlugin):
+                raise ValueError('{0} is not a subclass of AbstractAlerterPlugin'.format(name))
 
-                self.alerters[name] = klass(config)
+            self.alerters[name] = klass(config)
 
     def should_reload_rules(self):
         """ Checks if we need to reload the set of rules. """
         from doorman.models import Rule
 
-        with self.app.app_context():
-            try:
-                last_update = Rule.query.order_by(Rule.updated_at.desc()).limit(1).first()
-            except SQLAlchemyError:
-                # Ignore DB errors when testing
-                if not self.app.config['TESTING']:
-                    raise
+        if self.last_update is None:
+            return True
 
-                return False
-
-        if self.last_update < last_update:
+        newest_rule = Rule.query.order_by(Rule.updated_at.desc()).limit(1).first()
+        if self.last_update < newest_rule.updated_at:
             return True
 
         return False
@@ -112,15 +105,7 @@ class RuleManager(object):
         if not self.should_reload_rules():
             return
 
-        with self.app.app_context():
-            try:
-                all_rules = list(Rule.query.all())
-            except SQLAlchemyError:
-                # Ignore DB errors when testing
-                if self.app.config['TESTING']:
-                    all_rules = []
-                else:
-                    raise
+        all_rules = list(Rule.query.all())
 
         self.network = Network()
         for rule in all_rules:
@@ -136,7 +121,7 @@ class RuleManager(object):
         # Note: we do this here, and not in should_reload_rules, because it's
         # possible that we've reloaded a rule in between the two functions, and
         # thus we accidentally don't reload when we should.
-        self.last_update = max(all_rules, key=lambda r: r.updated_at)
+        self.last_update = max(r.updated_at for r in all_rules)
 
     def handle_log_entry(self, entry, node):
         """ The actual entrypoint for handling input log entries. """

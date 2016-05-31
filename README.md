@@ -71,11 +71,14 @@ Authenticating to Doorman can be handled several ways:
 
 * `DOORMAN_AUTH_METHOD = None`
 * `DOORMAN_AUTH_METHOD = 'doorman'`
+* `DOORMAN_AUTH_METHOD = 'ldap'`
 * `DOORMAN_AUTH_METHOD = 'google'`
 
 `None` implies no authentication, resulting in an exposed manager web interface. If you deploy the api and web interface (the manager) separately, and the manager will only be accessible from a trusted network, this may be enough for you.
 
 `doorman` utilizes username and password based authentication, managed by the backend database. Passwords are stored as bcrypt hashes with a work factor of 13 log_rounds. Doorman does not support user registration, or password reset capabilities from the web interface. This must be handled by the administrator using Doorman's [manage.py](https://github.com/mwielgoszewski/doorman/blob/master/manage.py) script.
+
+`ldap` authentication relies on an LDAP server to authenticate users. See the [flask-ldap3-login](http://flask-ldap3-login.readthedocs.io/en/latest/configuration.html) documentation for the configuration values required by the plugin in order to successfully bind and authenticate to your LDAP server.
 
 `google` uses OAuth 2.0 to authenticate with your Google credentials. To get started, you'll need to register a new web application client in the [Google API Console](https://console.developers.google.com/apis/credentials) and obtain a client_id and client_secret, along with authorize a callback URL. The following will need to be configured:
 
@@ -100,9 +103,9 @@ Setting       | Description
 `DOORMAN_EXPECTS_UNIQUE_HOST_ID`  |  If osquery is deployed on endpoints to start with the `--host_identifier=uuid` cli flag, set this value to `True`. Default is `True`.
 `DOORMAN_CHECKIN_INTERVAL`  |  Time (in seconds) nodes are expected to check-in for configurations or call the distributed read endpoint. Nodes that fail to check-in within this time will be highlighted in red on the main nodes page.
 `DOORMAN_ENROLL_DEFAULT_TAGS`  |  A default set of tags to apply to newly enrolled nodes.
-`DOORMAN_AUTH_METHOD`  |  The authentication backend used to authenticate Doorman users (not osquery endpoints). May be one of: <p><ul><li>`None`</li><li>`google`</li><li>`doorman`</li></ul></p> Note, google and doorman must be wrapped in quotes. Default is `None`. See the [authentication] (#authentication) section above for more information.
-`DOORMAN_ALERTER_PLUGINS`  |
-`MAIL_DEFAULT_SENDER`  |
+`DOORMAN_AUTH_METHOD`  |  The authentication backend used to authenticate Doorman users (not osquery endpoints). May be one of: <p><ul><li>`None`</li><li>`doorman`</li><li>`ldap`</li><li>`google`</li></ul></p> Note, google and doorman must be wrapped in quotes. Default is `None`. See the [authentication] (#authentication) section above for more information.
+`DOORMAN_ALERTER_PLUGINS`  | The available `AbstractAlerterPlugin` implementations. This settings expects a dictionary of alerter names and tuples, where the first tuple item is the class name implemting `AbstractAlerterPlugin` to import, and the second value is a dictionary configuration passed to configure the Alerter class. Available Alerter plugins at time of this release are:<p><ul><li>`doorman.plugins.alerters.debug.DebugAlerter `</li><li> `doorman.plugins.alerters.emailer.EmailAlerter`</li><li> `doorman.plugins.alerters.pagerduty.PagerDutyAlerter`</li></ul></p>
+`MAIL_DEFAULT_SENDER`  | If using the `doorman.plugins.alerters.emailer.EmailAlerter` alerter above, specify the sender email address used by Doorman for the `FROM:` field.
 
 
 

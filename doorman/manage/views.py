@@ -107,6 +107,7 @@ def node_activity(node_id):
 
 @blueprint.route('/node/<int:node_id>/logs')
 @blueprint.route('/node/<int:node_id>/logs/<int:page>')
+@login_required
 def node_logs(node_id, page=1):
     node = Node.query.filter(Node.id == node_id).first_or_404()
     status_logs = StatusLog.query.filter_by(node=node)

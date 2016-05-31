@@ -200,6 +200,35 @@ Setting       | Description
     ~~~
 
 
+## running in Docker
+
+First, build the Docker container:
+
+```
+$ docker build -t doorman .
+```
+
+Second, run the container, providing it with the credentials to access the
+Postgres database:
+
+```
+$ docker run \
+    -e DOORMAN_ENROLL_SECRET=foo \
+    -e DOORMAN_SECRET_KEY=secret-key \
+    -e POSTGRES_USER=doorman \
+    -e POSTGRES_PASSWORD=pass \
+    -e POSTGRES_HOST=your-host-here \
+    -p host-port:5000 \
+    doorman
+```
+
+The container will contain everything needed for Doorman to function (i.e.
+Redis, the Celery worker, and the API), managed by
+[Runit](http://smarden.org/runit/).  You can edit the service configuration
+under [`/docker`](https://github.com/mwielgoszewski/doorman/tree/master/docker)
+to set additional options.
+
+
 ## running tests
 
 To execute tests, simply run `python manage.py test`.

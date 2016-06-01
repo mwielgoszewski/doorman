@@ -217,7 +217,7 @@ $ docker run \
     -e DOORMAN_SECRET_KEY=secret-key \
     -e POSTGRES_USER=doorman \
     -e POSTGRES_PASSWORD=pass \
-    -e POSTGRES_HOST=your-host-here \
+    -e POSTGRES_ENV_POSTGRES_PORT=your-host-here \
     -p host-port:5000 \
     doorman
 ```
@@ -227,6 +227,11 @@ Redis, the Celery worker, and the API), managed by
 [Runit](http://smarden.org/runit/).  You can edit the service configuration
 under [`/docker`](https://github.com/mwielgoszewski/doorman/tree/master/docker)
 to set additional options.
+
+*Note: The `POSTGRES_ENV_POSTGRES_PORT` environment variable is the same
+variable that is expected when using the `--link` argument to `docker run`, so
+linking a Postgres container to the Doorman container should work without
+passing that environment variable.*
 
 
 ## running tests

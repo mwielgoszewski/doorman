@@ -34,19 +34,23 @@ RUN pip install -r /tmp/requirements.txt \
 # Add our application to the container
 COPY . /src/
 
-# Create service directories to allow running services
+# Create service directories to allow running services, along with the Doorman
+# user/group.
 RUN rm -rf /etc/service \
   && mv /src/docker/service /etc/ \
   && mv /src/docker/redis.conf /etc/ \
   && if [ ! -f /src/settings.cfg ]; then \
-    mv /src/docker/default-settings.cfg /src/settings.cfg; \
-  fi
+       mv /src/docker/default-settings.cfg /src/settings.cfg; \
+     fi \
+  && addgroup doorman \
+  && adduser -G doorman -D doorman
 
 # Install vendor libraries, pre-build static assets, and create default log
 # file directory.
 RUN cd /src/ \
   && bower install --allow-root \
   && python manage.py assets build \
-  && mkdir /var/log/doorman/
+  && mkdir /var/log/doorman/ \
+  && chown doorman:doorman /var/log/doorman/
 
 CMD ["runsvdir", "/etc/service"]

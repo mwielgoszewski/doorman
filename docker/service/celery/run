@@ -5,7 +5,10 @@ cd /src/
 export DOORMAN_ENV=prod
 export DOORMAN_SETTINGS=$PWD/settings.cfg
 
-exec celery \
-  worker \
-  -A doorman.worker:celery \
-  -l INFO
+exec chpst \
+  -u doorman \
+  -U doorman \
+  celery \
+    worker \
+    -A doorman.worker:celery \
+    -l INFO

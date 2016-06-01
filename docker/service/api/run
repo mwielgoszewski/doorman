@@ -5,7 +5,10 @@ cd /src/
 export DOORMAN_ENV=prod
 export DOORMAN_SETTINGS=$PWD/settings.cfg
 
-exec gunicorn \
-  --workers 4 \
-  --bind 0.0.0.0:5000 \
-  manage:app
+exec chpst \
+  -u doorman \
+  -U doorman \
+  gunicorn \
+    --workers 4 \
+    --bind 0.0.0.0:5000 \
+    manage:app

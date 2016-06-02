@@ -7,6 +7,11 @@ import os
 class Config(object):
     SECRET_KEY = b2a_hex(os.urandom(20))
 
+    # Set the following to ensure Celery workers can construct an
+    # external URL via `url_for`.
+    SERVER_NAME = "localhost"
+    PREFERRED_URL_SCHEME = "https"
+
     DEBUG = False
     DEBUG_TB_ENABLED = False
     DEBUG_TB_INTERCEPT_REDIRECTS = False

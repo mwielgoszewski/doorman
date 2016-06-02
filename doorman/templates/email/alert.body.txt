@@ -1,11 +1,16 @@
 A doorman alert was triggered: {{ match.rule.name }}
 
 Timestamp: {{ timestamp }}
-   Action: {{ match.result.action }}
-  Content:
+Action: {{ match.result.action }}
+Content:
 {%- for key, value in match.result.columns | dictsort %}
            {{ key }}: {{ value }}
 {%- endfor %}
+
+{%- if match.rule.description %}
+
+{{ match.rule.description }}
+{%- endif %}
 
 Review most recent activity for {{ node.host_identifier }} at {{ url_for('manage.node_activity', node_id=node.id, _external=True) }}.
 This rule's configuration may be reviewed at {{ url_for('manage.rule', rule_id=match.rule.id, _external=True) }}.

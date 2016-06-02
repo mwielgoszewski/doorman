@@ -96,6 +96,8 @@ The following settings should be configured to get up and running:
 Setting       | Description
 --------------|------------
 `SECRET_KEY`  |  Flask's [secret_key](http://flask.pocoo.org/docs/0.10/api/#flask.Flask.secret_key). |
+`SERVER_NAME` |  The name and port number of the server. See Flask's [Builtin Configuration Values](http://flask.pocoo.org/docs/0.10/config/#builtin-configuration-values) for more details.
+`PREFERRED_URL_SCHEME` |  The URL scheme that should be used for URL generation if no URL scheme is available. This defaults to `https`.
 `SQLALCHEMY_DATABASE_URI` |  The database URI that should be used for the connection. Example: <p><ul><li>`postgresql://localhost:5432/doorman`</li></ul></p> See the [Flask-SQLAlchemy](http://flask-sqlalchemy.pocoo.org/2.1/config/#configuration-keys) documentation for additional configuration settings.
 `BROKER_URL`  |  The Celery [broker URL](http://docs.celeryproject.org/en/latest/configuration.html#broker-url). Default: `redis://localhost:6379/0`
 `CELERY_RESULT_BACKEND`  |  The Celery [result backend URL](http://docs.celeryproject.org/en/latest/configuration.html#celery-result-backend). Default: `redis://localhost:6379/0`

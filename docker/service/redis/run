@@ -1,0 +1,6 @@
+#!/bin/sh
+
+exec chpst \
+   -u redis \
+   -U redis \
+   redis-server /etc/redis.conf

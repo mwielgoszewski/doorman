@@ -20,7 +20,7 @@
 
                     <tbody>
 
-                        {% for tag in tags %}
+                        {% for tag in tags | sort(attribute='value') %}
                         <tr>
                             <td>
                                 <button type="button" class="btn btn-link btn-xs" aria-label="Delete Tag">

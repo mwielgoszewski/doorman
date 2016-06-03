@@ -216,7 +216,7 @@ class LogicCondition(BaseCondition):
         # from the input's columns.  Otherwise, we have a whitelist of what we
         # can get from the input.
         if self.column_name is not None:
-            value = input.result_log['columns'].get(self.key)
+            value = input.result_log['columns'].get(self.column_name)
         elif self.key == 'query_name':
             value = input.result_log['name']
         elif self.key == 'timestamp':

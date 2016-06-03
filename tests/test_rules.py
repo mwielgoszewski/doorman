@@ -325,6 +325,16 @@ class TestFunctional:
               "input": "text",
               "operator": "equal",
               "value": "added"
+            },
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_equal",
+              "value": [
+                "name", "com.whitesmoke.uploader.plist"
+              ]
             }
           ]
         }""")
@@ -332,6 +342,7 @@ class TestFunctional:
         network = Network()
         network.parse_query(query, alerters=['debug'], rule_id=1)
         network.parse_query(query, alerters=['debug'], rule_id=2)
+        network.parse_query(query, alerters=['debug'], rule_id=3)
 
         # Should trigger the top-level alert, above
         now = dt.datetime.utcnow()
@@ -360,7 +371,7 @@ class TestFunctional:
         assert len(alerts) == 0
 
         alerts = network.process(bad_input, node)
-        assert sorted(alerts, key=lambda v: v[1]) == [('debug', 1), ('debug', 2)]
+        assert sorted(alerts, key=lambda v: v[1]) == [('debug', 1), ('debug', 2), ('debug', 3)]
 
         # Re-process the good input to assert that we don't continue to alert
         # on good input after a bad one...
@@ -369,4 +380,4 @@ class TestFunctional:
 
         # ... and that we *do* continue to alert on bad input.
         alerts = network.process(bad_input, node)
-        assert sorted(alerts, key=lambda v: v[1]) == [('debug', 1), ('debug', 2)]
+        assert sorted(alerts, key=lambda v: v[1]) == [('debug', 1), ('debug', 2), ('debug', 3)]

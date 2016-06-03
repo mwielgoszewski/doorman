@@ -25,7 +25,7 @@
                             <td>{{ pack.queries | count }}</td>
                             <td>
                                 <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_pack', pack_name=pack.name) }}">
-                                    {% for tag in pack.tags %}
+                                    {% for tag in pack.tags | sort(attribute='value') %}
                                     <option value="{{ tag.value }}">{{ tag.value }}</option>
                                     {% endfor %}
                                 </select>

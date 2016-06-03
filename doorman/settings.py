@@ -9,7 +9,7 @@ class Config(object):
 
     # Set the following to ensure Celery workers can construct an
     # external URL via `url_for`.
-    SERVER_NAME = "localhost"
+    SERVER_NAME = "127.0.0.1:5000"
     PREFERRED_URL_SCHEME = "https"
 
     DEBUG = False

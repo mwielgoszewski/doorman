@@ -37,7 +37,7 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
         details = {
             'node': node,
             'rule_name': match.rule.name,
-            'rule_description': match.rule.description
+            'rule_description': match.rule.description,
             'action': match.result['action'],
             'match': match.result['columns'],
         }

@@ -30,30 +30,38 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             count=self.incident_count
         )
 
+        description = match.rule.name
+        if match.rule.description:
+            description = "{0}: {1}".format(description, match.rule.description)
+
         details = {
             'node': node,
             'rule_name': match.rule.name,
+            'rule_description': match.rule.description
             'action': match.result['action'],
             'match': match.result['columns'],
         }
+
         headers = {
             'Content-type': 'application/json',
         }
+
         payload = json.dumps({
             'event_type': 'trigger',
             'service_key': self.service_key,
-
             'incident_key': key,
-            'description': 'A doorman alert was triggered',
+            'description': description,
             'client': 'Doorman',
             "client_url": self.client_url,
             'details': details,
         }, cls=DateTimeEncoder)
+
         resp = requests.post(
             'https://events.pagerduty.com/generic/2010-04-15/create_event.json',
             headers=headers,
             data=payload
         )
+
         if not resp.ok:
             self.logger.warn('Could not trigger PagerDuty alert!')
 

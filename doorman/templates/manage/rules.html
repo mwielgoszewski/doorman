@@ -3,7 +3,7 @@
 
     <div class="body-content">
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-9">
                 <h1>rules</h1>
 
                 {% if rules %}
@@ -13,11 +13,21 @@
                 {% endfor %}
 
                 {% else %}
-                <p>No rules defined.</p>
+                <p>No rules defined. You may <a href="{{ url_for('manage.add_rule') }}">create a new rule</a>.
                 {% endif %}
 
-
             </div>
+
+            <nav class="col-md-3 bs-docs-sidebar">
+                <ul class="nav nav-stacked fixed" id="sidebar">
+                {% if rules %}
+                    {% for rule in rules | sort(attribute='name') %}
+                    <li><a href="#rule-{{ rule.id }}">{{ rule.name }}</a></li>
+                    {% endfor %}
+                {% endif %}
+                </ul>
+            </nav>
+
         </div>
     </div>
 

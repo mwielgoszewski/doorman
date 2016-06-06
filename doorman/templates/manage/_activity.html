@@ -1,5 +1,6 @@
 
-                <ul class="nav nav-tabs" role="tablist">
+            <div class="col-md-3">
+                <ul class="nav nav-tabs tabs-left" role="tablist">
                     {% if queries.count() %}
                     <li class="active">
                         <a href="#distributed_queries" aria-controls="distributed_queries" role="tab" data-toggle="tab">distributed queries
@@ -16,7 +17,9 @@
                     </li>
                     {% endfor %}
                 </ul>
+            </div>
 
+            <div class="col-md-9">
                 <div class="tab-content">
 
                     {% if queries.count() %}
@@ -60,3 +63,4 @@
                     {% endfor %}
 
                 </div><!-- ./tab-content -->
+            </div>

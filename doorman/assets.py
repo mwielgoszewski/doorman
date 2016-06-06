@@ -8,6 +8,7 @@ css = Bundle(
            filters='less',
     ),
     'libs/bootstrap-tagsinput/dist/bootstrap-tagsinput.css',
+    'libs/bootstrap-vertical-tabs/bootstrap.vertical-tabs.css',
     'libs/jQuery-QueryBuilder/dist/css/query-builder.default.css',
     'css/style.css',
     filters='cssmin',

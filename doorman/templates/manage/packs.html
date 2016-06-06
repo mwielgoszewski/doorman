@@ -30,7 +30,7 @@
                     <li>
                         <a href="#{{ pack.name }}">{{ pack.name }}</a>
                         <ul class="nav nav-stacked">
-                        {% for query in pack.queries | sort (attribute='name') %}
+                        {% for query in pack.queries | sort(attribute='name') %}
                             <li><a href="#{{ pack.name }}-{{ query.name }}">{{ query.name }}</a></li>
                         {% endfor %}
                         </ul>
@@ -39,7 +39,7 @@
                 {% endif %}
                 </ul>
             </nav>
-            
+
         </div>
     </div>
 

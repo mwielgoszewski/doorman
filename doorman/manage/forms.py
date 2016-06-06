@@ -64,6 +64,7 @@ class QueryForm(Form):
         ('darwin', 'Darwin'),
         ('linux', 'Linux'),
         ('redhat/centos', 'Red Hat/CentOS'),
+        ('ubuntu', 'Ubuntu'),
     ])
     version = StringField('Version')
     description = TextAreaField('Description')

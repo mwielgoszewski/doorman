@@ -230,10 +230,14 @@ def add_query():
 @blueprint.route('/queries/distributed/<int:page>')
 @blueprint.route('/queries/distributed/<any(new, pending, complete):status>')
 @blueprint.route('/queries/distributed/<any(new, pending, complete):status>/<int:page>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/page')
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>')
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>/<int:page>')
 @login_required
-def distributed(node_id=None, status=None, page=1):
+def distributed(node_id=None, distributed_id=None, status=None, page=1):
     tasks = DistributedQueryTask.query
 
     if status == 'new':
@@ -246,6 +250,10 @@ def distributed(node_id=None, status=None, page=1):
     if node_id:
         node = Node.query.filter_by(id=node_id).first_or_404()
         tasks = tasks.filter_by(node_id=node.id)
+
+    if distributed_id:
+        query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
+        tasks = tasks.filter_by(distributed_query_id=query.id)
 
     tasks = get_paginate_options(
         request,
@@ -267,7 +275,8 @@ def distributed(node_id=None, status=None, page=1):
                             bs_version=3)
 
     return render_template('distributed.html', queries=tasks.items,
-                           status=status, pagination=pagination)
+                           status=status, pagination=pagination,
+                           distributed_id=distributed_id)
 
 
 @blueprint.route('/queries/distributed/add', methods=['GET', 'POST'])

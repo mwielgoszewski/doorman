@@ -6,7 +6,11 @@
             {% if queries is defined %}
 
             <div class="col-md-12">
-                <h1>{% if status %}{{ status }} {% endif %}distributed queries</h1>
+                {% if distributed_id %}
+                    <h1>{% if status %}{{ status }} {% endif %}distributed query {{ distributed_id }}</h1>
+                {% else %}
+                    <h1>{% if status %}{{ status }} {% endif %}distributed queries</h1>
+                {% endif %}
 
                 {% if queries %}
                 {% include "tables/distributed.html" %}

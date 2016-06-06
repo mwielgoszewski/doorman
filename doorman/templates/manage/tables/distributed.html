@@ -15,7 +15,14 @@
                             <td>
                                 <a href="{{ url_for('manage.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
                             </td>
-                            <td><code>{{ query.distributed_query.sql }}</code></td>
+                            <td>
+                                <code>{{ query.distributed_query.sql }}</code>
+                                {% if not distributed_id %}
+                                <a href="{{ url_for('manage.distributed', distributed_id=query.distributed_query.id) }}">
+                                    <i class="glyphicon glyphicon-new-window"></i>
+                                </a>
+                                {% endif %}
+                            </td>
                             <td>{{ query.distributed_query.timestamp }}</td>
                             <td>{{ query.distributed_query.not_before or 'immediately' }}</td>
                             <td>{{ query.timestamp or '' }}</td>

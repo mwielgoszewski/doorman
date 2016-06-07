@@ -14,11 +14,6 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
-try:
-    import html.escape as html_escape
-except ImportError:
-    html_escape = None
-
 from doorman.models import (
     Node, Pack, Query, Tag, FilePath,
     DistributedQuery, DistributedQueryTask, DistributedQueryResult, Rule,
@@ -851,9 +846,6 @@ class TestDistributedWrite:
 class TestDistributedTable:
 
     def html_escape(self, v):
-        if html_escape is not None:
-            return html_escape(v)
-
         return (v
             .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             .replace("'", "&#39;").replace('"', "&quot;")
@@ -873,8 +865,8 @@ class TestDistributedTable:
 
         # Verify that both of these queries exist in the table.
         resp = testapp.get(url_for('manage.distributed'))
-        assert self.html_escape(q1.sql) in resp.body
-        assert self.html_escape(q2.sql) in resp.body
+        assert self.html_escape(q1.sql) in resp.text
+        assert self.html_escape(q2.sql) in resp.text
 
     def test_distributed_query_table_filter_status(self, db, node, testapp):
         # Create two fake queries.
@@ -890,11 +882,11 @@ class TestDistributedTable:
 
         # Verify that only the complete one exists in the table
         resp = testapp.get(url_for('manage.distributed', status='complete'))
-        assert self.html_escape(q1.sql) not in resp.body
-        assert self.html_escape(q2.sql) in resp.body
+        assert self.html_escape(q1.sql) not in resp.text
+        assert self.html_escape(q2.sql) in resp.text
 
         # Should only have one result
-        assert 'displaying <b>1 - 1</b> of <b>1</b> complete distributed query tasks' in resp.body
+        assert 'displaying <b>1 - 1</b> of <b>1</b> complete distributed query tasks' in resp.text
 
     def test_distributed_query_table_filter_query(self, db, node, testapp):
         # Create two fake queries.
@@ -910,11 +902,11 @@ class TestDistributedTable:
 
         # Verify that only the complete one exists in the table
         resp = testapp.get(url_for('manage.distributed', distributed_id=q1.id))
-        assert self.html_escape(q1.sql) in resp.body
-        assert self.html_escape(q2.sql) not in resp.body
+        assert self.html_escape(q1.sql) in resp.text
+        assert self.html_escape(q2.sql) not in resp.text
 
         # Should only have one result
-        assert 'displaying <b>1 - 1</b> of <b>1</b> distributed query tasks' in resp.body
+        assert 'displaying <b>1 - 1</b> of <b>1</b> distributed query tasks' in resp.text
 
     def test_distributed_query_table_filter_node(self, db, testapp):
         # Create one fake query, but two nodes
@@ -931,7 +923,7 @@ class TestDistributedTable:
 
         # Verify that when filtering by the node, we only get one result.
         resp = testapp.get(url_for('manage.distributed', node_id=node1.id, status='pending'))
-        assert 'displaying <b>1 - 1</b> of <b>1</b> pending distributed query tasks' in resp.body
+        assert 'displaying <b>1 - 1</b> of <b>1</b> pending distributed query tasks' in resp.text
 
 
 class TestCreateQueryPackFromUpload:

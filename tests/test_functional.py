@@ -14,6 +14,11 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
+try:
+    import html.escape as html_escape
+except ImportError:
+    html_escape = None
+
 from doorman.models import (
     Node, Pack, Query, Tag, FilePath,
     DistributedQuery, DistributedQueryTask, DistributedQueryResult, Rule,
@@ -841,6 +846,92 @@ class TestDistributedWrite:
         })
 
         assert t2.results
+
+
+class TestDistributedTable:
+
+    def html_escape(self, v):
+        if html_escape is not None:
+            return html_escape(v)
+
+        return (v
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace("'", "&#39;").replace('"', "&quot;")
+            )
+
+    def test_distributed_query_table_basic(self, db, node, testapp):
+        # Create two fake queries.
+        q1 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
+        q2 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'otherproc';")
+        t2 = DistributedQueryTask.create(node=node, distributed_query=q2)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.PENDING)
+
+        # Verify that both of these queries exist in the table.
+        resp = testapp.get(url_for('manage.distributed'))
+        assert self.html_escape(q1.sql) in resp.body
+        assert self.html_escape(q2.sql) in resp.body
+
+    def test_distributed_query_table_filter_status(self, db, node, testapp):
+        # Create two fake queries.
+        q1 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
+        q2 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'otherproc';")
+        t2 = DistributedQueryTask.create(node=node, distributed_query=q2)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.COMPLETE)
+
+        # Verify that only the complete one exists in the table
+        resp = testapp.get(url_for('manage.distributed', status='complete'))
+        assert self.html_escape(q1.sql) not in resp.body
+        assert self.html_escape(q2.sql) in resp.body
+
+        # Should only have one result
+        assert 'displaying <b>1 - 1</b> of <b>1</b> complete distributed query tasks' in resp.body
+
+    def test_distributed_query_table_filter_query(self, db, node, testapp):
+        # Create two fake queries.
+        q1 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
+        q2 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'otherproc';")
+        t2 = DistributedQueryTask.create(node=node, distributed_query=q2)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.COMPLETE)
+
+        # Verify that only the complete one exists in the table
+        resp = testapp.get(url_for('manage.distributed', distributed_id=q1.id))
+        assert self.html_escape(q1.sql) in resp.body
+        assert self.html_escape(q2.sql) not in resp.body
+
+        # Should only have one result
+        assert 'displaying <b>1 - 1</b> of <b>1</b> distributed query tasks' in resp.body
+
+    def test_distributed_query_table_filter_node(self, db, testapp):
+        # Create one fake query, but two nodes
+        node1 = NodeFactory(host_identifier='node1')
+        node2 = NodeFactory(host_identifier='node2')
+
+        q1 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node1, distributed_query=q1)
+        t2 = DistributedQueryTask.create(node=node2, distributed_query=q1)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.PENDING)
+
+        # Verify that when filtering by the node, we only get one result.
+        resp = testapp.get(url_for('manage.distributed', node_id=node1.id, status='pending'))
+        assert 'displaying <b>1 - 1</b> of <b>1</b> pending distributed query tasks' in resp.body
 
 
 class TestCreateQueryPackFromUpload:

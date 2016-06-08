@@ -167,7 +167,7 @@ def create_query_pack_from_upload(upload):
 
 def get_node_health(node):
     checkin_interval = current_app.config['DOORMAN_CHECKIN_INTERVAL']
-    if (dt.datetime.utcnow() - node.last_checkin).seconds > checkin_interval:
+    if (dt.datetime.utcnow() - node.last_checkin).total_seconds() > checkin_interval:
         return u'danger'
     else:
         return ''

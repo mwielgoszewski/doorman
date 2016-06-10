@@ -7,6 +7,8 @@ from collections import defaultdict
 from doorman.rules import (
     BaseCondition,
     EqualCondition,
+    LessCondition,
+    LogicCondition,
     MatchesRegexCondition,
     Network,
     NotMatchesRegexCondition,
@@ -285,6 +287,45 @@ class TestBaseCondition:
         condition.run(DUMMY_INPUT)
 
         assert condition.runs == 1
+
+
+class TestLogicCondition:
+
+    def test_will_convert_to_numbers(self):
+        class TestCondition(LogicCondition):
+            def __init__(self, *args, **kwargs):
+                LogicCondition.__init__(self, *args, **kwargs)
+                self.compare_val = None
+
+            def compare(self, value):
+                self.compare_val = value
+
+        inp = RuleInput(node={}, result_log={
+            'columns': {
+                'int_col': '1234',
+                'float_col': '56.78',
+            },
+        })
+
+        condition = TestCondition(None, None, column_name='int_col')
+        condition.local_run(inp)
+        assert condition.compare_val == 1234
+
+        condition = TestCondition(None, None, column_name='float_col')
+        condition.local_run(inp)
+        assert condition.compare_val == 56.78
+
+    def test_less_with_number_values(self):
+        """ Functional test for LessCondition that it uses the number conversion. """
+
+        inp = RuleInput(node={}, result_log={
+            'columns': {
+                'val': '112',
+            },
+        })
+
+        condition = LessCondition(None, '12', column_name='val')
+        assert condition.local_run(inp) is True
 
 
 class TestRegexConditions:

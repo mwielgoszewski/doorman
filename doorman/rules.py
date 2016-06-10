@@ -3,6 +3,8 @@ import re
 import logging
 from collections import namedtuple
 
+import six
+
 
 logger = logging.getLogger(__name__)
 
@@ -208,8 +210,19 @@ class LogicCondition(BaseCondition):
     def __init__(self, key, expected, column_name=None):
         super(LogicCondition, self).__init__()
         self.key = key
-        self.expected = expected
+        self.expected = self.maybe_make_number(expected)
         self.column_name = column_name
+
+    def maybe_make_number(self, value):
+        if not isinstance(value, six.string_types):
+            return value
+
+        if value.isdigit():
+            return int(value)
+        elif '.' in value and value.replace('.', '', 1).isdigit():
+            return float(value)
+
+        return value
 
     def local_run(self, input):
         # If we have a 'column_name', we should use that to extract the value
@@ -227,6 +240,9 @@ class LogicCondition(BaseCondition):
             value = input.node['host_identifier']
         else:
             raise KeyError('Unknown key: {0}'.format(self.key))
+
+        # Try and convert the value to a number, if it looks like one
+        value = self.maybe_make_number(value)
 
         # Pass to the actual logic function
         logger.debug("Running logic condition %r: %r | %r", self, self.expected, value)

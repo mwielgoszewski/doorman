@@ -6,6 +6,7 @@ billiard==3.3.0.23
 blinker==1.4
 celery==3.1.23
 cffi==1.6.0
+contextlib2==0.5.3
 cssmin==0.2.0
 enum34==1.1.6
 Flask==0.10.1
@@ -33,6 +34,7 @@ pyasn1==0.1.9
 pycparser==2.14
 python-editor==1.0
 pytz==2016.4
+raven==5.20.0
 redis==2.10.5
 requests==2.10.0
 requests-oauthlib==0.6.1

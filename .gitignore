@@ -156,3 +156,8 @@ tags
 
 dev.db
 database/
+
+# Downloaded or generated assets
+doorman/static/css/bootstrap.css
+doorman/static/libs/
+doorman/static/public/

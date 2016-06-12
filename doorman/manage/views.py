@@ -375,8 +375,12 @@ def files():
 def add_file():
     form = FilePathForm()
     if form.validate_on_submit():
-        FilePath.create(category=form.category.data,
-                        target_paths=form.target_paths.data.splitlines())
+        file_path = FilePath(
+            category=form.category.data,
+            target_paths=form.target_paths.data.splitlines()
+        )
+        file_path.tags = create_tags(*form.tags.data.splitlines())
+        file_path.save()
         return redirect(url_for('manage.files'))
 
     flash_errors(form)

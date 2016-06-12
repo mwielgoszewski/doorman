@@ -132,6 +132,7 @@ class CreateTagForm(Form):
 class FilePathForm(Form):
     category = StringField('category', validators=[DataRequired()])
     target_paths = TextAreaField('files', validators=[DataRequired()])
+    tags = TextAreaField("Tags")
 
 
 class RuleForm(Form):

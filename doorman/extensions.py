@@ -108,6 +108,10 @@ class RuleManager(object):
         all_rules = list(Rule.query.all())
 
         self.network = Network()
+
+        if not all_rules:
+            return
+
         for rule in all_rules:
             # Verify the alerters
             for alerter in rule.alerters:

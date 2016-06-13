@@ -21,6 +21,13 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            {{ form.tags.label(class_="col-sm-2 control-label") }}
+                            <div class="col-sm-10">
+                                {{ form.tags(placeholder="One tag per line", class_="form-control") }}
+                            </div>
+                        </div>
+
                         <div class="form-group"> 
                             <div class="col-sm-10 col-sm-offset-2">
                                 <p><input class="btn-small btn-default btn-submit" type="submit" value="{% if file_path is defined %}update{% else %}add{% endif %} file path"></p>

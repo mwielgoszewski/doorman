@@ -268,7 +268,7 @@ class Node(SurrogatePK, Model):
         now = dt.datetime.utcnow()
         when = now - dt.timedelta(days=days, minutes=minutes, seconds=seconds)
         return self.result_logs.filter(ResultLog.timestamp > when) \
-            .order_by(ResultLog.timestamp.desc())
+            .order_by(ResultLog.timestamp.desc(), ResultLog.id.desc())
 
     def to_dict(self):
         # NOTE: deliberately not including any secret values in here, for now.
@@ -296,9 +296,9 @@ class FilePath(SurrogatePK, Model):
         self.category = category
 
         if target_paths is not None:
-            self.target_paths = '!!'.join(target_paths)
+            self.set_paths(*target_paths)
         elif args:
-            self.target_paths = '!!'.join(args)
+            self.set_paths(*args)
         else:
             self.target_paths = ''
 
@@ -309,6 +309,9 @@ class FilePath(SurrogatePK, Model):
 
     def get_paths(self):
         return self.target_paths.split('!!')
+
+    def set_paths(self, *target_paths):
+        self.target_paths = '!!'.join(target_paths)
 
 
 class ResultLog(SurrogatePK, Model):

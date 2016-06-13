@@ -132,6 +132,18 @@ class CreateTagForm(Form):
 class FilePathForm(Form):
     category = StringField('category', validators=[DataRequired()])
     target_paths = TextAreaField('files', validators=[DataRequired()])
+    tags = TextAreaField("Tags")
+
+
+class FilePathUpdateForm(FilePathForm):
+
+    def __init__(self, *args, **kwargs):
+        super(FilePathUpdateForm, self).__init__(*args, **kwargs)
+        # self.set_choices()
+        file_path = kwargs.pop('obj', None)
+        if file_path:
+            self.target_paths.process_data('\n'.join(file_path.get_paths()))
+            self.tags.process_data('\n'.join(t.value for t in file_path.tags))
 
 
 class RuleForm(Form):

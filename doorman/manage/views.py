@@ -16,6 +16,7 @@ from .forms import (
     CreateTagForm,
     UploadPackForm,
     FilePathForm,
+    FilePathUpdateForm,
     CreateRuleForm,
     UpdateRuleForm,
 )
@@ -374,13 +375,39 @@ def files():
 @login_required
 def add_file():
     form = FilePathForm()
+
     if form.validate_on_submit():
-        FilePath.create(category=form.category.data,
-                        target_paths=form.target_paths.data.splitlines())
+        file_path = FilePath(
+            category=form.category.data,
+            target_paths=form.target_paths.data.splitlines()
+        )
+        file_path.tags = create_tags(*form.tags.data.splitlines())
+        file_path.save()
+
         return redirect(url_for('manage.files'))
 
     flash_errors(form)
     return render_template('file.html', form=form)
+
+
+@blueprint.route('/file/<int:file_path_id>', methods=['GET', 'POST'])
+@login_required
+def file_path(file_path_id):
+    file_path = FilePath.query.filter(FilePath.id == file_path_id).first_or_404()
+    form = FilePathUpdateForm(request.form)
+
+    if form.validate_on_submit():
+        file_path.tags = create_tags(*form.tags.data.splitlines())
+        file_path.set_paths(*form.target_paths.data.splitlines())
+        file_path = file_path.update(
+            category=form.category.data,
+        )
+
+        return redirect(url_for('manage.files'))
+
+    form = FilePathUpdateForm(request.form, obj=file_path)
+    flash_errors(form)
+    return render_template('file.html', form=form, file_path=file_path)
 
 
 @blueprint.route('/file/<int:file_path_id>/tags', methods=['GET', 'POST'])

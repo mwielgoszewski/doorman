@@ -279,6 +279,19 @@ class Node(SurrogatePK, Model):
             'last_checkin': self.last_checkin,
         }
 
+    @property
+    def system_info(self):
+        description = u'doorman builtin - capture system info'
+        dqr = self.distributed_queries \
+            .filter(DistributedQuery.description == description) \
+            .order_by(DistributedQueryTask.timestamp.desc()).first()
+
+        if not dqr or not dqr.results:
+            return {}
+
+        results = dqr.results[-1]
+        return results.columns
+
 
 class FilePath(SurrogatePK, Model):
 

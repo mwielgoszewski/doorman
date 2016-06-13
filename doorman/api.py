@@ -11,7 +11,7 @@ from doorman.database import db
 from doorman.extensions import log_tee
 from doorman.models import (
     Node, Pack, Query, Tag,
-    DistributedQueryTask, DistributedQueryResult,
+    DistributedQuery, DistributedQueryTask, DistributedQueryResult,
     StatusLog,
 )
 from doorman.tasks import analyze_result
@@ -178,6 +178,20 @@ def enroll():
         node.save()
 
     current_app.logger.info("Enrolled new node %s", node)
+
+    # if we have configured doorman to capture system information
+    # upon new node enrollment, then create a distributed query task
+    # to collect this information from the system_info table asap.
+
+    if current_app.config['DOORMAN_CAPTURE_SYSTEM_INFO']:
+        description = 'doorman builtin - capture system info'
+        sql = 'select * from system_info;'
+
+        query = DistributedQuery.query.filter_by(description=description).first()
+        if not query:
+            query = DistributedQuery.create(sql=sql, description=description)
+
+        task = DistributedQueryTask.create(node_id=node.id, distributed_query=query)
 
     return jsonify(node_key=node.node_key, node_invalid=False)
 

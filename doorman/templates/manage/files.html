@@ -9,7 +9,9 @@
                 {% if file_paths %}
 
                 {% for file_path in file_paths %}
-                <h2>{{ file_path.category }}</h2>
+                <h2>
+                    <a href="{{ url_for('manage.file_path', file_path_id=file_path.id) }}">{{ file_path.category }}</a>
+                </h2>
 
                 <ul>
                     {% for path in file_path.get_paths() %}

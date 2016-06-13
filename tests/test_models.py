@@ -91,7 +91,16 @@ class TestFilePath:
         file_path = FilePath.create(category='foobar', target_paths=target_paths)
         assert file_path.to_dict() == {'foobar': target_paths}
 
+    def test_update(self):
+        target_paths = [
+            '/root/.ssh/%%',
+            '/home/.ssh/%%',
+        ]
+
+        file_path = FilePath.create(category='foobar', target_paths=target_paths)
+        assert file_path.to_dict() == {'foobar': target_paths}
+
         target_paths.append('/etc/%%')
-        file_path.target_paths = '!!'.join(target_paths)
+        file_path.set_paths(*target_paths)
         file_path.save()
         assert file_path.to_dict() == {'foobar': target_paths}

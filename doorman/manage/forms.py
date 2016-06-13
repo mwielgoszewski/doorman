@@ -135,6 +135,17 @@ class FilePathForm(Form):
     tags = TextAreaField("Tags")
 
 
+class FilePathUpdateForm(FilePathForm):
+
+    def __init__(self, *args, **kwargs):
+        super(FilePathUpdateForm, self).__init__(*args, **kwargs)
+        # self.set_choices()
+        file_path = kwargs.pop('obj', None)
+        if file_path:
+            self.target_paths.process_data('\n'.join(file_path.get_paths()))
+            self.tags.process_data('\n'.join(t.value for t in file_path.tags))
+
+
 class RuleForm(Form):
 
     name = StringField('Rule Name', validators=[DataRequired()])

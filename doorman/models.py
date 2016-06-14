@@ -341,7 +341,7 @@ class ResultLog(SurrogatePK, Model):
     )
 
     def __init__(self, name=None, action=None, columns=None, timestamp=None,
-                 node=None, node_id=None):
+                 node=None, node_id=None, **kwargs):
         self.name = name
         self.action = action
         self.columns = columns or {}
@@ -368,7 +368,8 @@ class StatusLog(SurrogatePK, Model):
     )
 
     def __init__(self, line=None, message=None, severity=None,
-                 filename=None, created=None, node=None, version=None):
+                 filename=None, created=None, node=None, version=None,
+                 **kwargs):
         self.line = int(line)
         self.message = message
         self.severity = int(severity)

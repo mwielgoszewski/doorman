@@ -6,10 +6,10 @@
             <div class="col-md-12">
                 <h1>{% if status %}{{ status }} {% endif %}distributed query results for query {{ distributed_id }}</h1>
 
-                <strong>query:</strong>
-                <code>{{ sql }}</code>
+                <p class="lead">{{ query.description or '' }}</p>
+                <pre>{{ query.sql }}</pre>
 
-                {% if results %}
+                {% if tasks %}
                 {% include "tables/distributed_results.html" %}
 
                 <div class="text-center">
@@ -20,7 +20,7 @@
                 {% else %}
                     <p>
                         No distributed query results for query {{ distributed_id }}
-                        {%- if status %} in {{ status }} state {% endif -%}
+                        {%- if status %} in state {{ status }}{% endif -%}
                     </p>
                 {% endif %}
             </div>

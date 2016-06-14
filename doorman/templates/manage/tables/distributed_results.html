@@ -1,6 +1,25 @@
-                <table class="table table-striped table-condensed">
-                    {% set columns = results | first | attr('columns') | list | sort %}
+{% macro render_task_parts(task) %}
+    <td>
+        <a href="{{ url_for('manage.get_node', node_id=task.node_id) }}">{{ task.node.host_identifier }}</a>
+    </td>
+    <td>{{ task.distributed_query.timestamp }}</td>
+    <td>{{ task.distributed_query.not_before or 'immediately' }}</td>
+    <td>{{ task.timestamp or '' }}</td>
+    {% if not status %}
+    <td>
+        {%- if task.status == DistributedQueryTask.NEW -%}
+        NEW
+        {%- elif task.status == DistributedQueryTask.PENDING -%}
+        PENDING
+        {%- elif task.status == DistributedQueryTask.COMPLETE -%}
+        COMPLETE
+        {%- endif -%}
+    </td>
+    {% endif %}
+{% endmacro %}
 
+
+                <table class="table table-striped table-condensed">
                     <thead>
                         <th>node</th>
                         <th>created</th>
@@ -8,36 +27,38 @@
                         <th>retrieved</th>
                         {% if not status %}<th>status</th>{% endif %}
 
-                        {% for column in columns %}
-                            <th>{{ column }}</th>
-                        {% endfor %}
+                        {% if columns %}
+                            {% for column in columns %}
+                                <th>{{ column }}</th>
+                            {% endfor %}
+                        {% else %}
+                            <th></th>
+                        {% endif %}
                     </thead>
 
                     <tbody>
-                        {% for result in results %}
-                        <tr>
-                            <td>
-                                <a href="{{ url_for('manage.get_node', node_id=result.distributed_query_task.node_id) }}">{{ result.distributed_query_task.node.host_identifier }}</a>
-                            </td>
-                            <td>{{ result.distributed_query.timestamp }}</td>
-                            <td>{{ result.distributed_query.not_before or 'immediately' }}</td>
-                            <td>{{ result.timestamp or '' }}</td>
-                            {% if not status %}
-                            <td>
-                                {%- if result.distributed_query_task.status == DistributedQueryTask.NEW -%}
-                                NEW
-                                {%- elif result.distributed_query_task.status == DistributedQueryTask.PENDING -%}
-                                PENDING
-                                {%- elif result.distributed_query_task.status == DistributedQueryTask.COMPLETE -%}
-                                COMPLETE
-                                {%- endif -%}
-                            </td>
+                        {% for task in tasks %}
+
+                            {# If we have any results, render a row per-result.  Otherwise, we render a single row without them #}
+                            {% if task.results | length %}
+                                {% for result in task.results %}
+                                    <tr>
+                                        {{ render_task_parts(task) }}
+
+                                        {% for column in columns %}
+                                            <td>{{ result.columns[column] }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    {{ render_task_parts(task) }}
+
+                                    <td colspan='{{ columns | length }}'>
+                                        <i>no results</i>
+                                    </td>
+                                </tr>
                             {% endif %}
-
-                            {% for column in columns %}
-                                <td>{{ result.columns[column] }}</td>
-                            {% endfor %}
-
                         {% endfor %}
                     </tbody>
 

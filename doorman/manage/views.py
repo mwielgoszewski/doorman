@@ -285,32 +285,35 @@ def distributed_results(distributed_id, status=None, page=1):
     elif status == 'complete':
         tasks = tasks.filter_by(status=DistributedQueryTask.COMPLETE)
 
-    # Now that we have all tasks, retrieve all the results for them.
-    ids = [x.id for x in tasks.all()]
-    results = DistributedQueryResult.query.filter(DistributedQueryResult.distributed_query_task_id.in_(ids))
-
-    results = get_paginate_options(
+    tasks = get_paginate_options(
         request,
-        DistributedQueryResult,
+        DistributedQueryTask,
         ('id', 'status', 'timestamp'),
-        existing_query=results,
+        existing_query=tasks,
         page=page,
         default_sort='desc'
     )
     display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
 
     pagination = Pagination(page=page,
-                            per_page=results.per_page,
-                            total=results.total,
+                            per_page=tasks.per_page,
+                            total=tasks.total,
                             alignment='center',
                             show_single_page=False,
                             display_msg=display_msg,
                             record_name='{0} distributed query results'.format(status or '').strip(),
                             bs_version=3)
 
+    # We could do this in the template, but it's more clear here.
+    columns = []
+    for task in tasks.items:
+        if len(task.results) > 0 and len(task.results[0].columns) > 0:
+            columns = sorted(task.results[0].columns.keys())
+
     return render_template('distributed_results.html',
-                           results=results.items,
-                           sql=query.sql,
+                           tasks=tasks.items,
+                           columns=columns,
+                           query=query,
                            status=status,
                            pagination=pagination,
                            distributed_id=distributed_id)

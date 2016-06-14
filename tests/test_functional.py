@@ -852,7 +852,7 @@ class TestDistributedTable:
             )
 
     def test_distributed_query_table_basic(self, db, node, testapp):
-        # Create two fake queries.
+        # Create two fake queries, tasks, and fake results.
         q1 = DistributedQuery.create(
             sql="select name, path, pid from processes where name = 'osqueryd';")
         t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
@@ -863,67 +863,45 @@ class TestDistributedTable:
         t1.update(status=DistributedQueryTask.PENDING)
         t2.update(status=DistributedQueryTask.PENDING)
 
-        # Verify that both of these queries exist in the table.
-        resp = testapp.get(url_for('manage.distributed'))
-        assert self.html_escape(q1.sql) in resp.text
-        assert self.html_escape(q2.sql) in resp.text
+        r1 = DistributedQueryResult.create(distributed_query_task=t1, distributed_query=q1, columns={
+            'query': 'number 1',
+        })
+        r2 = DistributedQueryResult.create(distributed_query_task=t2, distributed_query=q2, columns={
+            'query': 'number 2',
+        })
 
-    def test_distributed_query_table_filter_status(self, db, node, testapp):
-        # Create two fake queries.
-        q1 = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';")
-        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
-        q2 = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'otherproc';")
-        t2 = DistributedQueryTask.create(node=node, distributed_query=q2)
-
-        t1.update(status=DistributedQueryTask.PENDING)
-        t2.update(status=DistributedQueryTask.COMPLETE)
-
-        # Verify that only the complete one exists in the table
-        resp = testapp.get(url_for('manage.distributed', status='complete'))
-        assert self.html_escape(q1.sql) not in resp.text
-        assert self.html_escape(q2.sql) in resp.text
-
-        # Should only have one result
-        assert 'displaying <b>1 - 1</b> of <b>1</b> complete distributed query tasks' in resp.text
-
-    def test_distributed_query_table_filter_query(self, db, node, testapp):
-        # Create two fake queries.
-        q1 = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'osqueryd';")
-        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
-        q2 = DistributedQuery.create(
-            sql="select name, path, pid from processes where name = 'otherproc';")
-        t2 = DistributedQueryTask.create(node=node, distributed_query=q2)
-
-        t1.update(status=DistributedQueryTask.PENDING)
-        t2.update(status=DistributedQueryTask.COMPLETE)
-
-        # Verify that only the complete one exists in the table
-        resp = testapp.get(url_for('manage.distributed', distributed_id=q1.id))
+        # Verify that the first query is there, and the second is not
+        resp = testapp.get(url_for('manage.distributed_results', distributed_id=q1.id))
         assert self.html_escape(q1.sql) in resp.text
         assert self.html_escape(q2.sql) not in resp.text
 
-        # Should only have one result
-        assert 'displaying <b>1 - 1</b> of <b>1</b> distributed query tasks' in resp.text
-
-    def test_distributed_query_table_filter_node(self, db, testapp):
-        # Create one fake query, but two nodes
+    def test_distributed_query_table_filter_status(self, db, testapp):
         node1 = NodeFactory(host_identifier='node1')
         node2 = NodeFactory(host_identifier='node2')
 
-        q1 = DistributedQuery.create(
+        # Create a fake query and tasks for each node
+        q = DistributedQuery.create(
             sql="select name, path, pid from processes where name = 'osqueryd';")
-        t1 = DistributedQueryTask.create(node=node1, distributed_query=q1)
-        t2 = DistributedQueryTask.create(node=node2, distributed_query=q1)
+        t1 = DistributedQueryTask.create(node=node1, distributed_query=q)
+        t2 = DistributedQueryTask.create(node=node2, distributed_query=q)
 
         t1.update(status=DistributedQueryTask.PENDING)
-        t2.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.COMPLETE)
 
-        # Verify that when filtering by the node, we only get one result.
-        resp = testapp.get(url_for('manage.distributed', node_id=node1.id, status='pending'))
-        assert 'displaying <b>1 - 1</b> of <b>1</b> pending distributed query tasks' in resp.text
+        r1 = DistributedQueryResult.create(distributed_query_task=t1, distributed_query=q, columns={
+            'query': 'number 1',
+        })
+        r2 = DistributedQueryResult.create(distributed_query_task=t2, distributed_query=q, columns={
+            'query': 'number 2',
+        })
+
+        # Verify that only the complete one exists in the table
+        resp = testapp.get(url_for('manage.distributed_results', distributed_id=q.id, status='complete'))
+        assert 'number 1' not in resp.text
+        assert 'number 2' in resp.text
+
+        # Should only have one result
+        assert 'displaying <b>1 - 1</b> of <b>1</b> complete distributed query results' in resp.text
 
 
 class TestCreateQueryPackFromUpload:

@@ -22,7 +22,7 @@ from .forms import (
 )
 from doorman.database import db
 from doorman.models import (
-    DistributedQuery, DistributedQueryTask,
+    DistributedQuery, DistributedQueryTask, DistributedQueryResult,
     FilePath, Node, Pack, Query, Tag, Rule, StatusLog
 )
 from doorman.utils import (
@@ -230,14 +230,10 @@ def add_query():
 @blueprint.route('/queries/distributed/<int:page>')
 @blueprint.route('/queries/distributed/<any(new, pending, complete):status>')
 @blueprint.route('/queries/distributed/<any(new, pending, complete):status>/<int:page>')
-@blueprint.route('/queries/distributed/results/<int:distributed_id>')
-@blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
-@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
-@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/page')
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>')
 @blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>/<int:page>')
 @login_required
-def distributed(node_id=None, distributed_id=None, status=None, page=1):
+def distributed(node_id=None, status=None, page=1):
     tasks = DistributedQueryTask.query
 
     if status == 'new':
@@ -250,10 +246,6 @@ def distributed(node_id=None, distributed_id=None, status=None, page=1):
     if node_id:
         node = Node.query.filter_by(id=node_id).first_or_404()
         tasks = tasks.filter_by(node_id=node.id)
-
-    if distributed_id:
-        query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
-        tasks = tasks.filter_by(distributed_query_id=query.id)
 
     tasks = get_paginate_options(
         request,
@@ -275,7 +267,51 @@ def distributed(node_id=None, distributed_id=None, status=None, page=1):
                             bs_version=3)
 
     return render_template('distributed.html', queries=tasks.items,
-                           status=status, pagination=pagination,
+                           status=status, pagination=pagination)
+
+
+@blueprint.route('/queries/distributed/results/<int:distributed_id>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/<int:page>')
+def distributed_results(distributed_id, status=None, page=1):
+    query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
+    tasks = DistributedQueryTask.query.filter_by(distributed_query_id=query.id)
+
+    if status == 'new':
+        tasks = tasks.filter_by(status=DistributedQueryTask.NEW)
+    elif status == 'pending':
+        tasks = tasks.filter_by(status=DistributedQueryTask.PENDING)
+    elif status == 'complete':
+        tasks = tasks.filter_by(status=DistributedQueryTask.COMPLETE)
+
+    # Now that we have all tasks, retrieve all the results for them.
+    ids = [x.id for x in tasks.all()]
+    results = DistributedQueryResult.query.filter(DistributedQueryResult.distributed_query_task_id.in_(ids))
+
+    results = get_paginate_options(
+        request,
+        DistributedQueryResult,
+        ('id', 'status', 'timestamp'),
+        existing_query=results,
+        page=page,
+        default_sort='desc'
+    )
+    display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
+
+    pagination = Pagination(page=page,
+                            per_page=results.per_page,
+                            total=results.total,
+                            alignment='center',
+                            show_single_page=False,
+                            display_msg=display_msg,
+                            record_name='{0} distributed query results'.format(status or '').strip(),
+                            bs_version=3)
+
+    return render_template('distributed_results.html',
+                           results=results.items,
+                           status=status,
+                           pagination=pagination,
                            distributed_id=distributed_id)
 
 

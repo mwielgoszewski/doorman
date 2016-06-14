@@ -3,13 +3,11 @@
 
     <div class="body-content">
         <div class="row">
-            {% if queries is defined %}
-
             <div class="col-md-12">
-                <h1>{% if status %}{{ status }} {% endif %}distributed queries</h1>
+                <h1>{% if status %}{{ status }} {% endif %}distributed query results for query {{ distributed_id }}</h1>
 
-                {% if queries %}
-                {% include "tables/distributed.html" %}
+                {% if results %}
+                {% include "tables/distributed_results.html" %}
 
                 <div class="text-center">
                     <small>{{ pagination.info }}</small>
@@ -17,13 +15,11 @@
                 </div>
 
                 {% else %}
-                <p>No distributed queries in {{ status }} state.</p>
+                    <p>
+                        No distributed query results for query {{ distributed_id }}
+                        {%- if status %} in {{ status }} state {% endif -%}
+                    </p>
                 {% endif %}
-
-            {% else %}
-            <div class="col-md-9">
-                {% include "forms/distributed.html" %}
-            {% endif %}
             </div>
 
         </div>

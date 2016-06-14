@@ -17,11 +17,9 @@
                             </td>
                             <td>
                                 <code>{{ query.distributed_query.sql }}</code>
-                                {% if not distributed_id %}
-                                <a href="{{ url_for('manage.distributed', distributed_id=query.distributed_query.id) }}">
+                                <a href="{{ url_for('manage.distributed_results', distributed_id=query.distributed_query.id) }}">
                                     <i class="glyphicon glyphicon-new-window"></i>
                                 </a>
-                                {% endif %}
                             </td>
                             <td>{{ query.distributed_query.timestamp }}</td>
                             <td>{{ query.distributed_query.not_before or 'immediately' }}</td>

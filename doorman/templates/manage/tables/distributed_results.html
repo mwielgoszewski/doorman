@@ -1,0 +1,49 @@
+                <table class="table table-striped table-condensed">
+                    {% set columns = results | first | attr('columns') | list | sort %}
+
+                    <thead>
+                        <th>node</th>
+                        <th>query</th>
+                        <th>created</th>
+                        <th>run after</th>
+                        <th>retrieved</th>
+                        {% if not status %}<th>status</th>{% endif %}
+
+                        {% for column in columns %}
+                            <th>{{ column }}</th>
+                        {% endfor %}
+                    </thead>
+
+                    <tbody>
+                        {% for result in results %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('manage.get_node', node_id=result.distributed_query_task.node_id) }}">{{ result.distributed_query_task.node.host_identifier }}</a>
+                            </td>
+                            <td>
+                                <code>{{ result.distributed_query.sql }}</code>
+                            </td>
+                            <td>{{ result.distributed_query.timestamp }}</td>
+                            <td>{{ result.distributed_query.not_before or 'immediately' }}</td>
+                            <td>{{ result.timestamp or '' }}</td>
+                            {% if not status %}
+                            <td>
+                                {%- if result.distributed_query_task.status == DistributedQueryTask.NEW -%}
+                                NEW
+                                {%- elif result.distributed_query_task.status == DistributedQueryTask.PENDING -%}
+                                PENDING
+                                {%- elif result.distributed_query_task.status == DistributedQueryTask.COMPLETE -%}
+                                COMPLETE
+                                {%- endif -%}
+                            </td>
+                            {% endif %}
+
+                            {% for value in result.columns.values() %}
+                                <td>{{ value }}</td>
+                            {% endfor %}
+
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+

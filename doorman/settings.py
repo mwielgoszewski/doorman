@@ -34,6 +34,7 @@ class Config(object):
     DOORMAN_PACK_DELIMITER = '/'
     DOORMAN_ENROLL_DEFAULT_TAGS = [
     ]
+    DOORMAN_CAPTURE_SYSTEM_INFO = True
 
     BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'

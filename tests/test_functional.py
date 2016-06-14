@@ -187,6 +187,23 @@ class TestEnrolling:
         assert Tag.query.count() == 3
         assert node.tags == [tag]
 
+    def test_enrollment_captures_system_info(self, db, node, testapp):
+        enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': enroll_secret,
+            'host_identifier': 'foobaz'})
+
+        assert resp.json['node_invalid'] is False
+        assert resp.json['node_key'] != node.node_key
+
+        resp = testapp.post_json(url_for('api.distributed_read'), {
+            'node_key': resp.json['node_key']
+        })
+
+        assert resp.json['node_invalid'] is False
+        assert resp.json['queries'] is not None
+        assert 'select * from system_info;' in resp.json['queries'].values()
+
 
 class TestConfiguration:
 

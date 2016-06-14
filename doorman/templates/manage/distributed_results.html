@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>{% if status %}{{ status }} {% endif %}distributed query results for query {{ distributed_id }}</h1>
+
+                <p class="lead">{{ query.description or '' }}</p>
+                <pre>{{ query.sql }}</pre>
+
+                {% if tasks %}
+                {% include "tables/distributed_results.html" %}
+
+                <div class="text-center">
+                    <small>{{ pagination.info }}</small>
+                    {{ pagination.links }}
+                </div>
+
+                {% else %}
+                    <p>
+                        No distributed query results for query {{ distributed_id }}
+                        {%- if status %} in state {{ status }}{% endif -%}
+                    </p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

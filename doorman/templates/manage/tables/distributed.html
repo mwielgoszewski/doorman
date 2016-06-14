@@ -15,7 +15,12 @@
                             <td>
                                 <a href="{{ url_for('manage.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
                             </td>
-                            <td><code>{{ query.distributed_query.sql }}</code></td>
+                            <td>
+                                <code>{{ query.distributed_query.sql }}</code>
+                                <a href="{{ url_for('manage.distributed_results', distributed_id=query.distributed_query.id) }}">
+                                    <i class="fa fa-list-alt" title="View results for only this query"></i>
+                                </a>
+                            </td>
                             <td>{{ query.distributed_query.timestamp }}</td>
                             <td>{{ query.distributed_query.not_before or 'immediately' }}</td>
                             <td>{{ query.timestamp or '' }}</td>

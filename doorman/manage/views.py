@@ -22,7 +22,7 @@ from .forms import (
 )
 from doorman.database import db
 from doorman.models import (
-    DistributedQuery, DistributedQueryTask,
+    DistributedQuery, DistributedQueryTask, DistributedQueryResult,
     FilePath, Node, Pack, Query, Tag, Rule, StatusLog
 )
 from doorman.utils import (
@@ -268,6 +268,55 @@ def distributed(node_id=None, status=None, page=1):
 
     return render_template('distributed.html', queries=tasks.items,
                            status=status, pagination=pagination)
+
+
+@blueprint.route('/queries/distributed/results/<int:distributed_id>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/<int:page>')
+def distributed_results(distributed_id, status=None, page=1):
+    query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
+    tasks = DistributedQueryTask.query.filter_by(distributed_query_id=query.id)
+
+    if status == 'new':
+        tasks = tasks.filter_by(status=DistributedQueryTask.NEW)
+    elif status == 'pending':
+        tasks = tasks.filter_by(status=DistributedQueryTask.PENDING)
+    elif status == 'complete':
+        tasks = tasks.filter_by(status=DistributedQueryTask.COMPLETE)
+
+    tasks = get_paginate_options(
+        request,
+        DistributedQueryTask,
+        ('id', 'status', 'timestamp'),
+        existing_query=tasks,
+        page=page,
+        default_sort='desc'
+    )
+    display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
+
+    pagination = Pagination(page=page,
+                            per_page=tasks.per_page,
+                            total=tasks.total,
+                            alignment='center',
+                            show_single_page=False,
+                            display_msg=display_msg,
+                            record_name='{0} distributed query results'.format(status or '').strip(),
+                            bs_version=3)
+
+    # We could do this in the template, but it's more clear here.
+    columns = []
+    for task in tasks.items:
+        if len(task.results) > 0 and len(task.results[0].columns) > 0:
+            columns = sorted(task.results[0].columns.keys())
+
+    return render_template('distributed_results.html',
+                           tasks=tasks.items,
+                           columns=columns,
+                           query=query,
+                           status=status,
+                           pagination=pagination,
+                           distributed_id=distributed_id)
 
 
 @blueprint.route('/queries/distributed/add', methods=['GET', 'POST'])

@@ -843,6 +843,67 @@ class TestDistributedWrite:
         assert t2.results
 
 
+class TestDistributedTable:
+
+    def html_escape(self, v):
+        return (v
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace("'", "&#39;").replace('"', "&quot;")
+            )
+
+    def test_distributed_query_table_basic(self, db, node, testapp):
+        # Create two fake queries, tasks, and fake results.
+        q1 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node, distributed_query=q1)
+        q2 = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'otherproc';")
+        t2 = DistributedQueryTask.create(node=node, distributed_query=q2)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.PENDING)
+
+        r1 = DistributedQueryResult.create(distributed_query_task=t1, distributed_query=q1, columns={
+            'query': 'number 1',
+        })
+        r2 = DistributedQueryResult.create(distributed_query_task=t2, distributed_query=q2, columns={
+            'query': 'number 2',
+        })
+
+        # Verify that the first query is there, and the second is not
+        resp = testapp.get(url_for('manage.distributed_results', distributed_id=q1.id))
+        assert self.html_escape(q1.sql) in resp.text
+        assert self.html_escape(q2.sql) not in resp.text
+
+    def test_distributed_query_table_filter_status(self, db, testapp):
+        node1 = NodeFactory(host_identifier='node1')
+        node2 = NodeFactory(host_identifier='node2')
+
+        # Create a fake query and tasks for each node
+        q = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t1 = DistributedQueryTask.create(node=node1, distributed_query=q)
+        t2 = DistributedQueryTask.create(node=node2, distributed_query=q)
+
+        t1.update(status=DistributedQueryTask.PENDING)
+        t2.update(status=DistributedQueryTask.COMPLETE)
+
+        r1 = DistributedQueryResult.create(distributed_query_task=t1, distributed_query=q, columns={
+            'query': 'number 1',
+        })
+        r2 = DistributedQueryResult.create(distributed_query_task=t2, distributed_query=q, columns={
+            'query': 'number 2',
+        })
+
+        # Verify that only the complete one exists in the table
+        resp = testapp.get(url_for('manage.distributed_results', distributed_id=q.id, status='complete'))
+        assert 'number 1' not in resp.text
+        assert 'number 2' in resp.text
+
+        # Should only have one result
+        assert 'displaying <b>1 - 1</b> of <b>1</b> complete distributed query results' in resp.text
+
+
 class TestCreateQueryPackFromUpload:
 
     def test_pack_upload(self, testapp, db):

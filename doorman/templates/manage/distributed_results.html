@@ -6,6 +6,9 @@
             <div class="col-md-12">
                 <h1>{% if status %}{{ status }} {% endif %}distributed query results for query {{ distributed_id }}</h1>
 
+                <strong>query:</strong>
+                <code>{{ sql }}</code>
+
                 {% if results %}
                 {% include "tables/distributed_results.html" %}
 

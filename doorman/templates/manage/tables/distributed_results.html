@@ -3,7 +3,6 @@
 
                     <thead>
                         <th>node</th>
-                        <th>query</th>
                         <th>created</th>
                         <th>run after</th>
                         <th>retrieved</th>
@@ -20,9 +19,6 @@
                             <td>
                                 <a href="{{ url_for('manage.get_node', node_id=result.distributed_query_task.node_id) }}">{{ result.distributed_query_task.node.host_identifier }}</a>
                             </td>
-                            <td>
-                                <code>{{ result.distributed_query.sql }}</code>
-                            </td>
                             <td>{{ result.distributed_query.timestamp }}</td>
                             <td>{{ result.distributed_query.not_before or 'immediately' }}</td>
                             <td>{{ result.timestamp or '' }}</td>
@@ -38,8 +34,8 @@
                             </td>
                             {% endif %}
 
-                            {% for value in result.columns.values() %}
-                                <td>{{ value }}</td>
+                            {% for column in columns %}
+                                <td>{{ result.columns[column] }}</td>
                             {% endfor %}
 
                         {% endfor %}

@@ -310,6 +310,7 @@ def distributed_results(distributed_id, status=None, page=1):
 
     return render_template('distributed_results.html',
                            results=results.items,
+                           sql=query.sql,
                            status=status,
                            pagination=pagination,
                            distributed_id=distributed_id)

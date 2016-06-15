@@ -40,7 +40,8 @@ def inject_models():
     return dict(Node=Node, Pack=Pack, Query=Query, Tag=Tag,
                 Rule=Rule, FilePath=FilePath,
                 DistributedQuery=DistributedQuery,
-                DistributedQueryTask=DistributedQueryTask)
+                DistributedQueryTask=DistributedQueryTask,
+                current_app=current_app)
 
 
 @blueprint.route('/')

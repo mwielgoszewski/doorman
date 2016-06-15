@@ -215,7 +215,7 @@ class Node(SurrogatePK, Model):
     enrolled_on = Column(db.DateTime)
     host_identifier = Column(db.String)
     last_checkin = Column(db.DateTime)
-    node_info = Column(JSONB, default={})
+    node_info = Column(JSONB, default={}, nullable=False)
 
     tags = relationship(
         'Tag',

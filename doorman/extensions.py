@@ -91,7 +91,7 @@ class RuleManager(object):
             return True
 
         newest_rule = Rule.query.order_by(Rule.updated_at.desc()).limit(1).first()
-        if self.last_update < newest_rule.updated_at:
+        if newest_rule and self.last_update < newest_rule.updated_at:
             return True
 
         return False

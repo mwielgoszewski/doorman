@@ -32,6 +32,7 @@ class OAuthLogin(object):
     @property
     def redirect_uri(self):
         return url_for(self.config.get('DOORMAN_AUTH_REDIRECT_VIEW'),
+                       _scheme=self.config.get('PREFERRED_URL_SCHEME'),
                        _external=True)
 
     @property

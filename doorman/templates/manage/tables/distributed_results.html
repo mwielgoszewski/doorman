@@ -1,6 +1,6 @@
 {% macro render_task_parts(task) %}
     <td>
-        <a href="{{ url_for('manage.get_node', node_id=task.node_id) }}">{{ task.node.host_identifier }}</a>
+        <a href="{{ url_for('manage.get_node', node_id=task.node_id) }}">{{ task.node.display_name }}</a>
     </td>
     <td>{{ task.distributed_query.timestamp }}</td>
     <td>{{ task.distributed_query.not_before or 'immediately' }}</td>

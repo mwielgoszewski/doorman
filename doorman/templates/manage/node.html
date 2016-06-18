@@ -4,7 +4,7 @@
     <div class="body-content">
         <div class="row">
             <div class="col-md-12">
-                <h1>{{ node.host_identifier }} / <a href="{{ url_for('manage.node_activity', node_id=node.id) }}">recent activity</a> / <a href="{{ url_for('manage.node_logs', node_id=node.id) }}">logs</a></h1>
+                <h1>{{ node.display_name }} / <a href="{{ url_for('manage.node_activity', node_id=node.id) }}">recent activity</a> / <a href="{{ url_for('manage.node_logs', node_id=node.id) }}">logs</a></h1>
 
                 <div class="row">
                     <div class="col-md-3">

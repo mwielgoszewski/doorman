@@ -245,6 +245,17 @@ class Node(SurrogatePK, Model):
         return assemble_distributed_queries(self)
 
     @property
+    def display_name(self):
+        if 'display_name' in self.node_info:
+            return self.node_info['display_name']
+        elif 'hostname' in self.node_info:
+            return self.node_info['hostname']
+        elif 'computer_name' in self.node_info:
+            return self.node_info['computer_name']
+        else:
+            return self.host_identifier
+
+    @property
     def packs(self):
         return db.session.object_session(self) \
             .query(Pack).join((Tag, Pack.tags)) \

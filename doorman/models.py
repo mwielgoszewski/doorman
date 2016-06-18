@@ -286,6 +286,7 @@ class Node(SurrogatePK, Model):
         # NOTE: deliberately not including any secret values in here, for now.
         return {
             'id': self.id,
+            'display_name': self.display_name,
             'enrolled_on': self.enrolled_on,
             'host_identifier': self.host_identifier,
             'last_checkin': self.last_checkin,

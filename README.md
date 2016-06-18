@@ -85,6 +85,13 @@ Authenticating to Doorman can be handled several ways:
 * `DOORMAN_OAUTH_CLIENT_ID = "client_id"`
 * `DOORMAN_OAUTH_CLIENT_SECRET = "client_secret"`
 
+Additionally, you should configure at least one of the following:
+
+* `DOORMAN_OAUTH_GOOGLE_ALLOWED_DOMAINS`
+* `DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS`
+
+Both of the aforementioned keys accept a list argument of app domains or user email addresses that are authorized to authenticate to Doorman. **WARNING**: if these values are not configured, then anyone with a Google account will be able to authenticate to your instance of Doorman!
+
 The callback URL by default is `https://SERVER_NAME/oauth2callback`. The `SERVER_NAME` is populated from the environment parameters passed from your upstream web proxy (i.e., nginx's [server_name](http://nginx.org/en/docs/http/server_names.html)).
 
 # configuration

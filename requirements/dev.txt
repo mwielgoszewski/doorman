@@ -57,3 +57,4 @@ WebOb==1.6.0
 WebTest==2.0.21
 Werkzeug==0.11.8
 WTForms==2.1
+flask-sslify

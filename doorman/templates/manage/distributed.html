@@ -17,7 +17,7 @@
                 </div>
 
                 {% else %}
-                <p>No distributed queries in {{ status }} state.</p>
+                <p>No distributed queries in {{ status | default('any', true) }} state.</p>
                 {% endif %}
 
             {% else %}

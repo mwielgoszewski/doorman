@@ -32,7 +32,18 @@ class Config(object):
     DOORMAN_CHECKIN_INTERVAL = 3600
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
+
     DOORMAN_ENROLL_DEFAULT_TAGS = [
+    ]
+
+    DOORMAN_CAPTURE_NODE_INFO = [
+        ('computer_name', 'name'),
+        ('hardware_vendor', 'make'),
+        ('hardware_model', 'model'),
+        ('hardware_serial', 'serial'),
+        ('cpu_brand', 'cpu'),
+        ('cpu_physical_cores', 'cpu cores'),
+        ('physical_memory', 'memory'),
     ]
 
     BROKER_URL = 'redis://localhost:6379/0'

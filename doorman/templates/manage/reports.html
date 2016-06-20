@@ -27,7 +27,7 @@
                             <td>{{ node.id }}</td>
                             <td>
                                 <a href="{{ url_for('manage.get_node', node_id=node.id) }}">
-                                {{ node.host_identifier }}
+                                {{ node.display_name }}
                             </a>
                             </td>
                             <td>{{ report.packs }}</td>

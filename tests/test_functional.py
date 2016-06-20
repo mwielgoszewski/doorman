@@ -19,6 +19,7 @@ from doorman.models import (
     DistributedQuery, DistributedQueryTask, DistributedQueryResult, Rule,
 )
 from doorman.settings import TestConfig
+from doorman.utils import learn_from_result
 
 from .factories import NodeFactory, PackFactory, QueryFactory, TagFactory
 
@@ -1277,3 +1278,147 @@ class TestRuleEndToEnd:
                       'column_name': 'column_value',
                     },
                 }
+
+
+class TestLearning:
+    # default columns we capture node info on are:
+    COLUMNS = [
+        'computer_name',
+        'hardware_vendor',
+        'hardware_model',
+        'hardware_serial',
+        'cpu_brand',
+        'cpu_physical_cores',
+        'physical_memory',
+    ]
+
+    def test_node_info_updated_on_added_data(self, node, testapp):
+        assert not node.node_info
+
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "added",
+              "columns": {
+                "cpu_subtype": "Intel x86-64h Haswell",
+                "cpu_physical_cores": "4",
+                "physical_memory": "17179869184",
+                "cpu_logical_cores": "8",
+                "hostname": "foobar",
+                "hardware_version": "1.0",
+                "hardware_vendor": "Apple Inc.",
+                "hardware_model": "MacBookPro11,3",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
+                "cpu_type": "x86_64h",
+                "computer_name": "hostname.local",
+                "hardware_serial": "123456890",
+                "uuid": ""
+              },
+              "hostIdentifier": node.host_identifier
+            }
+        ]
+
+        result = {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        }
+
+        learn_from_result(result, node.to_dict())
+
+        for column in self.COLUMNS:
+            assert column in node.node_info
+            assert node.node_info[column] == data[0]['columns'][column]
+
+        assert 'foobar' not in node.node_info
+
+    def test_node_info_updated_on_removed_data(self, node, testapp):
+        assert not node.node_info
+        node.node_info = {
+                "computer_name": "hostname.local",
+                "hardware_version": "1.0",
+                "hardware_vendor": "Apple Inc.",
+                "hardware_model": "MacBookPro11,3",
+                "hardware_serial": "123456890",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
+                "cpu_physical_cores": "4",
+                "physical_memory": "17179869184",
+        }
+
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "removed",
+              "columns": {
+                "physical_memory": "17179869184",
+                "hostname": "foobar",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
+                "computer_name": "hostname.local",
+              },
+              "hostIdentifier": node.host_identifier
+            },
+
+            # give ourselves a 32gb memory upgrade, overclock 300Mhz
+            # and a cool hostname
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "added",
+              "columns": {
+                "physical_memory": "34359738368",
+                "hostname": "zerocool",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.83GHz",
+                "computer_name": "zerocool.local",
+              },
+              "hostIdentifier": node.host_identifier
+            }
+        ]
+
+        result = {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        }
+
+        learn_from_result(result, node.to_dict())
+
+        for column in self.COLUMNS:
+            assert column in node.node_info
+
+        for column in ('physical_memory', 'cpu_brand', 'computer_name'):
+            assert node.node_info[column] == data[1]['columns'][column]
+
+        assert 'foobar' not in node.node_info
+
+    def test_node_info_not_updated_on_erroneous_data(self, node, testapp):
+        assert not node.node_info
+
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "added",
+              "columns": {
+                "uuid": "foobar"
+              },
+              "hostIdentifier": node.host_identifier
+            }
+        ]
+
+        result = {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        }
+
+        learn_from_result(result, node.to_dict())
+        assert 'foobar' not in node.node_info

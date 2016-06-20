@@ -91,7 +91,7 @@ class RuleManager(object):
             return True
 
         newest_rule = Rule.query.order_by(Rule.updated_at.desc()).limit(1).first()
-        if self.last_update < newest_rule.updated_at:
+        if newest_rule and self.last_update < newest_rule.updated_at:
             return True
 
         return False
@@ -108,6 +108,10 @@ class RuleManager(object):
         all_rules = list(Rule.query.all())
 
         self.network = Network()
+
+        if not all_rules:
+            return
+
         for rule in all_rules:
             # Verify the alerters
             for alerter in rule.alerters:

@@ -259,6 +259,42 @@ def validate_osquery_query(query):
     return True
 
 
+def learn_from_result(result, node):
+    from doorman.models import Node
+
+    if not result['data']:
+        return
+
+    capture_columns = set(
+        map(itemgetter(0),
+            current_app.config['DOORMAN_CAPTURE_NODE_INFO']
+        )
+    )
+
+    if not capture_columns:
+        return
+
+    node_info = node.get('node_info', {})
+    orig_node_info = node_info.copy()
+
+    for _, action, columns, _, in extract_results(result):
+        # only update columns common to both sets
+        for column in capture_columns & set(columns):
+            if action == 'removed':
+                node_info.pop(column, None)
+            elif action == 'added':
+                node_info[column] = columns.get(column)
+
+    # only update node_info if there's actually a change
+
+    if orig_node_info == node_info:
+        return
+
+    node = Node.get_by_id(node['id'])
+    node.update(node_info=node_info)
+    return
+
+
 def process_result(result, node):
     if not result['data']:
         current_app.logger.error("No results to process from %s", node)

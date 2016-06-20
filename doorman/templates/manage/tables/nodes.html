@@ -14,7 +14,7 @@
 
                         <tr class="{{ node | health }}">
                             <td>
-                                <a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.host_identifier }}</a>
+                                <a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.display_name }}</a>
                             </td>
                             <td>{{ node.node_key }}</td>
                             <td>{{ node.enrolled_on }}</td>

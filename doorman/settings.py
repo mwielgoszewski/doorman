@@ -176,6 +176,18 @@ class Config(object):
     # LDAP_OPT_X_TLS_USE_VERSION = 3  # ssl.PROTOCOL_TLSv1
     # LDAP_OPT_X_TLS_VALID_NAMES = []
 
+    # To enable Sentry reporting, configure the following keys
+    # https://docs.getsentry.com/hosted/clients/python/integrations/flask/
+    # SENTRY_DSN = 'https://<key>:<secret>@app.getsentry.com/<project>'
+    # SENTRY_INCLUDE_PATHS = ['doorman']
+    # SENTRY_USER_ATTRS = ['username', 'first_name', 'last_name', 'email']
+    #
+    # https://docs.getsentry.com/hosted/clients/python/advanced/#sanitizing-data
+    # SENTRY_PROCESSORS = [
+    #     'raven.processors.SanitizePasswordsProcessor',
+    # ]
+    # RAVEN_IGNORE_EXCEPTIONS = []
+
 
 class ProdConfig(Config):
 

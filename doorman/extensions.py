@@ -9,6 +9,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from raven.contrib.flask import Sentry
 
 
 class LogTee(object):
@@ -247,3 +248,4 @@ ldap_manager = LDAP3LoginManager()
 login_manager = LoginManager()
 metrics = Metrics()
 rule_manager = RuleManager()
+sentry = Sentry()

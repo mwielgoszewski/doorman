@@ -206,14 +206,16 @@ def logger(node=None):
     '''
     data = request.get_json()
     log_type = data['log_type']
-    debug = current_app.config['DEBUG']
+    log_level = current_app.config['DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL']
 
-    if debug:
+    if current_app.debug:
         current_app.logger.debug(json.dumps(data, indent=2))
 
     if log_type == 'status':
         log_tee.handle_status(data, host_identifier=node.host_identifier)
         for item in data.get('data', []):
+            if int(item['severity']) < log_level:
+                continue
             status_log = StatusLog(node=node, **item)
             db.session.add(status_log)
         else:

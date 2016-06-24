@@ -807,7 +807,7 @@ class TestDistributedWrite:
         result = DistributedQueryResult.query.filter(
             DistributedQueryResult.columns['foo'].astext == 'baz').all()
         assert not result
-        assert node.last_ip != '127.0.0.2'
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_write_state_new(self, db, node, testapp):
         q = DistributedQuery.create(
@@ -920,6 +920,8 @@ class TestDistributedWrite:
         assert not q1.results
         assert not q2.results
         assert node.last_ip != '127.0.0.2'
+        assert not node.last_ip
+        assert foo.last_ip == '127.0.0.2'
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': foo.node_key,
@@ -931,7 +933,8 @@ class TestDistributedWrite:
         )
 
         assert t2.results
-        assert node.last_ip == '127.0.0.2'
+        assert node.last_ip != '127.0.0.2'
+        assert not node.last_ip
         assert foo.last_ip == '127.0.0.3'
 
 

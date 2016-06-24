@@ -10,11 +10,7 @@
                 {% for pack in packs %}
                 <h2 id="{{ pack.name }}">{{ pack.name }}</h2>
                 <p>
-                    <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_pack', pack_name=pack.name) }}">
-                        {% for tag in pack.tags | sort(attribute='value') %}
-                        <option value="{{ tag.value }}">{{ tag.value }}</option>
-                        {% endfor %}
-                    </select>
+                    <input class="tagsinput" placeholder="Add tags by typing here" value="{{ pack.tags | map(attribute='value') | sort | join(',') }}" data-uri="{{ url_for('manage.tag_pack', pack_name=pack.name) }}" size="23">
                 </p>
                 {% include "_pack.html" %}
                 {% endfor %}

@@ -93,11 +93,7 @@
 
                         <h2>Tags</h2>
 
-                        <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_node', node_id=node.id) }}">
-                            {% for tag in node.tags | sort(attribute='value') %}
-                            <option value="{{ tag.value }}">{{ tag.value }}</option>
-                            {% endfor %}
-                        </select>
+                        <input class="tagsinput" placeholder="Add tags by typing here" value="{{ node.tags | map(attribute='value') | sort | join(',') }}" data-uri="{{ url_for('manage.tag_node', node_id=node.id) }}">
 
                     </div><!--./col-md-9-->
                 </div><!--./row-->

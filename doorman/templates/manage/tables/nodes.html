@@ -20,11 +20,7 @@
                             <td>{{ node.enrolled_on }}</td>
                             <td>{{ node.last_checkin }}</td>
                             <td>
-                                <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_node', node_id=node.id) }}">
-                                    {% for tag in node.tags | sort(attribute='value') %}
-                                    <option value="{{ tag.value }}">{{ tag.value }}</option>
-                                    {% endfor %}
-                                </select>
+                                <input class="tagsinput" value="{{ node.tags | map(attribute='value') | sort | join(',') }}" data-uri="{{ url_for('manage.tag_node', node_id=node.id) }}">
                             </td>
                         </tr>
 

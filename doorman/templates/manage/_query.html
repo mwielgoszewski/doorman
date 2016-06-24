@@ -55,14 +55,7 @@
                         <tr>
                             <th width="15%">Tags</th>
                             <td width="85%">
-                                <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_query', query_id=query.id ) }}">
-                                {% for tag in query.tags | sort(attribute='value') %}
-                                    <option value="{{ tag.value }}">{{ tag.value }}</option>
-                                <span class="label">
-                                    <a href="{{ url_for('manage.get_tag', tag_value=tag.value) }}">{{ tag.value }}</a>
-                                </span>
-                                {% endfor %}
-                                </select>
+                                <input class="tagsinput" placeholder="Add tags by typing here" value="{{ query.tags | map(attribute='value') | sort | join(',') }}" data-uri="{{ url_for('manage.tag_query', query_id=query.id) }}" size="23">
                             </td>
                         </tr>
 

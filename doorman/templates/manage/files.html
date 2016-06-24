@@ -19,11 +19,7 @@
                     {% endfor %}
                 </ul>
 
-                <select multiple class="tagsinput" data-uri="{{ url_for('manage.tag_file', file_path_id=file_path.id) }}">
-                    {% for tag in file_path.tags | sort(attribute='value') %}
-                    <option value="{{ tag.value }}">{{ tag.value }}</option>
-                    {% endfor %}
-                </select>
+                <input class="tagsinput" placeholder="Add tags by typing here" value="{{ file_path.tags | map(attribute='value') | sort | join(',') }}" data-uri="{{ url_for('manage.tag_file', file_path_id=file_path.id) }}" size="23">
 
                 {% endfor %}
 

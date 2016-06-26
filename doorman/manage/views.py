@@ -25,6 +25,7 @@ from .forms import (
     FilePathUpdateForm,
     CreateRuleForm,
     UpdateRuleForm,
+    UpdateNodeForm,
 )
 from doorman.database import db
 from doorman.models import (
@@ -138,11 +139,29 @@ def nodes_by_tag(tags):
     return render_template('nodes.html', nodes=nodes)
 
 
-@blueprint.route('/node/<int:node_id>')
+@blueprint.route('/node/<int:node_id>', methods=['GET', 'POST'])
 @login_required
 def get_node(node_id):
     node = Node.query.filter(Node.id == node_id).first_or_404()
-    return render_template('node.html', node=node)
+    form = UpdateNodeForm(request.form)
+
+    if form.validate_on_submit():
+        node_info = node.node_info.copy()
+
+        if form.display_name.data:
+            node_info['display_name'] = form.display_name.data
+        elif 'display_name' in node_info:
+            node_info.pop('display_name')
+
+        node.node_info = node_info
+        node.is_active = form.is_active.data
+        node.save()
+
+        return redirect(url_for('manage.get_node', node_id=node.id))
+
+    form = UpdateNodeForm(request.form, obj=node)
+    flash_errors(form)
+    return render_template('node.html', form=form, node=node)
 
 
 @blueprint.route('/node/<int:node_id>/activity')

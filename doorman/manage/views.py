@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from StringIO import StringIO
 from operator import itemgetter
 import csv
 import json
@@ -27,6 +26,7 @@ from .forms import (
     UpdateRuleForm,
     UpdateNodeForm,
 )
+from doorman.compat import StringIO
 from doorman.database import db
 from doorman.models import (
     DistributedQuery, DistributedQueryTask, DistributedQueryResult,

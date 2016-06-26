@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
+from StringIO import StringIO
+from operator import itemgetter
+import csv
 import json
 import datetime as dt
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, current_app, flash, jsonify, make_response, redirect,
+    render_template, request, url_for
+)
 from flask_login import login_required
 from flask_paginate import Pagination
 
@@ -74,6 +80,45 @@ def nodes(page=1):
 
     return render_template('nodes.html', nodes=nodes.items,
                            pagination=pagination)
+
+
+@blueprint.route('/nodes.csv')
+@login_required
+def nodes_csv():
+    headers = [
+        'Display name',
+        'Host identifier',
+        'Enrolled On',
+        'Last Check-in',
+        'Last IP Address',
+        'Is Active',
+    ]
+
+    column_names = map(itemgetter(0), current_app.config['DOORMAN_CAPTURE_NODE_INFO'])
+    labels = map(itemgetter(1), current_app.config['DOORMAN_CAPTURE_NODE_INFO'])
+    headers.extend(labels)
+    headers = map(str.title, headers)
+
+    sio = StringIO()
+    writer = csv.writer(sio)
+    writer.writerow(headers)
+
+    for node in Node.query:
+        row = [
+            node.display_name,
+            node.host_identifier,
+            node.enrolled_on,
+            node.last_checkin,
+            node.last_ip,
+            node.is_active,
+        ]
+        row.extend([node.node_info.get(column, '') for column in column_names])
+        writer.writerow(row)
+
+    response = make_response(sio.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=nodes.csv"
+    response.headers["Content-Type"] = "text/csv"
+    return response
 
 
 @blueprint.route('/nodes/add', methods=['GET', 'POST'])

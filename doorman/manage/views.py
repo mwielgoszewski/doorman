@@ -69,9 +69,10 @@ def nodes(page=1):
     )
 
     display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name} '
-    display_msg += '<a href="{0}" title=""><i class="fa fa-download"></i></a>'.format(
+    display_msg += '<a href="{0}" title="Export node information to csv">'.format(
         url_for('manage.nodes_csv')
     )
+    display_msg += '<i class="fa fa-download"></i></a>'
 
     pagination = Pagination(page=page,
                             per_page=nodes.per_page,

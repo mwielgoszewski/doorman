@@ -246,11 +246,11 @@ class Node(SurrogatePK, Model):
 
     @property
     def display_name(self):
-        if 'display_name' in self.node_info:
+        if 'display_name' in self.node_info and self.node_info['display_name']:
             return self.node_info['display_name']
-        elif 'hostname' in self.node_info:
+        elif 'hostname' in self.node_info and self.node_info['hostname']:
             return self.node_info['hostname']
-        elif 'computer_name' in self.node_info:
+        elif 'computer_name' in self.node_info and self.node_info['computer_name']:
             return self.node_info['computer_name']
         else:
             return self.host_identifier

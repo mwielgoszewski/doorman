@@ -2,11 +2,22 @@
 
 $(function() {
 
-    $(".tagsinput").tagsinput({
+    $(function(){
+        var hash = window.location.hash;
+        hash && $('ul.nav a[href="' + hash + '"]').tab('show');
 
+        $('.nav-tabs a').click(function (e) {
+            $(this).tab('show');
+            window.location.hash = this.hash;
+            $(window).scrollTop(0);
+        });
+
+    });
+
+
+    $(".tagsinput").tagsinput({
         tagClass: "label label-default",
         trimValue: true
-
     });
 
 
@@ -15,7 +26,7 @@ $(function() {
         var data = JSON.stringify([]);
 
         if ($(this).val() != null)
-            data = JSON.stringify($(this).val());
+            data = JSON.stringify($(this).tagsinput('items'));
 
         $.ajax({
             url: $(this).data('uri'),
@@ -35,7 +46,7 @@ $(function() {
         var data = JSON.stringify([]);
 
         if ($(this).val() != null)
-            data = JSON.stringify($(this).val());
+            data = JSON.stringify($(this).tagsinput('items'));
 
         $.ajax({
             url: $(this).data('uri'),

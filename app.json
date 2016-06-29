@@ -1,0 +1,6 @@
+{
+  "name": "Doorman",
+  "description": "An osquery fleet manager",
+  "repository": "https://github.com/mfaraji/doorman.git",
+  "keywords": ["doorman", "fleet", "osquery"]
+}

@@ -172,7 +172,7 @@ def get_node(node_id):
         node.save()
 
         if request.is_xhr:
-            return '', 202
+            return '', 204
 
         return redirect(url_for('manage.get_node', node_id=node.id))
 

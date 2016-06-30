@@ -59,12 +59,20 @@ def index():
 
 @blueprint.route('/nodes')
 @blueprint.route('/nodes/<int:page>')
+@blueprint.route('/nodes/<any(inactive):status>')
+@blueprint.route('/nodes/<any(inactive):status>/<int:page>')
 @login_required
-def nodes(page=1):
+def nodes(page=1, status=None):
+    if status == 'inactive':
+        nodes = Node.query.filter_by(is_active=False)
+    else:
+        nodes = Node.query.filter_by(is_active=True)
+
     nodes = get_paginate_options(
         request,
         Node,
         ('id', 'host_identifier', 'enrolled_on', 'last_checkin'),
+        existing_query=nodes,
         page=page,
     )
 
@@ -83,8 +91,10 @@ def nodes(page=1):
                             record_name='nodes',
                             bs_version=3)
 
-    return render_template('nodes.html', nodes=nodes.items,
-                           pagination=pagination)
+    return render_template('nodes.html',
+                           nodes=nodes.items,
+                           pagination=pagination,
+                           status=status)
 
 
 @blueprint.route('/nodes.csv')

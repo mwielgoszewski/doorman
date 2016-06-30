@@ -62,15 +62,17 @@ def node_required(f):
         # --logger_tls_compress=true
         if 'Content-Encoding' in request.headers and \
             request.headers['Content-Encoding'] == 'gzip':
-            request._cached_data = gzip.GzipFile(fileobj=BytesIO(request.get_data())).read()
+            request._cached_data = gzip.GzipFile(
+                fileobj=BytesIO(request.get_data())).read()
 
         request_json = request.get_json()
 
-        if not request_json:
+        if not request_json or 'node_key' not in request_json:
             current_app.logger.error(
-                "Request did not contain valid JSON data. This could be an "
-                "attempt to gather information about this endpoint or an "
-                "automated scanner."
+                "%s - Request did not contain valid JSON data. This could "
+                "be an attempt to gather information about this endpoint "
+                "or an automated scanner.",
+                request.remote_addr
             )
             # Return nothing
             return ""

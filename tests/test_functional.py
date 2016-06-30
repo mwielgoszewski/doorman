@@ -229,7 +229,8 @@ class TestConfiguration:
     def test_missing_node_key(self, node, testapp):
         resp = testapp.post_json(url_for('api.configuration'), {
             'foo': 'bar'})
-        assert resp.json == {'node_invalid': True}
+        assert not resp.normal_body
+        # assert resp.json == {'node_invalid': True}
 
     def test_invalid_node_key(self, node, testapp):
         resp = testapp.post_json(url_for('api.configuration'), {
@@ -365,7 +366,8 @@ class TestLogging:
     def test_missing_node_key(self, node, testapp):
         resp = testapp.post_json(url_for('api.logger'), {
             'foo': 'bar'})
-        assert resp.json == {'node_invalid': True}
+        assert not resp.normal_body
+        # assert resp.json == {'node_invalid': True}
 
     def test_status_log_created_for_node(self, node, testapp):
         data = {

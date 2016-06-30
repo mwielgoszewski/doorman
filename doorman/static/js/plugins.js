@@ -14,7 +14,6 @@ $(function() {
 
     });
 
-
     $(".tagsinput").tagsinput({
         tagClass: "label label-default",
         trimValue: true
@@ -73,6 +72,20 @@ $(function() {
             $(tr).remove();
             console.log(jqXHR.status);
         })
+
+    })
+
+    $('.activate-node').on('click', function(event) {
+         if ($(this).data('uri') == null || $(this).data('uri') == "")
+            return;
+
+        var el = $(this);
+
+        $.post($(this).data('uri'), {
+            is_active: !$(this).hasClass('glyphicon-check') || null
+        }).done(function (data, textStatus, jqXHR) {
+            $(el).toggleClass('glyphicon-unchecked').toggleClass('glyphicon-check');
+        });
 
     })
 

@@ -171,6 +171,9 @@ def get_node(node_id):
         node.is_active = form.is_active.data
         node.save()
 
+        if request.is_xhr:
+            return '', 202
+
         return redirect(url_for('manage.get_node', node_id=node.id))
 
     form = UpdateNodeForm(request.form, obj=node)

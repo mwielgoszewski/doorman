@@ -242,6 +242,13 @@ class TestConfiguration:
             'node_key': node.node_key})
         assert resp.json['node_invalid'] is False
 
+    def test_inactive_node_key(self, node, testapp):
+        node.is_active = False
+        node.save()
+        resp = testapp.post_json(url_for('api.configuration'), {
+            'node_key': node.node_key})
+        assert resp.json['node_invalid'] is True
+
     def test_configuration_has_all_required_values(self, node, testapp):
         tag = TagFactory(value='foobar')
         pack = PackFactory(name='foobar')

@@ -41,7 +41,7 @@
                             <tr>
                                 <th class="text-right">active</th>
                                 <td>
-                                    <button class="activate-node glyphicon glyphicon-{{ 'check' if node.is_active else 'unchecked' }}" title="{{ 'active' if node.is_active else 'inactive' }}" data-uri="{{ url_for('manage.get_node', node_id=node.id) }}" ></button>
+                                    <button class="activate-node glyphicon glyphicon-{{ 'check' if node.is_active else 'unchecked' }}" data-uri="{{ url_for('manage.get_node', node_id=node.id) }}" ></button>
                                 </td>
                             </tr>
                         </table>

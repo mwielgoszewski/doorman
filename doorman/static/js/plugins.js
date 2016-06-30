@@ -92,9 +92,9 @@ $(function() {
         var el = $(this);
 
         $.post($(this).data('uri'), {
-            is_active: !$(this).hasClass('glyphicon-check') || null
+            is_active: $(this).hasClass('glyphicon-unchecked') || null
         }).done(function (data, textStatus, jqXHR) {
-            $(el).toggleClass('glyphicon-unchecked').toggleClass('glyphicon-check');
+            $(el).toggleClass('glyphicon-check glyphicon-unchecked');
         });
 
     })

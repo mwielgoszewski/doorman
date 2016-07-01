@@ -4,7 +4,15 @@
     <div class="body-content">
         <div class="row">
             <div class="col-md-12">
-                <h1>{% if status %}{{ status }} {% endif %}nodes</h1>
+                <h1>
+                    {% if status == 'active' %}
+                    active nodes /
+                    <a href="{{ url_for('manage.nodes', status='inactive') }}">inactive nodes</a>
+                    {% else %}
+                    <a href="{{ url_for('manage.nodes') }}">active nodes</a>
+                    / inactive nodes
+                    {% endif %}
+                </h1>
                 
                 {% if nodes %}
                 {% include "tables/nodes.html" %}

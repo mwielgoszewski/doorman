@@ -59,10 +59,10 @@ def index():
 
 @blueprint.route('/nodes')
 @blueprint.route('/nodes/<int:page>')
-@blueprint.route('/nodes/<any(inactive):status>')
-@blueprint.route('/nodes/<any(inactive):status>/<int:page>')
+@blueprint.route('/nodes/<any(active, inactive):status>')
+@blueprint.route('/nodes/<any(active, inactive):status>/<int:page>')
 @login_required
-def nodes(page=1, status=None):
+def nodes(page=1, status='active'):
     if status == 'inactive':
         nodes = Node.query.filter_by(is_active=False)
     else:
@@ -88,7 +88,7 @@ def nodes(page=1, status=None):
                             alignment='center',
                             show_single_page=False,
                             display_msg=display_msg,
-                            record_name='nodes',
+                            record_name='{status} nodes'.format(status=status),
                             bs_version=3)
 
     return render_template('nodes.html',

@@ -275,6 +275,7 @@ def distributed(node_id=None, status=None, page=1):
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/<int:page>')
+@login_required
 def distributed_results(distributed_id, status=None, page=1):
     query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
     tasks = DistributedQueryTask.query.filter_by(distributed_query_id=query.id)

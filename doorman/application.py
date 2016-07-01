@@ -32,6 +32,7 @@ def create_app(config=ProdConfig):
 
 def register_blueprints(app):
     app.register_blueprint(api)
+    csrf.exempt(api)
 
     # if the DOORMAN_NO_MANAGER environment variable isn't set,
     # register the backend blueprint. This is useful when you want

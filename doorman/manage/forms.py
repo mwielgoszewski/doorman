@@ -184,3 +184,9 @@ class UpdateRuleForm(RuleForm):
     def __init__(self, *args, **kwargs):
         super(UpdateRuleForm, self).__init__(*args, **kwargs)
         self.set_choices()
+
+
+class UpdateNodeForm(Form):
+
+    display_name = StringField('Name', validators=[Optional()])
+    is_active = BooleanField('Active', validators=[Optional()])

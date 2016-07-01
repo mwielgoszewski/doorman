@@ -4,7 +4,7 @@
     <div class="body-content">
         <div class="row">
             <div class="col-md-12">
-                <h1>nodes</h1>
+                <h1>{% if status %}{{ status }} {% endif %}nodes</h1>
                 
                 {% if nodes %}
                 {% include "tables/nodes.html" %}

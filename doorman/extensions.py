@@ -9,6 +9,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CsrfProtect
 from raven.contrib.flask import Sentry
 
 
@@ -239,6 +240,7 @@ class Metrics(object):
 
 
 bcrypt = Bcrypt()
+csrf = CsrfProtect()
 db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()

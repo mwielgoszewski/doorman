@@ -23,6 +23,10 @@
                             {% endfor %}
                             {% endif %}
                             <tr>
+                                <th class="text-right">last ip address</th>
+                                <td>{{ node.last_ip | default('', true) }}</td>
+                            </tr>
+                            <tr>
                                 <th class="text-right">host identifier</th>
                                 <td>{{ node.host_identifier }}</td>
                             </tr>
@@ -33,6 +37,12 @@
                             <tr>
                                 <th class="text-right">last check-in</th>
                                 <td>{{ node.last_checkin }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-right">active</th>
+                                <td>
+                                    <button class="activate-node glyphicon glyphicon-{{ 'check' if node.is_active else 'unchecked' }}" data-uri="{{ url_for('manage.get_node', node_id=node.id) }}" ></button>
+                                </td>
                             </tr>
                         </table>
 

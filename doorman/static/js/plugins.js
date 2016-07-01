@@ -2,6 +2,16 @@
 
 $(function() {
 
+    var csrftoken = $('meta[name=csrf-token]').attr('content')
+
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken)
+            }
+        }
+    })
+
     $(function(){
         var hash = window.location.hash;
         hash && $('ul.nav a[href="' + hash + '"]').tab('show');
@@ -13,7 +23,6 @@ $(function() {
         });
 
     });
-
 
     $(".tagsinput").tagsinput({
         tagClass: "label label-default",
@@ -73,6 +82,20 @@ $(function() {
             $(tr).remove();
             console.log(jqXHR.status);
         })
+
+    })
+
+    $('.activate-node').on('click', function(event) {
+         if ($(this).data('uri') == null || $(this).data('uri') == "")
+            return;
+
+        var el = $(this);
+
+        $.post($(this).data('uri'), {
+            is_active: $(this).hasClass('glyphicon-unchecked') || null
+        }).done(function (data, textStatus, jqXHR) {
+            $(el).toggleClass('glyphicon-check glyphicon-unchecked');
+        });
 
     })
 

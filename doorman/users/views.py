@@ -13,7 +13,7 @@ from flask_login import current_user, login_user, logout_user, COOKIE_NAME
 from oauthlib.oauth2 import OAuth2Error
 
 from .forms import LoginForm
-from doorman.extensions import ldap_manager, login_manager
+from doorman.extensions import csrf, ldap_manager, login_manager
 from doorman.models import User
 from doorman.utils import flash_errors
 
@@ -94,6 +94,7 @@ def logout():
     return response, 302
 
 
+@csrf.exempt
 @blueprint.route('/oauth2callback')
 def oauth2callback():
     if '_oauth_state' not in session:

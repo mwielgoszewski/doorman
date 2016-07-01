@@ -7,8 +7,8 @@ from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.manage import blueprint as backend
 from doorman.extensions import (
-    db, debug_toolbar, ldap_manager, log_tee, login_manager, mail,
-    make_celery, metrics, migrate, rule_manager, sentry
+    bcrypt, csrf, db, debug_toolbar, ldap_manager, log_tee, login_manager,
+    mail, make_celery, metrics, migrate, rule_manager, sentry
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
@@ -32,6 +32,7 @@ def create_app(config=ProdConfig):
 
 def register_blueprints(app):
     app.register_blueprint(api)
+    csrf.exempt(api)
 
     # if the DOORMAN_NO_MANAGER environment variable isn't set,
     # register the backend blueprint. This is useful when you want
@@ -44,6 +45,8 @@ def register_blueprints(app):
 
 
 def register_extensions(app):
+    bcrypt.init_app(app)
+    csrf.init_app(app)
     db.init_app(app)
     migrate.init_app(app, db)
     assets.init_app(app)

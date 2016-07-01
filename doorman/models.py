@@ -17,6 +17,7 @@ from doorman.database import (
     relationship,
     ARRAY,
     JSONB,
+    INET,
 )
 from doorman.extensions import bcrypt
 
@@ -216,6 +217,8 @@ class Node(SurrogatePK, Model):
     host_identifier = Column(db.String)
     last_checkin = Column(db.DateTime)
     node_info = Column(JSONB, default={}, nullable=False)
+    is_active = Column(db.Boolean, default=True, nullable=False)
+    last_ip = Column(INET, nullable=True)
 
     tags = relationship(
         'Tag',
@@ -226,12 +229,15 @@ class Node(SurrogatePK, Model):
 
     def __init__(self, host_identifier, node_key=None,
                  enroll_secret=None, enrolled_on=None, last_checkin=None,
+                 is_active=True, last_ip=None,
                  **kwargs):
         self.node_key = node_key or str(uuid.uuid4())
         self.host_identifier = host_identifier
         self.enroll_secret = enroll_secret
         self.enrolled_on = enrolled_on
         self.last_checkin = last_checkin
+        self.is_active = is_active
+        self.last_ip = last_ip
 
     def __repr__(self):
         return '<Node-{0.id}: node_key={0.node_key}, host_identifier={0.host_identifier}>'.format(self)
@@ -290,7 +296,9 @@ class Node(SurrogatePK, Model):
             'enrolled_on': self.enrolled_on,
             'host_identifier': self.host_identifier,
             'last_checkin': self.last_checkin,
-            'node_info': self.node_info.copy()
+            'node_info': self.node_info.copy(),
+            'last_ip': self.last_ip,
+            'is_active': self.is_active
         }
 
 

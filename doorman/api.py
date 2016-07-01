@@ -62,25 +62,44 @@ def node_required(f):
         # --logger_tls_compress=true
         if 'Content-Encoding' in request.headers and \
             request.headers['Content-Encoding'] == 'gzip':
-            request._cached_data = gzip.GzipFile(fileobj=BytesIO(request.get_data())).read()
+            request._cached_data = gzip.GzipFile(
+                fileobj=BytesIO(request.get_data())).read()
 
         request_json = request.get_json()
 
-        if not request_json:
+        if not request_json or 'node_key' not in request_json:
             current_app.logger.error(
-                "Request did not contain valid JSON data. This could be an "
-                "attempt to gather information about this endpoint or an "
-                "automated scanner."
+                "%s - Request did not contain valid JSON data. This could "
+                "be an attempt to gather information about this endpoint "
+                "or an automated scanner.",
+                request.remote_addr
             )
             # Return nothing
             return ""
 
-        node_key = request.get_json().get('node_key')
-        node = Node.query.filter(Node.node_key == node_key).first()
+        node_key = request_json.get('node_key')
+        node = Node.query.filter_by(node_key=node_key).first()
+
         if not node:
-            current_app.logger.error("Could not find node with node_key %s",
-                                     node_key)
+            current_app.logger.error(
+                "%s - Could not find node with node_key %s",
+                request.remote_addr, node_key
+            )
             return jsonify(node_invalid=True)
+
+        if not node.is_active:
+            current_app.logger.error(
+                "%s - Node %s came back from the dead!",
+                request.remote_addr, node_key
+            )
+            return jsonify(node_invalid=True)
+
+        node.update(
+            last_checkin=dt.datetime.utcnow(),
+            last_ip=request.remote_addr,
+            commit=False
+        )
+
         return f(node=node, *args, **kwargs)
     return decorated_function
 
@@ -102,9 +121,10 @@ def enroll():
     request_json = request.get_json()
     if not request_json:
         current_app.logger.error(
-            "Request did not contain valid JSON data. This could be an "
-            "attempt to gather information about this endpoint or an "
-            "automated scanner."
+            "%s - Request did not contain valid JSON data. This could "
+            "be an attempt to gather information about this endpoint "
+            "or an automated scanner.",
+            request.remote_addr
         )
         # Return nothing
         return ""
@@ -113,8 +133,10 @@ def enroll():
         current_app.config.get('DOORMAN_ENROLL_OVERRIDE', 'enroll_secret'))
 
     if not enroll_secret:
-        current_app.logger.error("No enroll_secret provided by remote host %s",
-                                 request.remote_addr)
+        current_app.logger.error(
+            "%s - No enroll_secret provided by remote host",
+            request.remote_addr
+        )
         return jsonify(node_invalid=True)
 
     # If we pre-populate node table with a per-node enroll_secret,
@@ -123,19 +145,30 @@ def enroll():
     node = Node.query.filter(Node.enroll_secret == enroll_secret).first()
 
     if not node and enroll_secret not in current_app.config['DOORMAN_ENROLL_SECRET']:
-        current_app.logger.error("Invalid enroll_secret %s", enroll_secret)
+        current_app.logger.error("%s - Invalid enroll_secret %s",
+            request.remote_addr, enroll_secret
+        )
         return jsonify(node_invalid=True)
 
     host_identifier = request_json.get('host_identifier')
 
     if node and node.enrolled_on:
-        current_app.logger.warn("%s already enrolled on %s, returning "
-                                "existing node_key", node, node.enrolled_on)
+        current_app.logger.warn(
+            "%s - %s already enrolled on %s, returning existing node_key",
+            request.remote_addr, node, node.enrolled_on
+        )
 
         if node.host_identifier != host_identifier:
-            current_app.logger.info("%s changed their host_identifier to %s",
-                                    node, host_identifier)
-            node.update(host_identifier=host_identifier)
+            current_app.logger.info(
+                "%s - %s changed their host_identifier to %s",
+                request.remote_addr, node, host_identifier
+            )
+            node.host_identifier = host_identifier
+
+        node.update(
+            last_checkin=dt.datetime.utcnow(),
+            last_ip=request.remote_addr
+        )
 
         return jsonify(node_key=node.node_key, node_invalid=False)
 
@@ -147,14 +180,20 @@ def enroll():
 
     if existing_node and not existing_node.enroll_secret:
         current_app.logger.warning(
-            "Duplicate host_identifier %s, already enrolled %s",
-            host_identifier, existing_node.enrolled_on)
+            "%s - Duplicate host_identifier %s, already enrolled %s",
+            request.remote_addr, host_identifier, existing_node.enrolled_on
+        )
 
         if current_app.config['DOORMAN_EXPECTS_UNIQUE_HOST_ID'] is True:
             current_app.logger.info(
-                "Unique host identification is true, %s already enrolled "
+                "%s - Unique host identification is true, %s already enrolled "
                 "returning existing node key %s",
-                host_identifier, existing_node.node_key)
+                request.remote_addr, host_identifier, existing_node.node_key
+            )
+            existing_node.update(
+                last_checkin=dt.datetime.utcnow(),
+                last_ip=request.remote_addr
+            )
             return jsonify(node_key=existing_node.node_key, node_invalid=False)
 
     now = dt.datetime.utcnow()
@@ -162,11 +201,13 @@ def enroll():
     if node:
         node.update(host_identifier=host_identifier,
                     last_checkin=now,
-                    enrolled_on=now)
+                    enrolled_on=now,
+                    last_ip=request.remote_addr)
     else:
         node = Node(host_identifier=host_identifier,
                     last_checkin=now,
-                    enrolled_on=now)
+                    enrolled_on=now,
+                    last_ip=request.remote_addr)
 
         for value in current_app.config.get('DOORMAN_ENROLL_DEFAULT_TAGS', []):
             tag = Tag.query.filter_by(value=value).first()
@@ -177,7 +218,9 @@ def enroll():
 
         node.save()
 
-    current_app.logger.info("Enrolled new node %s", node)
+    current_app.logger.info("%s - Enrolled new node %s",
+        request.remote_addr, node
+    )
 
     return jsonify(node_key=node.node_key, node_invalid=False)
 
@@ -191,10 +234,15 @@ def configuration(node=None):
 
     :returns: an osquery configuration file
     '''
-    current_app.logger.info("%s checking in to retrieve a new configuration",
-                            node)
+    current_app.logger.info(
+        "%s - %s checking in to retrieve a new configuration",
+        request.remote_addr, node
+    )
     config = node.get_config()
-    node.update(last_checkin=dt.datetime.utcnow())
+
+    # write last_checkin, last_ip
+    db.session.add(node)
+    db.session.commit()
     return jsonify(config, node_invalid=False)
 
 
@@ -219,17 +267,24 @@ def logger(node=None):
             status_log = StatusLog(node=node, **item)
             db.session.add(status_log)
         else:
+            db.session.add(node)
             db.session.commit()
 
     elif log_type == 'result':
+        db.session.add(node)
         db.session.bulk_save_objects(process_result(data, node))
         db.session.commit()
         log_tee.handle_result(data, host_identifier=node.host_identifier)
         analyze_result.delay(data, node.to_dict())
 
     else:
-        current_app.logger.error("Unknown log_type %r", log_type)
+        current_app.logger.error("%s - Unknown log_type %r",
+            request.remote_addr, log_type
+        )
         current_app.logger.info(json.dumps(data))
+        # still need to write last_checkin, last_ip
+        db.session.add(node)
+        db.session.commit()
 
     return jsonify(node_invalid=False)
 
@@ -241,10 +296,16 @@ def distributed_read(node=None):
     '''
     '''
     data = request.get_json()
-    current_app.logger.info("%s checking in to retrieve distributed queries",
-                            node)
+
+    current_app.logger.info(
+        "%s - %s checking in to retrieve distributed queries",
+        request.remote_addr, node
+    )
+
     queries = node.get_new_queries()
-    node.update(last_checkin=dt.datetime.utcnow(), commit=False)
+
+    # need to write last_checkin, last_ip, and update distributed
+    # query state
     db.session.add(node)
     db.session.commit()
 
@@ -258,7 +319,9 @@ def distributed_write(node=None):
     '''
     '''
     data = request.get_json()
-    current_app.logger.info("Got data: %s", data)
+
+    if current_app.debug:
+        current_app.logger.debug(json.dumps(data, indent=2))
 
     for guid, results in data.get('queries', {}).items():
         task = DistributedQueryTask.query.filter(
@@ -268,21 +331,27 @@ def distributed_write(node=None):
         ).first()
 
         if not task:
-            current_app.logger.error("Got result for distributed query not "
-                                     "in PENDING state: %s: %s",
-                                     guid, json.dumps(data))
+            current_app.logger.error(
+                "%s - Got result for distributed query not in PENDING "
+                "state: %s: %s",
+                request.remote_addr, guid, json.dumps(data)
+            )
             continue
 
         for columns in results:
-            result = DistributedQueryResult(columns,
-                                            distributed_query=task.distributed_query,
-                                            distributed_query_task=task)
+            result = DistributedQueryResult(
+                columns,
+                distributed_query=task.distributed_query,
+                distributed_query_task=task
+            )
             db.session.add(result)
         else:
             task.status = DistributedQueryTask.COMPLETE
             db.session.add(task)
 
     else:
+        # need to write last_checkin, last_ip on node
+        db.session.add(node)
         db.session.commit()
 
     return jsonify(node_invalid=False)

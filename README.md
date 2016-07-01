@@ -112,6 +112,8 @@ Setting       | Description
 `DOORMAN_EXPECTS_UNIQUE_HOST_ID`  |  If osquery is deployed on endpoints to start with the `--host_identifier=uuid` cli flag, set this value to `True`. Default is `True`.
 `DOORMAN_CHECKIN_INTERVAL`  |  Time (in seconds) nodes are expected to check-in for configurations or call the distributed read endpoint. Nodes that fail to check-in within this time will be highlighted in red on the main nodes page.
 `DOORMAN_ENROLL_DEFAULT_TAGS`  |  A default set of tags to apply to newly enrolled nodes.
+`DOORMAN_CAPTURE_NODE_INFO` |  A list of tuples, containing a pair of osquery result column and label used to determine what information is captured about a node and presented on a node's information page. In order for this information to be captured, a node must execute a query which returns a result containing these columns. By default, the following information is captured: (i.e., `select * from system_info;`) <ul><li>`computer_name`</li><li>`hardware_vendor`</li><li>`hardware_model`</li><li>`hardware_serial`</li><li>`cpu_brand`</li><li>`cpu_physical_cores`</li><li>`physical_memory`</li></ul>
+`DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL` |  The minimum osquery status log level to retain. Default is `0`, (all logs).
 `DOORMAN_AUTH_METHOD`  |  The authentication backend used to authenticate Doorman users (not osquery endpoints). May be one of: <p><ul><li>`None`</li><li>`doorman`</li><li>`ldap`</li><li>`google`</li></ul></p> Note, google and doorman must be wrapped in quotes. Default is `None`. See the [authentication] (#authentication) section above for more information.
 `DOORMAN_ALERTER_PLUGINS`  | The available `AbstractAlerterPlugin` implementations. This settings expects a dictionary of alerter names and tuples, where the first tuple item is the class name implemting `AbstractAlerterPlugin` to import, and the second value is a dictionary configuration passed to configure the Alerter class. Available Alerter plugins at time of this release are:<p><ul><li>`doorman.plugins.alerters.debug.DebugAlerter `</li><li> `doorman.plugins.alerters.emailer.EmailAlerter`</li><li> `doorman.plugins.alerters.pagerduty.PagerDutyAlerter`</li></ul></p>
 `MAIL_DEFAULT_SENDER`  | If using the `doorman.plugins.alerters.emailer.EmailAlerter` alerter above, specify the sender email address used by Doorman for the `FROM:` field.
@@ -124,7 +126,7 @@ Setting       | Description
 
     a. Choose a directory to host the database. We'll use `~/doormandb` for these examples.
     b. Run `initdb ~/doormandb` to initialize the database.
-    c. Run `pg_ctl -D ~/doormandb -l ~/doormandb/pg.log -o -p 5432 start` to start a Postgres instance.
+    c. Run `pg_ctl -D ~/doormandb -l ~/doormandb/pg.log -o -p5432 start` to start a Postgres instance.
 
     If you reboot or otherwise, just run the pg_ctl ... start command above to resurrect the server.
 
@@ -172,38 +174,40 @@ Setting       | Description
     python manage.py ssl
     ~~~
 
-1. Launch osquery with the [appropriate cli flags](https://osquery.readthedocs.org/en/stable/installation/cli-flags/#remote-settings-optional-for-configloggerdistributed-flags) to configure it to use the TLS enrollment, configuration, logging, and distributed read/write API's. **Below is an example bash script to be used _only_ for testing**:
+1. Launch osquery with the [appropriate cli flags](https://osquery.readthedocs.org/en/stable/installation/cli-flags/#remote-settings-optional-for-configloggerdistributed-flags) to configure it to use the TLS enrollment, configuration, logging, and distributed read/write API's. **Below is an example osquery.flags to be used _only_ for testing**:
 
     ~~~
-    #!/usr/bin/env bash
-    
-    export ENROLL_SECRET=secret
-    
-    osqueryd \
-       --pidfile /tmp/osquery.pid \
-       --host_identifier uuid \
-       --database_path /tmp/osquery.db \
-       --config_plugin tls \
-       --config_tls_endpoint /config \
-       --config_tls_refresh 10 \
-       --config_tls_max_attempts 3 \
-       --enroll_tls_endpoint /enroll  \
-       --enroll_secret_env ENROLL_SECRET \
-       --disable_distributed=false \
-       --distributed_plugin tls \
-       --distributed_interval 10 \
-       --distributed_tls_max_attempts 3 \
-       --distributed_tls_read_endpoint /distributed/read \
-       --distributed_tls_write_endpoint /distributed/write \
-       --tls_dump true \
-       --logger_path /tmp/ \
-       --logger_plugin tls \
-       --logger_tls_endpoint /log \
-       --logger_tls_period 5 \
-       --tls_hostname localhost:5000 \
-       --tls_server_certs ./certificate.crt \
-       --log_result_events=false \
-       --pack_delimiter /
+    --pidfile=/tmp/osquery.pid
+    --host_identifier=uuid
+    --database_path=/tmp/osquery.db
+    --config_plugin=tls
+    --config_tls_endpoint=/config
+    --config_tls_refresh=10
+    --config_tls_max_attempts=3
+    --enroll_tls_endpoint=/enroll
+    --enroll_secret_env=ENROLL_SECRET
+    --disable_distributed=false
+    --distributed_plugin=tls
+    --distributed_interval=10
+    --distributed_tls_max_attempts=3
+    --distributed_tls_read_endpoint=/distributed/read
+    --distributed_tls_write_endpoint=/distributed/write
+    --logger_plugin=tls
+    --logger_tls_endpoint=/log
+    --logger_tls_period=5
+    --tls_hostname=localhost:5000 \
+    --tls_server_certs=./certificate.crt
+    --log_result_events=false
+    --pack_delimiter=/
+    --utc
+    --verbose
+    --tls_dump=true
+    ~~~
+
+    And then invoke `osqueryd` as root by running:
+
+    ~~~
+    root@localhost# ENROLL_SECRET=secret osqueryd --flagfile osquery.flags
     ~~~
 
 

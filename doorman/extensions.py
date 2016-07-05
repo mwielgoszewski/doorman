@@ -10,7 +10,7 @@ from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from raven.contrib.flask import Sentry
-
+from flask_sslify import SSLify
 
 class LogTee(object):
     def __init__(self, app=None):
@@ -248,4 +248,8 @@ ldap_manager = LDAP3LoginManager()
 login_manager = LoginManager()
 metrics = Metrics()
 rule_manager = RuleManager()
+<<<<<<< 89c3a99d262eec5c9e51a2923cb9a69c752ae7f7
 sentry = Sentry()
+=======
+sslify = SSLify()
+>>>>>>> Addressing reviews

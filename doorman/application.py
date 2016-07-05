@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 
-from flask import Flask, render_template, request, redirect
-from flask_sslify import SSLify
+from flask import Flask, render_template
 from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.manage import blueprint as backend
 from doorman.extensions import (
     db, debug_toolbar, ldap_manager, log_tee, login_manager, mail,
-    make_celery, metrics, migrate, rule_manager, sentry
+    make_celery, metrics, migrate, rule_manager, sentry, sslify
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
@@ -19,9 +17,6 @@ def create_app(config=ProdConfig):
     app = Flask(__name__)
     app.config.from_object(config)
     app.config.from_envvar('DOORMAN_SETTINGS', silent=True)
-    # if running on heroku, redirect http to https
-    if 'DYNO' in os.environ:
-        sslify = SSLify(app)
     register_blueprints(app)
     register_errorhandlers(app)
     register_loggers(app)
@@ -57,6 +52,8 @@ def register_extensions(app):
     metrics.init_app(app)
     login_manager.init_app(app)
     sentry.init_app(app)
+    if 'DYNO' in os.environ:
+        sslify.init_app(app)
 
 
 def register_loggers(app):
@@ -67,9 +64,9 @@ def register_loggers(app):
     from logging.handlers import WatchedFileHandler
 
     log_fname = app.config['DOORMAN_LOGGING_FILENAME']
-    if log_fname == 'sys.stdout':
-    	handler = logging.StreamHandler(sys.stdout)
-    else:
+    if isinstance(log_fname, basestring):
+    	handler = logging.StreamHandler(log_fname)
+    elif isinstance(log_fname, file):
         handler = WatchedFileHandler(log_fname)
     levelname = app.config['DOORMAN_LOGGING_LEVEL']
     if levelname in ('DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL'):

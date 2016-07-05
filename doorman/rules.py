@@ -260,12 +260,12 @@ class LogicCondition(BaseCondition):
 
 class EqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected == value
+        return value == self.expected
 
 
 class NotEqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected != value
+        return value != self.expected
 
 
 class BeginsWithCondition(LogicCondition):
@@ -310,22 +310,22 @@ class IsNotEmptyCondition(LogicCondition):
 
 class LessCondition(LogicCondition):
     def compare(self, value):
-        return self.expected < value
+        return value < self.expected
 
 
 class LessEqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected <= value
+        return value <= self.expected
 
 
 class GreaterCondition(LogicCondition):
     def compare(self, value):
-        return self.expected > value
+        return value > self.expected
 
 
 class GreaterEqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected >= value
+        return value >= self.expected
 
 
 class MatchesRegexCondition(LogicCondition):

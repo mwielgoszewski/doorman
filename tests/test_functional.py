@@ -19,6 +19,7 @@ from doorman.models import (
     DistributedQuery, DistributedQueryTask, DistributedQueryResult, Rule,
 )
 from doorman.settings import TestConfig
+from doorman.utils import learn_from_result
 
 from .factories import NodeFactory, PackFactory, QueryFactory, TagFactory
 
@@ -69,29 +70,43 @@ class TestEnrolling:
         enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': enroll_secret,
-            'host_identifier': 'foobaz'})
+            'host_identifier': 'foobaz'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert resp.json['node_invalid'] is False
         assert resp.json['node_key'] != node.node_key
 
+        n = Node.query.filter_by(node_key=resp.json['node_key']).one()
+        assert n.is_active
+        assert n.last_ip == '127.0.0.2'
+
     def test_valid_reenrollment(self, node, testapp):
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': node.enroll_secret,
-            'host_identifier': node.host_identifier})
+            'host_identifier': node.host_identifier},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert resp.json['node_invalid'] is False
         assert resp.json['node_key'] == node.node_key
+        assert node.is_active
+        assert node.last_ip == '127.0.0.2'
 
     def test_valid_reenrollment_change_host_identifier(self, node, testapp):
         host_identifier = 'foo'
 
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': node.enroll_secret,
-            'host_identifier': host_identifier})
+            'host_identifier': host_identifier},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert resp.json['node_invalid'] is False
         assert resp.json['node_key'] == node.node_key
         assert node.host_identifier == host_identifier
+        assert node.is_active
+        assert node.last_ip == '127.0.0.2'
 
     def test_duplicate_host_identifier_when_expecting_unique_ids(self, node, testapp):
         # When the application is configured DOORMAN_EXPECTS_UNIQUE_HOST_ID = True
@@ -108,10 +123,15 @@ class TestEnrolling:
 
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': enroll_secret,
-            'host_identifier': existing.host_identifier})
+            'host_identifier': existing.host_identifier},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert resp.json['node_invalid'] is False
         assert resp.json['node_key'] == existing.node_key
+        assert existing.is_active
+        assert existing.last_ip == '127.0.0.2'
+        assert node.last_ip != '127.0.0.2'
 
     def test_duplicate_host_identifier_when_not_expecting_unique_ids(self, node, testapp):
 
@@ -123,10 +143,14 @@ class TestEnrolling:
 
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': enroll_secret,
-            'host_identifier': existing.host_identifier})
+            'host_identifier': existing.host_identifier},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert resp.json['node_invalid'] is False
         assert resp.json['node_key'] != existing.node_key
+        assert node.is_active
+        assert existing.last_ip != '127.0.0.2'
 
     def test_default_tags_that_dont_exist_yet_are_created(self, db, testapp):
         testapp.app.config['DOORMAN_ENROLL_DEFAULT_TAGS'] = ['foo', 'bar']
@@ -163,13 +187,16 @@ class TestEnrolling:
 
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': enroll_secret,
-            'host_identifier': 'kungfoo',
-        })
+            'host_identifier': 'kungfoo'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         node = Node.query.filter_by(host_identifier='kungfoo').first()
         assert node
         assert node.tags
         assert tag in node.tags
+        assert node.is_active
+        assert node.last_ip == '127.0.0.2'
 
     def test_reenrolling_node_does_not_get_new_tags(self, db, node, testapp):
         testapp.app.config['DOORMAN_ENROLL_DEFAULT_TAGS'] = ['foo', 'bar']
@@ -177,15 +204,19 @@ class TestEnrolling:
 
         tag = TagFactory(value='foobar')
         node.tags.append(tag)
+        node.last_ip = '127.0.0.1'
         node.save()
 
         resp = testapp.post_json(url_for('api.enroll'), {
             'enroll_secret': enroll_secret,
-            'host_identifier': node.host_identifier,
-        })
+            'host_identifier': node.host_identifier},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert Tag.query.count() == 3
         assert node.tags == [tag]
+        assert node.is_active
+        assert node.last_ip == '127.0.0.1'
 
 
 class TestConfiguration:
@@ -198,7 +229,8 @@ class TestConfiguration:
     def test_missing_node_key(self, node, testapp):
         resp = testapp.post_json(url_for('api.configuration'), {
             'foo': 'bar'})
-        assert resp.json == {'node_invalid': True}
+        assert not resp.normal_body
+        # assert resp.json == {'node_invalid': True}
 
     def test_invalid_node_key(self, node, testapp):
         resp = testapp.post_json(url_for('api.configuration'), {
@@ -209,6 +241,13 @@ class TestConfiguration:
         resp = testapp.post_json(url_for('api.configuration'), {
             'node_key': node.node_key})
         assert resp.json['node_invalid'] is False
+
+    def test_inactive_node_key(self, node, testapp):
+        node.is_active = False
+        node.save()
+        resp = testapp.post_json(url_for('api.configuration'), {
+            'node_key': node.node_key})
+        assert resp.json['node_invalid'] is True
 
     def test_configuration_has_all_required_values(self, node, testapp):
         tag = TagFactory(value='foobar')
@@ -334,7 +373,8 @@ class TestLogging:
     def test_missing_node_key(self, node, testapp):
         resp = testapp.post_json(url_for('api.logger'), {
             'foo': 'bar'})
-        assert resp.json == {'node_invalid': True}
+        assert not resp.normal_body
+        # assert resp.json == {'node_invalid': True}
 
     def test_status_log_created_for_node(self, node, testapp):
         data = {
@@ -350,13 +390,16 @@ class TestLogging:
             'node_key': node.node_key,
             'data': [data],
             'log_type': 'status',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert node.status_logs.count()
         assert node.status_logs[0].line == data['line']
         assert node.status_logs[0].message == data['message']
         assert node.status_logs[0].severity == data['severity']
         assert node.status_logs[0].filename == data['filename']
+        assert node.last_ip == '127.0.0.2'
 
     def test_status_log_created_for_node_put(self, node, testapp):
         data = {
@@ -372,13 +415,16 @@ class TestLogging:
             'node_key': node.node_key,
             'data': [data],
             'log_type': 'status',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert node.status_logs.count()
         assert node.status_logs[0].line == data['line']
         assert node.status_logs[0].message == data['message']
         assert node.status_logs[0].severity == data['severity']
         assert node.status_logs[0].filename == data['filename']
+        assert node.last_ip == '127.0.0.2'
 
     def test_status_log_created_for_node_when_gzipped(self, node, testapp):
         data = {
@@ -402,13 +448,16 @@ class TestLogging:
         resp = testapp.post(url_for('api.logger'), fileobj.getvalue(), headers={
             'Content-Encoding': 'gzip',
             'Content-Type': 'application/json'
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert node.status_logs.count()
         assert node.status_logs[0].line == data['line']
         assert node.status_logs[0].message == data['message']
         assert node.status_logs[0].severity == data['severity']
         assert node.status_logs[0].filename == data['filename']
+        assert node.last_ip == '127.0.0.2'
 
     def test_no_status_log_created_when_data_is_empty(self, node, testapp):
         assert not node.status_logs.count()
@@ -417,9 +466,12 @@ class TestLogging:
             'node_key': node.node_key,
             'data': [],
             'log_type': 'status',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not node.status_logs.count()
+        assert node.last_ip == '127.0.0.2'
 
     def test_result_log_created_for_node(self, node, testapp):
         now = dt.datetime.utcnow()
@@ -455,9 +507,12 @@ class TestLogging:
             'node_key': node.node_key,
             'data': data,
             'log_type': 'result',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert node.result_logs.count() == 2
+        assert node.last_ip == '127.0.0.2'
 
         added, removed = node.result_logs.all()
 
@@ -478,9 +533,12 @@ class TestLogging:
             'node_key': node.node_key,
             'data': [],
             'log_type': 'result',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not node.result_logs.count()
+        assert node.last_ip == '127.0.0.2'
 
     def test_result_event_format(self, node, testapp):
         now = dt.datetime.utcnow()
@@ -544,9 +602,12 @@ class TestLogging:
             'node_key': node.node_key,
             'data': data,
             'log_type': 'result',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert node.result_logs.count() == 4
+        assert node.last_ip == '127.0.0.2'
 
         for i, result in enumerate(node.result_logs.all()):
             assert result.timestamp == now.replace(microsecond=0)
@@ -611,9 +672,12 @@ class TestLogging:
             'node_key': node.node_key,
             'data': data,
             'log_type': 'result',
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert node.result_logs.count() == 3
+        assert node.last_ip == '127.0.0.2'
 
         r0, r1, r2 = node.result_logs.all()
 
@@ -640,9 +704,12 @@ class TestDistributedRead:
     def test_no_distributed_queries(self, db, node, testapp):
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not resp.json['queries']
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_read_new(self, db, node, testapp):
         q = DistributedQuery.create(sql='select * from osquery_info;')
@@ -652,12 +719,15 @@ class TestDistributedRead:
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert t.status == DistributedQueryTask.PENDING
         assert t.guid in resp.json['queries']
         assert resp.json['queries'][t.guid] == q.sql
         assert t.timestamp > q.timestamp
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_read_pending(self, db, node, testapp):
         q = DistributedQuery.create(sql='select * from osquery_info;')
@@ -666,9 +736,12 @@ class TestDistributedRead:
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not resp.json['queries']
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_read_complete(self, db, node, testapp):
         q = DistributedQuery.create(sql='select * from osquery_info;')
@@ -677,9 +750,12 @@ class TestDistributedRead:
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not resp.json['queries']
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_read_not_before(self, db, node, testapp):
         import doorman.utils
@@ -700,20 +776,26 @@ class TestDistributedRead:
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not resp.json['queries']
+        assert node.last_ip == '127.0.0.2'
 
         mocked_datetime.utcnow.return_value = not_before + dt.timedelta(seconds=1)
 
         resp = testapp.post_json(url_for('api.distributed_read'), {
             'node_key': node.node_key,
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.3')
+        )
 
         assert t.status == DistributedQueryTask.PENDING
         assert t.timestamp == not_before + dt.timedelta(seconds=1)
         assert t.guid in resp.json['queries']
         assert resp.json['queries'][t.guid] == q.sql
+        assert node.last_ip == '127.0.0.3'
 
         datetime_patcher.stop()
 
@@ -728,10 +810,13 @@ class TestDistributedWrite:
             'queries': {
                 'foo': 'bar',
             }
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
         result = DistributedQueryResult.query.filter(
             DistributedQueryResult.columns['foo'].astext == 'baz').all()
         assert not result
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_write_state_new(self, db, node, testapp):
         q = DistributedQuery.create(
@@ -743,10 +828,13 @@ class TestDistributedWrite:
             'queries': {
                 t.guid: '',
             }
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert t.status == DistributedQueryTask.NEW
         assert not q.results
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_write_state_pending(self, db, node, testapp):
         q = DistributedQuery.create(
@@ -770,12 +858,15 @@ class TestDistributedWrite:
             'queries': {
                 t.guid: data,
             }
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert t.status == DistributedQueryTask.COMPLETE
         assert q.results
         assert q.results[0].columns == data[0]
         assert q.results[1].columns == data[1]
+        assert node.last_ip == '127.0.0.2'
 
     def test_distributed_query_write_state_complete(self, db, node, testapp):
         q = DistributedQuery.create(
@@ -804,12 +895,15 @@ class TestDistributedWrite:
             'queries': {
                 t.guid: '',
             }
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert q.results
         assert len(q.results) == 1
         assert q.results[0] == r
         assert q.results[0].columns == data[0]
+        assert node.last_ip == '127.0.0.2'
 
     def test_malicious_node_distributed_query_write(self, db, node, testapp):
         foo = NodeFactory(host_identifier='foo')
@@ -828,19 +922,29 @@ class TestDistributedWrite:
             'queries': {
                 t1.guid: 'bar'
             }
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
 
         assert not q1.results
         assert not q2.results
+        assert node.last_ip != '127.0.0.2'
+        assert not node.last_ip
+        assert foo.last_ip == '127.0.0.2'
 
         resp = testapp.post_json(url_for('api.distributed_write'), {
             'node_key': foo.node_key,
             'queries': {
                 t2.guid: 'bar'
             }
-        })
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.3')
+        )
 
         assert t2.results
+        assert node.last_ip != '127.0.0.2'
+        assert not node.last_ip
+        assert foo.last_ip == '127.0.0.3'
 
 
 class TestDistributedTable:
@@ -1277,3 +1381,147 @@ class TestRuleEndToEnd:
                       'column_name': 'column_value',
                     },
                 }
+
+
+class TestLearning:
+    # default columns we capture node info on are:
+    COLUMNS = [
+        'computer_name',
+        'hardware_vendor',
+        'hardware_model',
+        'hardware_serial',
+        'cpu_brand',
+        'cpu_physical_cores',
+        'physical_memory',
+    ]
+
+    def test_node_info_updated_on_added_data(self, node, testapp):
+        assert not node.node_info
+
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "added",
+              "columns": {
+                "cpu_subtype": "Intel x86-64h Haswell",
+                "cpu_physical_cores": "4",
+                "physical_memory": "17179869184",
+                "cpu_logical_cores": "8",
+                "hostname": "foobar",
+                "hardware_version": "1.0",
+                "hardware_vendor": "Apple Inc.",
+                "hardware_model": "MacBookPro11,3",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
+                "cpu_type": "x86_64h",
+                "computer_name": "hostname.local",
+                "hardware_serial": "123456890",
+                "uuid": ""
+              },
+              "hostIdentifier": node.host_identifier
+            }
+        ]
+
+        result = {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        }
+
+        learn_from_result(result, node.to_dict())
+
+        for column in self.COLUMNS:
+            assert column in node.node_info
+            assert node.node_info[column] == data[0]['columns'][column]
+
+        assert 'foobar' not in node.node_info
+
+    def test_node_info_updated_on_removed_data(self, node, testapp):
+        assert not node.node_info
+        node.node_info = {
+                "computer_name": "hostname.local",
+                "hardware_version": "1.0",
+                "hardware_vendor": "Apple Inc.",
+                "hardware_model": "MacBookPro11,3",
+                "hardware_serial": "123456890",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
+                "cpu_physical_cores": "4",
+                "physical_memory": "17179869184",
+        }
+
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "removed",
+              "columns": {
+                "physical_memory": "17179869184",
+                "hostname": "foobar",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
+                "computer_name": "hostname.local",
+              },
+              "hostIdentifier": node.host_identifier
+            },
+
+            # give ourselves a 32gb memory upgrade, overclock 300Mhz
+            # and a cool hostname
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "added",
+              "columns": {
+                "physical_memory": "34359738368",
+                "hostname": "zerocool",
+                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.83GHz",
+                "computer_name": "zerocool.local",
+              },
+              "hostIdentifier": node.host_identifier
+            }
+        ]
+
+        result = {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        }
+
+        learn_from_result(result, node.to_dict())
+
+        for column in self.COLUMNS:
+            assert column in node.node_info
+
+        for column in ('physical_memory', 'cpu_brand', 'computer_name'):
+            assert node.node_info[column] == data[1]['columns'][column]
+
+        assert 'foobar' not in node.node_info
+
+    def test_node_info_not_updated_on_erroneous_data(self, node, testapp):
+        assert not node.node_info
+
+        now = dt.datetime.utcnow()
+        data = [
+            {
+              "name": "system_info",
+              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
+              "unixTime": now.strftime('%s'),
+              "action": "added",
+              "columns": {
+                "uuid": "foobar"
+              },
+              "hostIdentifier": node.host_identifier
+            }
+        ]
+
+        result = {
+            'node_key': node.node_key,
+            'data': data,
+            'log_type': 'result',
+        }
+
+        learn_from_result(result, node.to_dict())
+        assert 'foobar' not in node.node_info

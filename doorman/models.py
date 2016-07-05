@@ -17,6 +17,7 @@ from doorman.database import (
     relationship,
     ARRAY,
     JSONB,
+    INET,
 )
 from doorman.extensions import bcrypt
 
@@ -215,6 +216,9 @@ class Node(SurrogatePK, Model):
     enrolled_on = Column(db.DateTime)
     host_identifier = Column(db.String)
     last_checkin = Column(db.DateTime)
+    node_info = Column(JSONB, default={}, nullable=False)
+    is_active = Column(db.Boolean, default=True, nullable=False)
+    last_ip = Column(INET, nullable=True)
 
     tags = relationship(
         'Tag',
@@ -225,12 +229,15 @@ class Node(SurrogatePK, Model):
 
     def __init__(self, host_identifier, node_key=None,
                  enroll_secret=None, enrolled_on=None, last_checkin=None,
+                 is_active=True, last_ip=None,
                  **kwargs):
         self.node_key = node_key or str(uuid.uuid4())
         self.host_identifier = host_identifier
         self.enroll_secret = enroll_secret
         self.enrolled_on = enrolled_on
         self.last_checkin = last_checkin
+        self.is_active = is_active
+        self.last_ip = last_ip
 
     def __repr__(self):
         return '<Node-{0.id}: node_key={0.node_key}, host_identifier={0.host_identifier}>'.format(self)
@@ -242,6 +249,17 @@ class Node(SurrogatePK, Model):
     def get_new_queries(self, **kwargs):
         from doorman.utils import assemble_distributed_queries
         return assemble_distributed_queries(self)
+
+    @property
+    def display_name(self):
+        if 'display_name' in self.node_info and self.node_info['display_name']:
+            return self.node_info['display_name']
+        elif 'hostname' in self.node_info and self.node_info['hostname']:
+            return self.node_info['hostname']
+        elif 'computer_name' in self.node_info and self.node_info['computer_name']:
+            return self.node_info['computer_name']
+        else:
+            return self.host_identifier
 
     @property
     def packs(self):
@@ -274,9 +292,13 @@ class Node(SurrogatePK, Model):
         # NOTE: deliberately not including any secret values in here, for now.
         return {
             'id': self.id,
+            'display_name': self.display_name,
             'enrolled_on': self.enrolled_on,
             'host_identifier': self.host_identifier,
             'last_checkin': self.last_checkin,
+            'node_info': self.node_info.copy(),
+            'last_ip': self.last_ip,
+            'is_active': self.is_active
         }
 
 
@@ -328,7 +350,7 @@ class ResultLog(SurrogatePK, Model):
     )
 
     def __init__(self, name=None, action=None, columns=None, timestamp=None,
-                 node=None, node_id=None):
+                 node=None, node_id=None, **kwargs):
         self.name = name
         self.action = action
         self.columns = columns or {}
@@ -355,7 +377,8 @@ class StatusLog(SurrogatePK, Model):
     )
 
     def __init__(self, line=None, message=None, severity=None,
-                 filename=None, created=None, node=None, version=None):
+                 filename=None, created=None, node=None, version=None,
+                 **kwargs):
         self.line = int(line)
         self.message = message
         self.severity = int(severity)

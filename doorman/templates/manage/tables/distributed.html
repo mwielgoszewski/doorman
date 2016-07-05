@@ -13,7 +13,7 @@
                         {% for query in queries %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('manage.get_node', node_id=query.node_id) }}">{{ query.node.host_identifier }}</a>
+                                <a href="{{ url_for('manage.get_node', node_id=query.node_id) }}">{{ query.node.display_name }}</a>
                             </td>
                             <td>
                                 <code>{{ query.distributed_query.sql }}</code>

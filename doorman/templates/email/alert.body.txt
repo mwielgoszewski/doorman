@@ -12,7 +12,7 @@ Content:
 {{ match.rule.description }}
 {%- endif %}
 
-Review most recent activity for {{ node.host_identifier }} at {{ url_for('manage.node_activity', node_id=node.id, _external=True) }}.
+Review most recent activity for {{ node.display_name }} at {{ url_for('manage.node_activity', node_id=node.id, _external=True) }}.
 This rule's configuration may be reviewed at {{ url_for('manage.rule', rule_id=match.rule.id, _external=True) }}.
 
 ---END doorman notification

@@ -32,7 +32,19 @@ class Config(object):
     DOORMAN_CHECKIN_INTERVAL = 3600
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
+    DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL = 0
+
     DOORMAN_ENROLL_DEFAULT_TAGS = [
+    ]
+
+    DOORMAN_CAPTURE_NODE_INFO = [
+        ('computer_name', 'name'),
+        ('hardware_vendor', 'make'),
+        ('hardware_model', 'model'),
+        ('hardware_serial', 'serial'),
+        ('cpu_brand', 'cpu'),
+        ('cpu_physical_cores', 'cpu cores'),
+        ('physical_memory', 'memory'),
     ]
 
     BROKER_URL = 'redis://localhost:6379/0'
@@ -165,6 +177,18 @@ class Config(object):
     # LDAP_OPT_X_TLS_USE_VERSION = 3  # ssl.PROTOCOL_TLSv1
     # LDAP_OPT_X_TLS_VALID_NAMES = []
 
+    # To enable Sentry reporting, configure the following keys
+    # https://docs.getsentry.com/hosted/clients/python/integrations/flask/
+    # SENTRY_DSN = 'https://<key>:<secret>@app.getsentry.com/<project>'
+    # SENTRY_INCLUDE_PATHS = ['doorman']
+    # SENTRY_USER_ATTRS = ['username', 'first_name', 'last_name', 'email']
+    #
+    # https://docs.getsentry.com/hosted/clients/python/advanced/#sanitizing-data
+    # SENTRY_PROCESSORS = [
+    #     'raven.processors.SanitizePasswordsProcessor',
+    # ]
+    # RAVEN_IGNORE_EXCEPTIONS = []
+
 
 class ProdConfig(Config):
 
@@ -178,6 +202,7 @@ class ProdConfig(Config):
     DOORMAN_ENROLL_SECRET = [
 
     ]
+    DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL = 1
 
     BROKER_URL = ''
     CELERY_RESULT_BACKEND = ''

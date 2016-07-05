@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+from operator import itemgetter
+import csv
 import json
 import datetime as dt
 
-from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, current_app, flash, jsonify, make_response, redirect,
+    render_template, request, url_for
+)
 from flask_login import login_required
 from flask_paginate import Pagination
 
@@ -19,7 +24,9 @@ from .forms import (
     FilePathUpdateForm,
     CreateRuleForm,
     UpdateRuleForm,
+    UpdateNodeForm,
 )
+from doorman.compat import StringIO
 from doorman.database import db
 from doorman.models import (
     DistributedQuery, DistributedQueryTask, DistributedQueryResult,
@@ -40,7 +47,8 @@ def inject_models():
     return dict(Node=Node, Pack=Pack, Query=Query, Tag=Tag,
                 Rule=Rule, FilePath=FilePath,
                 DistributedQuery=DistributedQuery,
-                DistributedQueryTask=DistributedQueryTask)
+                DistributedQueryTask=DistributedQueryTask,
+                current_app=current_app)
 
 
 @blueprint.route('/')
@@ -51,16 +59,28 @@ def index():
 
 @blueprint.route('/nodes')
 @blueprint.route('/nodes/<int:page>')
+@blueprint.route('/nodes/<any(active, inactive):status>')
+@blueprint.route('/nodes/<any(active, inactive):status>/<int:page>')
 @login_required
-def nodes(page=1):
+def nodes(page=1, status='active'):
+    if status == 'inactive':
+        nodes = Node.query.filter_by(is_active=False)
+    else:
+        nodes = Node.query.filter_by(is_active=True)
+
     nodes = get_paginate_options(
         request,
         Node,
         ('id', 'host_identifier', 'enrolled_on', 'last_checkin'),
+        existing_query=nodes,
         page=page,
     )
 
-    display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name}'
+    display_msg = 'displaying <b>{start} - {end}</b> of <b>{total}</b> {record_name} '
+    display_msg += '<a href="{0}" title="Export node information to csv">'.format(
+        url_for('manage.nodes_csv')
+    )
+    display_msg += '<i class="fa fa-download"></i></a>'
 
     pagination = Pagination(page=page,
                             per_page=nodes.per_page,
@@ -68,11 +88,52 @@ def nodes(page=1):
                             alignment='center',
                             show_single_page=False,
                             display_msg=display_msg,
-                            record_name='nodes',
+                            record_name='{status} nodes'.format(status=status),
                             bs_version=3)
 
-    return render_template('nodes.html', nodes=nodes.items,
-                           pagination=pagination)
+    return render_template('nodes.html',
+                           nodes=nodes.items,
+                           pagination=pagination,
+                           status=status)
+
+
+@blueprint.route('/nodes.csv')
+@login_required
+def nodes_csv():
+    headers = [
+        'Display name',
+        'Host identifier',
+        'Enrolled On',
+        'Last Check-in',
+        'Last IP Address',
+        'Is Active',
+    ]
+
+    column_names = map(itemgetter(0), current_app.config['DOORMAN_CAPTURE_NODE_INFO'])
+    labels = map(itemgetter(1), current_app.config['DOORMAN_CAPTURE_NODE_INFO'])
+    headers.extend(labels)
+    headers = map(str.title, headers)
+
+    sio = StringIO()
+    writer = csv.writer(sio)
+    writer.writerow(headers)
+
+    for node in Node.query:
+        row = [
+            node.display_name,
+            node.host_identifier,
+            node.enrolled_on,
+            node.last_checkin,
+            node.last_ip,
+            node.is_active,
+        ]
+        row.extend([node.node_info.get(column, '') for column in column_names])
+        writer.writerow(row)
+
+    response = make_response(sio.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=nodes.csv"
+    response.headers["Content-Type"] = "text/csv"
+    return response
 
 
 @blueprint.route('/nodes/add', methods=['GET', 'POST'])
@@ -92,11 +153,32 @@ def nodes_by_tag(tags):
     return render_template('nodes.html', nodes=nodes)
 
 
-@blueprint.route('/node/<int:node_id>')
+@blueprint.route('/node/<int:node_id>', methods=['GET', 'POST'])
 @login_required
 def get_node(node_id):
     node = Node.query.filter(Node.id == node_id).first_or_404()
-    return render_template('node.html', node=node)
+    form = UpdateNodeForm(request.form)
+
+    if form.validate_on_submit():
+        node_info = node.node_info.copy()
+
+        if form.display_name.data:
+            node_info['display_name'] = form.display_name.data
+        elif 'display_name' in node_info:
+            node_info.pop('display_name')
+
+        node.node_info = node_info
+        node.is_active = form.is_active.data
+        node.save()
+
+        if request.is_xhr:
+            return '', 204
+
+        return redirect(url_for('manage.get_node', node_id=node.id))
+
+    form = UpdateNodeForm(request.form, obj=node)
+    flash_errors(form)
+    return render_template('node.html', form=form, node=node)
 
 
 @blueprint.route('/node/<int:node_id>/activity')
@@ -274,6 +356,7 @@ def distributed(node_id=None, status=None, page=1):
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/<int:page>')
+@login_required
 def distributed_results(distributed_id, status=None, page=1):
     query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
     tasks = DistributedQueryTask.query.filter_by(distributed_query_id=query.id)

@@ -9,6 +9,8 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_sslify import SSLify
+
 
 
 class LogTee(object):
@@ -243,3 +245,4 @@ ldap_manager = LDAP3LoginManager()
 login_manager = LoginManager()
 metrics = Metrics()
 rule_manager = RuleManager()
+sslify = SSLify()

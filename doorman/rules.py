@@ -98,8 +98,11 @@ class Network(object):
                 # Strip 'column_' prefix to get the 'real' operator.
                 op = op[7:]
 
-                # The 'value' array will look like ['column_name', 'actual value']
-                column_name, value = value
+                if isinstance(value, basestring):
+                    column_name = value
+                else:
+                    # The 'value' array will look like ['column_name', 'actual value']
+                    column_name, value = value
 
             klass = OPERATOR_MAP.get(op)
             if not klass:

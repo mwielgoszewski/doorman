@@ -30,8 +30,10 @@
                                             {{ item.condition }}<br/>
                                             <ul>{{ loop(item.rules) }}</ul>
                                         {%- else -%}
-                                            {%- if item.operator.startswith('column_') %}
+                                            {%- if item.operator.startswith('column_') and not item.operator.endswith('_empty') %}
                                                 Column "{{ item.value[0] }}" {{ item.operator[7:] | pretty_operator }} "{{ item.value[1] }}"
+                                            {%- elif item.operator.startswith('column_') and item.operator.endswith('_empty') %}
+                                                Column "{{ item.value }}" {{ item.operator[7:] | pretty_operator }}
                                             {%- else -%}
                                                 {{ item.id | pretty_field }} {{ item.operator | pretty_operator }} "{{ item.value }}"
                                             {%- endif %}

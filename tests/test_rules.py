@@ -8,6 +8,7 @@ from doorman.rules import (
     BaseCondition,
     EqualCondition,
     LessCondition,
+    GreaterEqualCondition,
     LogicCondition,
     MatchesRegexCondition,
     Network,
@@ -46,6 +47,29 @@ class TestNetwork:
                 "model_id",
                 "5500"
               ]
+            }
+          ]
+        }
+        """)
+
+        network = Network()
+        network.parse_query(query)
+
+        # AND condition, single column condition
+        assert len(network.conditions) == 2
+
+    def test_will_parse_empty_condition(self):
+        query = json.loads("""
+        {
+          "condition": "AND",
+          "rules": [
+            {
+              "id": "column",
+              "field": "column",
+              "type": "string",
+              "input": "text",
+              "operator": "column_is_not_empty",
+              "value": "model_id"
             }
           ]
         }
@@ -324,8 +348,36 @@ class TestLogicCondition:
             },
         })
 
+        # assert that the rule does not alert when the column value
+        # posted by osquery ('112') is less than configured in the rule ('12')
+
         condition = LessCondition(None, '12', column_name='val')
+        assert condition.local_run(inp) is False
+
+        condition = LessCondition(None, '112', column_name='val')
+        assert condition.local_run(inp) is False
+
+        condition = LessCondition(None, '113', column_name='val')
         assert condition.local_run(inp) is True
+
+    def test_greater_or_equal_to_number_values(self):
+        inp = RuleInput(node={}, result_log={
+            'columns': {
+                'val': '112',
+            },
+        })
+
+        # assert that the rule does not alert when the column value
+        # posted by osquery ('112') is less than configured in the rule ('12')
+
+        condition = GreaterEqualCondition(None, '12', column_name='val')
+        assert condition.local_run(inp) is True
+
+        condition = GreaterEqualCondition(None, '112', column_name='val')
+        assert condition.local_run(inp) is True
+
+        condition = GreaterEqualCondition(None, '113', column_name='val')
+        assert condition.local_run(inp) is False
 
 
 class TestRegexConditions:

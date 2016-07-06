@@ -98,7 +98,7 @@ class Network(object):
                 # Strip 'column_' prefix to get the 'real' operator.
                 op = op[7:]
 
-                if isinstance(value, basestring):
+                if isinstance(value, six.string_types):
                     column_name = value
                 else:
                     # The 'value' array will look like ['column_name', 'actual value']

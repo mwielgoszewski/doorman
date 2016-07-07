@@ -9,9 +9,8 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CsrfProtect
 from raven.contrib.flask import Sentry
-
+from flask_sslify import SSLify
 
 class LogTee(object):
     def __init__(self, app=None):
@@ -240,7 +239,6 @@ class Metrics(object):
 
 
 bcrypt = Bcrypt()
-csrf = CsrfProtect()
 db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()
@@ -251,3 +249,4 @@ login_manager = LoginManager()
 metrics = Metrics()
 rule_manager = RuleManager()
 sentry = Sentry()
+sslify = SSLify()

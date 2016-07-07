@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jcorina/doorman.git"
+    "url": "git+https://github.com/mwielgoszewski/doorman"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/jcorina/doorman/issues"
+    "url": "https://github.com/mwielgoszewski/doorman/issues"
   },
-  "homepage": "https://github.com/jcorina/doorman#readme",
+  "homepage": "https://github.com/mwielgoszewski/doorman#readme",
   "dependencies": {
     "bower": "^1.7.9",
     "less": "^2.7.1"

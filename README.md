@@ -255,3 +255,8 @@ To execute tests, simply run `python manage.py test`.
 Doorman is written and maintained by Marcin Wielgoszewski, with contributions from the following individuals and companies:
 
 * [Andrew Dunham](https://github.com/andrew-d) (Stripe)
+
+
+# Deploy on Heroku
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)

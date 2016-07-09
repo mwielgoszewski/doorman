@@ -249,21 +249,24 @@ class TestConfig(Config):
     DOORMAN_AUTH_METHOD = None
 
 
-class HerokuConfig(ProdConfig):
-    ENV = 'heroku'
+if os.environ.get('DYNO'):
+    # we don't want to even define this class elsewhere,
+    # because its definition depends on Heroku-specific environment variables
+    class HerokuConfig(ProdConfig):
+        ENV = 'heroku'
 
-    DOORMAN_LOGGING_FILENAME = '-'  # handled specially - stdout
+        DOORMAN_LOGGING_FILENAME = '-'  # handled specially - stdout
 
-    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-    BROKER_URL = os.environ['REDIS_URL']
-    CELERY_RESULT_BACKEND = os.environ['REDIS_URL']
+        SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+        BROKER_URL = os.environ['REDIS_URL']
+        CELERY_RESULT_BACKEND = os.environ['REDIS_URL']
 
-    try:
-        SECRET_KEY = os.environ['SECRET_KEY']
-    except KeyError:
-        pass  # leave default random-filled key
-    # several values can be specified as a space-separated string
-    DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET'].split()
+        try:
+            SECRET_KEY = os.environ['SECRET_KEY']
+        except KeyError:
+            pass  # leave default random-filled key
+        # several values can be specified as a space-separated string
+        DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET'].split()
 
 
 # choose proper configuration based on environment -

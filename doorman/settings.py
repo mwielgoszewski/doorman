@@ -249,11 +249,21 @@ class TestConfig(Config):
     DOORMAN_AUTH_METHOD = None
 
 
+class HerokuConfig(ProdConfig):
+    ENV = 'heroku'
+
+    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+    BROKER_URL = os.environ['REDIS_URL']
+    CELERY_RESULT_BACKEND = os.environ['REDIS_URL']
+
+
 # choose proper configuration based on environment -
 # this is both for manage.py and for worker.py
 if os.environ.get('DOORMAN_ENV') == 'prod':
     CurrentConfig = ProdConfig
 elif os.environ.get('DOORMAN_ENV') == 'test':
     CurrentConfig = TestConfig
+elif os.environ.get('DYNO'):
+    CurrentConfig = HerokuConfig
 else:
     CurrentConfig = DevConfig

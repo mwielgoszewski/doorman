@@ -262,7 +262,8 @@ class HerokuConfig(ProdConfig):
         SECRET_KEY = os.environ['SECRET_KEY']
     except KeyError:
         pass  # leave default random-filled key
-    DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET']
+    # several values can be specified as a space-separated string
+    DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET'].split()
 
 
 # choose proper configuration based on environment -

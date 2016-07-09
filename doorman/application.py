@@ -65,12 +65,12 @@ def register_loggers(app):
         return
 
     import logging
-    from logging.handlers import WatchedFileHandler, StreamHandler
+    from logging.handlers import WatchedFileHandler
     import sys
 
     logfile = app.config['DOORMAN_LOGGING_FILENAME']
     if logfile == '-':
-        handler = StreamHandler(sys.stdout)
+        handler = logging.StreamHandler(sys.stdout)
     else:
         handler = WatchedFileHandler(logfile)
     levelname = app.config['DOORMAN_LOGGING_LEVEL']

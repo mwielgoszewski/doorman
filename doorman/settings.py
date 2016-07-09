@@ -88,7 +88,7 @@ class Config(object):
         # 'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
         #     # Required
         #     'service_key': 'foobar',
-        
+
         #     # Optional
         #     'client_url': 'https://doorman.domain.com',
         #     'key_format': 'doorman-security-{count}',
@@ -247,3 +247,13 @@ class TestConfig(Config):
     GRAPHITE_ENABLED = False
 
     DOORMAN_AUTH_METHOD = None
+
+
+# choose proper configuration based on environment -
+# this is both for manage.py and for worker.py
+if os.environ.get('DOORMAN_ENV') == 'prod':
+    CurrentConfig = ProdConfig
+elif os.environ.get('DOORMAN_ENV') == 'test':
+    CurrentConfig = TestConfig
+else:
+    CurrentConfig = DevConfig

@@ -258,6 +258,12 @@ class HerokuConfig(ProdConfig):
     BROKER_URL = os.environ['REDIS_URL']
     CELERY_RESULT_BACKEND = os.environ['REDIS_URL']
 
+    try:
+        SECRET_KEY = os.environ['SECRET_KEY']
+    except KeyError:
+        pass  # leave default random-filled key
+    DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET']
+
 
 # choose proper configuration based on environment -
 # this is both for manage.py and for worker.py

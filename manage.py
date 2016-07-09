@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from os.path import abspath, basename, dirname, join, splitext
+from os.path import abspath, dirname, join
 import os
 import glob
-import json
 
 from flask_assets import ManageAssets
 from flask_migrate import MigrateCommand
@@ -76,7 +75,8 @@ def extract_ddl(specs_dir):
 
     opath = join(dirname(__file__), 'doorman', 'osquery_schema.sql')
     with open(opath, 'wb') as f:
-        f.write('-- This file is generated using "python manage.py extract_ddl" - do not edit manually\n')
+        f.write('-- This file is generated using "python manage.py extract_ddl"'
+                '- do not edit manually\n')
         f.write('\n'.join(ddl))
 
 

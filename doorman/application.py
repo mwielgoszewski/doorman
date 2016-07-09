@@ -2,21 +2,24 @@
 import os
 
 from flask import Flask, render_template
+
 from doorman.api import blueprint as api
 from doorman.assets import assets
 from doorman.manage import blueprint as backend
 from doorman.extensions import (
-    db, debug_toolbar, ldap_manager, log_tee, login_manager, mail,
-    make_celery, metrics, migrate, rule_manager, sentry, sslify
+    bcrypt, csrf, db, debug_toolbar, ldap_manager, log_tee, login_manager,
+    mail, make_celery, metrics, migrate, rule_manager, sentry
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
 from doorman.utils import get_node_health, pretty_field, pretty_operator
 
+
 def create_app(config=ProdConfig):
     app = Flask(__name__)
     app.config.from_object(config)
     app.config.from_envvar('DOORMAN_SETTINGS', silent=True)
+
     register_blueprints(app)
     register_errorhandlers(app)
     register_loggers(app)
@@ -29,6 +32,7 @@ def create_app(config=ProdConfig):
 
 def register_blueprints(app):
     app.register_blueprint(api)
+    csrf.exempt(api)
 
     # if the DOORMAN_NO_MANAGER environment variable isn't set,
     # register the backend blueprint. This is useful when you want
@@ -41,6 +45,8 @@ def register_blueprints(app):
 
 
 def register_extensions(app):
+    bcrypt.init_app(app)
+    csrf.init_app(app)
     db.init_app(app)
     migrate.init_app(app, db)
     assets.init_app(app)
@@ -52,8 +58,6 @@ def register_extensions(app):
     metrics.init_app(app)
     login_manager.init_app(app)
     sentry.init_app(app)
-    if 'DYNO' in os.environ:
-        sslify.init_app(app)
 
 
 def register_loggers(app):
@@ -63,11 +67,7 @@ def register_loggers(app):
     import logging
     from logging.handlers import WatchedFileHandler
 
-    log_fname = app.config['DOORMAN_LOGGING_FILENAME']
-    if isinstance(log_fname, basestring):
-        handler = logging.StreamHandler(log_fname)
-    elif isinstance(log_fname, file):
-        handler = WatchedFileHandler(log_fname)
+    handler = WatchedFileHandler(app.config['DOORMAN_LOGGING_FILENAME'])
     levelname = app.config['DOORMAN_LOGGING_LEVEL']
     if levelname in ('DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL'):
         handler.setLevel(getattr(logging, levelname))

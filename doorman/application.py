@@ -58,6 +58,14 @@ def register_extensions(app):
     metrics.init_app(app)
     login_manager.init_app(app)
     sentry.init_app(app)
+    if app.config['ENFORCE_SSL']:
+        # Due to architecture of flask-sslify,
+        # its constructor expects to be launched within app context
+        # unless app is passed.
+        # As a result, we cannot create sslify object in `extensions` module
+        # without getting an error.
+        from flask_sslify import SSLify
+        SSLify(app)
 
 
 def register_loggers(app):

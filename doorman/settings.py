@@ -12,6 +12,11 @@ class Config(object):
     # SERVER_NAME = "doorman.domain.com"
     PREFERRED_URL_SCHEME = "https"
 
+    # PREFERRED_URL_SCHEME will not work without SERVER_NAME configured,
+    # so we need to use SSLify extension for that.
+    # By default it is enabled for all production configs.
+    ENFORCE_SSL = False
+
     DEBUG = False
     DEBUG_TB_ENABLED = False
     DEBUG_TB_INTERCEPT_REDIRECTS = False
@@ -196,6 +201,8 @@ class ProdConfig(Config):
     DEBUG = False
     DEBUG_TB_ENABLED = False
     DEBUG_TB_INTERCEPT_REDIRECTS = False
+
+    ENFORCE_SSL = True
 
     SQLALCHEMY_DATABASE_URI = ''
 

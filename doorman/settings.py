@@ -252,6 +252,8 @@ class TestConfig(Config):
 class HerokuConfig(ProdConfig):
     ENV = 'heroku'
 
+    DOORMAN_LOGGING_FILENAME = '-'  # handled specially - stdout
+
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     BROKER_URL = os.environ['REDIS_URL']
     CELERY_RESULT_BACKEND = os.environ['REDIS_URL']

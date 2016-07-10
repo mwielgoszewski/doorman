@@ -33,7 +33,7 @@
       "description": "Flask's secret key",
       "generator": "secret"
     },
-    "DOORMAN_ENROL_SECRET": {
+    "ENROLL_SECRET": {
       "description": "Either one value or several space-delimited values",
       "value": ""
     },

@@ -261,6 +261,13 @@ if os.environ.get('DYNO'):
     # we don't want to even define this class elsewhere,
     # because its definition depends on Heroku-specific environment variables
     class HerokuConfig(ProdConfig):
+        """
+        Environment variables accessed here are provided by Heroku.
+        REDIS_URL and DATABASE_URL are defined by addons,
+        while others should be created using `heroku config`.
+        They are also declared in `app.json`, so they will be created
+        when deploying using `Deploy to Heroku` button.
+        """
         ENV = 'heroku'
 
         DOORMAN_LOGGING_FILENAME = '-'  # handled specially - stdout

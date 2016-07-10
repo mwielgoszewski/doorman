@@ -297,7 +297,7 @@ if os.environ.get('DYNO'):
             'email': ('doorman.plugins.alerters.emailer.EmailAlerter', {
                 'recipients': [
                     email.strip() for email in
-                    os.environ.get('MAIL_RECIPIENTS').split(';')
+                    os.environ.get('MAIL_RECIPIENTS', '').split(';')
                 ],
             }),
 

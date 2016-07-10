@@ -276,10 +276,10 @@ if os.environ.get('DYNO'):
         # several values can be specified as a space-separated string
         DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET'].split()
 
-        DOORMAN_AUTH_METHOD = "google"
-        DOORMAN_OAUTH_CLIENT_ID = os.environ['OAUTH_CLIENT_ID']
-        DOORMAN_OAUTH_CLIENT_SECRET = os.environ['OAUTH_CLIENT_SECRET']
-        DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ['OAUTH_ALLOWED_USERS']
+        DOORMAN_AUTH_METHOD = "google" if os.environ.get('OAUTH_CLIENT_ID') else None
+        DOORMAN_OAUTH_CLIENT_ID = os.environ.get('OAUTH_CLIENT_ID')
+        DOORMAN_OAUTH_CLIENT_SECRET = os.environ.get('OAUTH_CLIENT_SECRET')
+        DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ.get('OAUTH_ALLOWED_USERS')
 
         # mail config
         MAIL_SERVER = os.environ['MAIL_SERVER']

@@ -282,11 +282,11 @@ if os.environ.get('DYNO'):
         DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ.get('OAUTH_ALLOWED_USERS')
 
         # mail config
-        MAIL_SERVER = os.environ['MAIL_SERVER']
-        MAIL_PORT = os.environ['MAIL_PORT']
-        MAIL_USERNAME = os.environ['MAIL_USERNAME']
-        MAIL_PASSWORD = os.environ['MAIL_PASSWORD']
-        MAIL_DEFAULT_SENDER = os.environ['MAIL_DEFAULT_SENDER']
+        MAIL_SERVER = os.environ.get('MAIL_SERVER')
+        MAIL_PORT = os.environ.get('MAIL_PORT')
+        MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+        MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+        MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
         MAIL_USE_SSL = True
 
         DOORMAN_ALERTER_PLUGINS = {
@@ -296,7 +296,8 @@ if os.environ.get('DYNO'):
 
             'email': ('doorman.plugins.alerters.emailer.EmailAlerter', {
                 'recipients': [
-                    email.strip() for email in os.environ['MAIL_RECIPIENTS'].split(';')
+                    email.strip() for email in
+                    os.environ.get('MAIL_RECIPIENTS').split(';')
                 ],
             }),
 

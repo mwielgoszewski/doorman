@@ -279,7 +279,7 @@ if os.environ.get('DYNO'):
         DOORMAN_AUTH_METHOD = "google" if os.environ.get('OAUTH_CLIENT_ID') else None
         DOORMAN_OAUTH_CLIENT_ID = os.environ.get('OAUTH_CLIENT_ID')
         DOORMAN_OAUTH_CLIENT_SECRET = os.environ.get('OAUTH_CLIENT_SECRET')
-        DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ.get('OAUTH_ALLOWED_USERS')
+        DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ.get('OAUTH_ALLOWED_USERS', '').split()
 
         # mail config
         MAIL_SERVER = os.environ.get('MAIL_SERVER')

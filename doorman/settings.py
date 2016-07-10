@@ -126,6 +126,7 @@ class Config(object):
     # a periodic basis, as the file will grow indefinitely. See
     # https://docs.python.org/dev/library/logging.handlers.html#watchedfilehandler
     # for more information.
+    # Alternatively, you can set filename to '-' to log to stdout.
     DOORMAN_LOGGING_FILENAME = '/var/log/doorman/doorman.log'
     DOORMAN_LOGGING_FORMAT = '%(asctime)s -  %(name)s - %(levelname)s - %(thread)d - %(message)s'
     DOORMAN_LOGGING_LEVEL = 'WARNING'
@@ -274,6 +275,32 @@ if os.environ.get('DYNO'):
             pass  # leave default random-filled key
         # several values can be specified as a space-separated string
         DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET'].split()
+
+        DOORMAN_AUTH_METHOD = "google"
+        DOORMAN_OAUTH_CLIENT_ID = os.environ['OAUTH_CLIENT_ID']
+        DOORMAN_OAUTH_CLIENT_SECRET = os.environ['OAUTH_CLIENT_SECRET']
+        DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ['OAUTH_ALLOWED_USERS']
+
+        # mail config
+        MAIL_SERVER = os.environ['MAIL_SERVER']
+        MAIL_PORT = os.environ['MAIL_PORT']
+        MAIL_USERNAME = os.environ['MAIL_USERNAME']
+        MAIL_PASSWORD = os.environ['MAIL_PASSWORD']
+        MAIL_DEFAULT_SENDER = os.environ['MAIL_DEFAULT_SENDER']
+        MAIL_USE_SSL = True
+
+        DOORMAN_ALERTER_PLUGINS = {
+            'debug': ('doorman.plugins.alerters.debug.DebugAlerter', {
+                'level': 'error',
+            }),
+
+            'email': ('doorman.plugins.alerters.emailer.EmailAlerter', {
+                'recipients': [
+                    email.strip() for email in os.environ['MAIL_RECIPIENTS'].split(';')
+                ],
+            }),
+
+        }
 
 
 # choose proper configuration based on environment -

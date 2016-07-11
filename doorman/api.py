@@ -10,7 +10,7 @@ from flask import Blueprint, current_app, jsonify, request, g
 from doorman.database import db
 from doorman.extensions import log_tee
 from doorman.models import (
-    Node, Pack, Query, Tag,
+    Node, Tag,
     DistributedQueryTask, DistributedQueryResult,
     StatusLog,
 )

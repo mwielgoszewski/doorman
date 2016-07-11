@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from collections import defaultdict
-
 from celery import Celery
 from flask_bcrypt import Bcrypt
 from flask_debugtoolbar import DebugToolbarExtension
@@ -102,7 +100,6 @@ class RuleManager(object):
         """ Load rules from the database. """
         from doorman.rules import Network
         from doorman.models import Rule
-        from sqlalchemy.exc import SQLAlchemyError
 
         if not self.should_reload_rules():
             return

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
-from itertools import groupby
 from operator import itemgetter
 from os.path import basename, join, splitext
 import datetime as dt

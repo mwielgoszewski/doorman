@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from itertools import chain
 import datetime as dt
 import uuid
 
@@ -11,7 +10,6 @@ from doorman.database import (
     ForeignKey,
     Model,
     SurrogatePK,
-    UniqueConstraint,
     db,
     reference_col,
     relationship,

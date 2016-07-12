@@ -58,6 +58,14 @@ def register_extensions(app):
     metrics.init_app(app)
     login_manager.init_app(app)
     sentry.init_app(app)
+    if app.config['ENFORCE_SSL']:
+        # Due to architecture of flask-sslify,
+        # its constructor expects to be launched within app context
+        # unless app is passed.
+        # As a result, we cannot create sslify object in `extensions` module
+        # without getting an error.
+        from flask_sslify import SSLify
+        SSLify(app)
 
 
 def register_loggers(app):
@@ -66,8 +74,13 @@ def register_loggers(app):
 
     import logging
     from logging.handlers import WatchedFileHandler
+    import sys
 
-    handler = WatchedFileHandler(app.config['DOORMAN_LOGGING_FILENAME'])
+    logfile = app.config['DOORMAN_LOGGING_FILENAME']
+    if logfile == '-':
+        handler = logging.StreamHandler(sys.stdout)
+    else:
+        handler = WatchedFileHandler(logfile)
     levelname = app.config['DOORMAN_LOGGING_LEVEL']
     if levelname in ('DEBUG', 'INFO', 'WARN', 'WARNING', 'ERROR', 'CRITICAL'):
         handler.setLevel(getattr(logging, levelname))

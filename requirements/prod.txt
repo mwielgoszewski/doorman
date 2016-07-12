@@ -20,6 +20,7 @@ Flask-Migrate==1.8.0
 flask-paginate==0.4.1
 Flask-Script==2.0.5
 Flask-SQLAlchemy==2.1
+Flask-SSLify==0.1.5
 Flask-WTF==0.12
 itsdangerous==0.24
 Jinja2==2.8

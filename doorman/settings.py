@@ -12,6 +12,11 @@ class Config(object):
     # SERVER_NAME = "doorman.domain.com"
     PREFERRED_URL_SCHEME = "https"
 
+    # PREFERRED_URL_SCHEME will not work without SERVER_NAME configured,
+    # so we need to use SSLify extension for that.
+    # By default it is enabled for all production configs.
+    ENFORCE_SSL = False
+
     DEBUG = False
     DEBUG_TB_ENABLED = False
     DEBUG_TB_INTERCEPT_REDIRECTS = False
@@ -88,7 +93,7 @@ class Config(object):
         # 'pagerduty-security': ('doorman.plugins.alerters.pagerduty.PagerDutyAlerter', {
         #     # Required
         #     'service_key': 'foobar',
-        
+
         #     # Optional
         #     'client_url': 'https://doorman.domain.com',
         #     'key_format': 'doorman-security-{count}',
@@ -121,6 +126,7 @@ class Config(object):
     # a periodic basis, as the file will grow indefinitely. See
     # https://docs.python.org/dev/library/logging.handlers.html#watchedfilehandler
     # for more information.
+    # Alternatively, you can set filename to '-' to log to stdout.
     DOORMAN_LOGGING_FILENAME = '/var/log/doorman/doorman.log'
     DOORMAN_LOGGING_FORMAT = '%(asctime)s -  %(name)s - %(levelname)s - %(thread)d - %(message)s'
     DOORMAN_LOGGING_LEVEL = 'WARNING'
@@ -197,6 +203,8 @@ class ProdConfig(Config):
     DEBUG_TB_ENABLED = False
     DEBUG_TB_INTERCEPT_REDIRECTS = False
 
+    ENFORCE_SSL = True
+
     SQLALCHEMY_DATABASE_URI = ''
 
     DOORMAN_ENROLL_SECRET = [
@@ -247,3 +255,69 @@ class TestConfig(Config):
     GRAPHITE_ENABLED = False
 
     DOORMAN_AUTH_METHOD = None
+
+
+if os.environ.get('DYNO'):
+    # we don't want to even define this class elsewhere,
+    # because its definition depends on Heroku-specific environment variables
+    class HerokuConfig(ProdConfig):
+        """
+        Environment variables accessed here are provided by Heroku.
+        REDIS_URL and DATABASE_URL are defined by addons,
+        while others should be created using `heroku config`.
+        They are also declared in `app.json`, so they will be created
+        when deploying using `Deploy to Heroku` button.
+        """
+        ENV = 'heroku'
+
+        DOORMAN_LOGGING_FILENAME = '-'  # handled specially - stdout
+
+        SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
+        BROKER_URL = os.environ['REDIS_URL']
+        CELERY_RESULT_BACKEND = os.environ['REDIS_URL']
+
+        try:
+            SECRET_KEY = os.environ['SECRET_KEY']
+        except KeyError:
+            pass  # leave default random-filled key
+        # several values can be specified as a space-separated string
+        DOORMAN_ENROLL_SECRET = os.environ['ENROLL_SECRET'].split()
+
+        DOORMAN_AUTH_METHOD = "google" if os.environ.get('OAUTH_CLIENT_ID') else None
+        DOORMAN_OAUTH_CLIENT_ID = os.environ.get('OAUTH_CLIENT_ID')
+        DOORMAN_OAUTH_CLIENT_SECRET = os.environ.get('OAUTH_CLIENT_SECRET')
+        DOORMAN_OAUTH_GOOGLE_ALLOWED_USERS = os.environ.get('OAUTH_ALLOWED_USERS', '').split()
+
+        # mail config
+        MAIL_SERVER = os.environ.get('MAIL_SERVER')
+        MAIL_PORT = os.environ.get('MAIL_PORT')
+        MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+        MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+        MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER')
+        MAIL_USE_SSL = True
+
+        DOORMAN_ALERTER_PLUGINS = {
+            'debug': ('doorman.plugins.alerters.debug.DebugAlerter', {
+                'level': 'error',
+            }),
+
+            'email': ('doorman.plugins.alerters.emailer.EmailAlerter', {
+                'recipients': [
+                    email.strip() for email in
+                    os.environ.get('MAIL_RECIPIENTS', '').split(';')
+                ],
+            }),
+
+        }
+
+
+# choose proper configuration based on environment -
+# this is both for manage.py and for worker.py
+if os.environ.get('DOORMAN_ENV') == 'prod':
+    CurrentConfig = ProdConfig
+elif os.environ.get('DOORMAN_ENV') == 'test':
+    CurrentConfig = TestConfig
+elif os.environ.get('DYNO'):
+    CurrentConfig = HerokuConfig
+else:
+    CurrentConfig = DevConfig

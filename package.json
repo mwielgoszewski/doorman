@@ -1,0 +1,27 @@
+{
+  "name": "doorman",
+  "version": "1.0.0",
+  "description": "[![Build Status](https://travis-ci.org/mwielgoszewski/doorman.svg?branch=master)](https://travis-ci.org/mwielgoszewski/doorman) [![Code Climate](https://codeclimate.com/github/mwielgoszewski/doorman/badges/gpa.svg)](https://codeclimate.com/github/mwielgoszewski/doorman)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "postinstall": "bower install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mwielgoszewski/doorman"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mwielgoszewski/doorman/issues"
+  },
+  "homepage": "https://github.com/mwielgoszewski/doorman#readme",
+  "dependencies": {
+    "bower": "^1.7.9",
+    "less": "^2.7.1"
+  }
+}

@@ -245,6 +245,11 @@ linking a Postgres container to the Doorman container should work without
 passing that environment variable.*
 
 
+## running on Heroku
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+
 ## running tests
 
 To execute tests, simply run `python manage.py test`.

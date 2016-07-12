@@ -1,0 +1,79 @@
+{
+  "name": "Doorman",
+  "description": "An osquery fleet manager",
+  "repository": "https://github.com/mwielgoszewski/doorman.git",
+  "keywords": ["doorman", "fleet", "osquery"],
+
+  "buildpacks": [
+	{
+	  "url": "heroku/nodejs"
+	},
+	{
+	  "url": "heroku/python"
+	}
+  ],
+  "addons": [
+	"heroku-postgresql",
+	"heroku-redis"
+  ],
+  "formation": {
+	"web": {
+	  "quantity": 1
+	},
+	"worker": {
+	  "quantity": 1
+	}
+  },
+  "scripts": {
+    "postdeploy": "python manage.py db upgrade"
+  },
+  "success_url": "/manage",
+  "env": {
+    "SECRET_KEY": {
+      "description": "Flask's secret key",
+      "generator": "secret"
+    },
+    "ENROLL_SECRET": {
+      "description": "Either one value or several space-delimited values",
+      "value": ""
+    },
+
+    "OAUTH_CLIENT_ID": {
+      "description": "Google's client ID to use for user authentication, if not provided then auth will be disabled",
+      "required": false
+    },
+    "OAUTH_CLIENT_SECRET": {
+      "description": "Google's client ID to use for user authentication",
+      "required": false
+    },
+    "OAUTH_ALLOWED_USERS": {
+      "description": "Space-delimited list of allowed Google user IDs (or emails?)",
+      "required": false
+    },
+
+    "MAIL_SERVER": {
+      "description": "SMTP server to send emails with (mailing will be disabled unless this is provided)",
+      "required": false
+    },
+    "MAIL_PORT": {
+      "description": "SSL-enabled port on the mail server",
+      "required": false
+    },
+    "MAIL_USERNAME": {
+      "description": "Username for SMTP",
+      "required": false
+    },
+    "MAIL_PASSWORD": {
+      "description": "Password for SMTP",
+      "required": false
+    },
+    "MAIL_DEFAULT_SENDER": {
+      "description": "Default sender for emails",
+      "required": false
+    },
+    "MAIL_RECIPIENTS": {
+      "description": "List of mail recipients, separated by ';'",
+      "required": false
+    }
+  }
+}

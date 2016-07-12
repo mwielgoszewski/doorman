@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from os.path import abspath, basename, dirname, join, splitext
-import os
+from os.path import abspath, dirname, join
 import glob
-import json
 
 from flask_assets import ManageAssets
 from flask_migrate import MigrateCommand
@@ -10,19 +8,11 @@ from flask_script import Command, Manager, Server, Shell
 from flask_script.commands import Clean, ShowUrls
 
 from doorman import create_app, db
-from doorman.settings import DevConfig, ProdConfig, TestConfig
+from doorman.settings import CurrentConfig
 from doorman.assets import assets
 
 
-if os.environ.get('DOORMAN_ENV') == 'prod':
-    CONFIG = ProdConfig
-elif os.environ.get('DOORMAN_ENV') == 'test':
-    CONFIG = TestConfig
-else:
-    CONFIG = DevConfig
-
-
-app = create_app(config=CONFIG)
+app = create_app(config=CurrentConfig)
 
 
 def _make_context():
@@ -76,7 +66,8 @@ def extract_ddl(specs_dir):
 
     opath = join(dirname(__file__), 'doorman', 'osquery_schema.sql')
     with open(opath, 'wb') as f:
-        f.write('-- This file is generated using "python manage.py extract_ddl" - do not edit manually\n')
+        f.write('-- This file is generated using "python manage.py extract_ddl"'
+                '- do not edit manually\n')
         f.write('\n'.join(ddl))
 
 

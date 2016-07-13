@@ -98,8 +98,11 @@ class Network(object):
                 # Strip 'column_' prefix to get the 'real' operator.
                 op = op[7:]
 
-                # The 'value' array will look like ['column_name', 'actual value']
-                column_name, value = value
+                if isinstance(value, six.string_types):
+                    column_name = value
+                else:
+                    # The 'value' array will look like ['column_name', 'actual value']
+                    column_name, value = value
 
             klass = OPERATOR_MAP.get(op)
             if not klass:
@@ -257,12 +260,12 @@ class LogicCondition(BaseCondition):
 
 class EqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected == value
+        return value == self.expected
 
 
 class NotEqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected != value
+        return value != self.expected
 
 
 class BeginsWithCondition(LogicCondition):
@@ -307,22 +310,22 @@ class IsNotEmptyCondition(LogicCondition):
 
 class LessCondition(LogicCondition):
     def compare(self, value):
-        return self.expected < value
+        return value < self.expected
 
 
 class LessEqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected <= value
+        return value <= self.expected
 
 
 class GreaterCondition(LogicCondition):
     def compare(self, value):
-        return self.expected > value
+        return value > self.expected
 
 
 class GreaterEqualCondition(LogicCondition):
     def compare(self, value):
-        return self.expected >= value
+        return value >= self.expected
 
 
 class MatchesRegexCondition(LogicCondition):

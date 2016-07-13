@@ -249,6 +249,25 @@ passing that environment variable.*
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
+If you want to secure your instance with authentication then you will need to configure Google auth
+(which is currently the only one supported with Heroku); see the next section.
+
+## configuring Google auth
+
+In order to configure authentication with Google, you need to do the following steps:
+
+1. Open [Google developer's console](https://console.developers.google.com/) and create a new app,
+   or choose an existing one;
+2. Open `Credentials` section on the left menu;
+3. Press `Create credentials` button and choose `OAuth client ID`;
+4. Choose `Web application` for an application type;
+5. Fill in app name, and enter `https://YOUR_DOMAIN/oauth2callback`
+   (put in the domain you have installed the app on, and check scheme).
+   For Heroku it will be `APPNAME.herokuapps.com` unless you use your own domain.
+6. Press `Create` button; you will get `CLIENT_ID` and `CLIENT_SECRET` values to put in the config.
+7. Go back to `Credentials` page and open `OAuth consent screen` tab. Fill in required fields.
+8. Specify your Google account's primary email address in `*_ALLOWED_USERS` config option.
+   If you want to specify several accounts, separate them with spaces.
 
 ## running tests
 

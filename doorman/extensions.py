@@ -34,7 +34,7 @@ class LogTee(object):
                 raise ValueError('Could not find a class named "{0}" in package "{1}"'.format(classname, package))
 
             if not issubclass(klass, AbstractLogsPlugin):
-                raise ValueError('{0} is not a subclass of AbstractLogsPlugin'.format(name))
+                raise ValueError('{0} is not a subclass of AbstractLogsPlugin'.format(klass))
 
             self.plugins.append(klass(app.config))
 

@@ -58,7 +58,7 @@ def extract_schema(filename):
 
     with open(filename, 'rU') as f:
         tree = ast.parse(f.read())
-        exec compile(tree, '<string>', 'exec') in namespace
+        exec(compile(tree, '<string>', 'exec'), namespace)
 
     columns = ', '.join('%s %s' % (x[0], x[1]) for x in current_spec['schema'])
     return 'CREATE TABLE %s (%s);' % (current_spec['name'], columns)

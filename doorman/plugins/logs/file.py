@@ -53,6 +53,7 @@ class LogPlugin(AbstractLogsPlugin):
                 'message':  item.get('message', ''),
                 'severity': item.get('severity', ''),
                 'filename': item.get('filename', ''),
+                'version': item.get('version'),  # be null
             })
 
             if 'created' in item:

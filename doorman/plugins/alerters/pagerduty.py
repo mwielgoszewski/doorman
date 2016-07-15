@@ -30,9 +30,12 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             count=self.incident_count
         )
 
-        description = match.rule.name
-        if match.rule.description:
-            description = "{0}: {1}".format(description, match.rule.description)
+        description = match.rule.template.safe_substitute(
+            match.result['columns'],
+            **node
+        ).rstrip()
+
+        description = ":".join(description.split('\r\n\r\n', 1))
 
         details = {
             'node': node,

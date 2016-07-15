@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
+import string
 import uuid
 
 from flask_login import UserMixin
@@ -478,6 +479,11 @@ class Rule(SurrogatePK, Model):
         self.conditions = conditions
         self.updated_at = updated_at
 
+    @property
+    def template(self):
+        return string.Template(
+            "{rule.name}\r\n\r\n{rule.description}".format(rule=self)
+        )
 
 class User(UserMixin, SurrogatePK, Model):
 

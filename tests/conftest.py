@@ -80,6 +80,7 @@ def node(db):
 def rule(db):
     rule = RuleFactory(
         name='testrule',
+        description='kung = $kung',
         alerters=[],
         conditions={}
     )

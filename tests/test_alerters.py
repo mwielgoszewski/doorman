@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 from collections import namedtuple
+import datetime as dt
 import json
 import mock
+import raven
 
 from doorman.rules import RuleMatch
 from doorman.plugins.alerters.emailer import EmailAlerter
 from doorman.plugins.alerters.pagerduty import PagerDutyAlerter
+from doorman.plugins.alerters.sentry import SentryAlerter
 
 
 MockResponse = namedtuple('MockResponse', ['ok', 'content'])
@@ -108,3 +111,35 @@ class TestEmailerAlerter:
 
         alerter = EmailAlerter(self.config)
         alerter.handle_alert(node.to_dict(), match)
+
+
+class TestSentryAlerter:
+
+    def setup_method(self, _method):
+        self.config = {
+            'dsn': 'https://key:secret@app.getsentry.com/project'
+        }
+
+    def test_will_alert(self, node, rule, testapp):
+        match = RuleMatch(
+            rule=rule,
+            node=node.to_dict(),
+            result={
+                'name': 'foo',
+                'action': 'added',
+                'timestamp': dt.datetime.utcnow(),
+                'columns': {'boo': 'baz', 'kung': 'bloo'},
+            }
+        )
+
+        with mock.patch.object(raven.Client, 'captureMessage', return_value=None) as pmock:
+            alerter = SentryAlerter(self.config)
+            alerter.handle_alert(node.to_dict(), match)
+
+        assert pmock.called
+
+        _, kwargs = pmock.call_args
+        assert kwargs['message'] == rule.template.safe_substitute(
+            match.result['columns'],
+            **node.to_dict()
+        ).rstrip()

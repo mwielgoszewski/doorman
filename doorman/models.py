@@ -481,8 +481,8 @@ class Rule(SurrogatePK, Model):
 
     @property
     def template(self):
-        return string.Template(
-            "{rule.name}\r\n\r\n{rule.description}".format(rule=self)
+        return string.Template("{name}\r\n\r\n{description}".format(
+            name=self.name, description=self.description or '')
         )
 
 class User(UserMixin, SurrogatePK, Model):

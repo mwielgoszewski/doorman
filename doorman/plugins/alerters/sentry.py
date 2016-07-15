@@ -29,7 +29,7 @@ class SentryAlerter(AbstractAlerterPlugin):
 
         message = match.rule.template.safe_substitute(
             match.result['columns'],
-            **node,
+            **node
         )
 
         self.client.captureMessage(

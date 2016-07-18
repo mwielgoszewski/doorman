@@ -279,10 +279,16 @@ def learn_from_result(result, node):
     for _, action, columns, _, in extract_results(result):
         # only update columns common to both sets
         for column in capture_columns & set(columns):
-            if action == 'removed':
-                node_info.pop(column, None)
-            elif action == 'added':
-                node_info[column] = columns.get(column)
+
+            cvalue = node_info.get(column)  # current value
+            value = columns.get(column)
+
+            if action == 'removed' and (cvalue is None or cvalue != value):
+                pass
+            elif action == 'removed' and cvalue == value:
+                node_info.pop(column)
+            elif action == 'added' and (cvalue is None or cvalue != value):
+                node_info[column] = value
 
     # only update node_info if there's actually a change
 

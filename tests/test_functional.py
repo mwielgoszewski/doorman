@@ -1441,7 +1441,7 @@ class TestLearning:
     def test_node_info_updated_on_removed_data(self, node, testapp):
         assert not node.node_info
         node.node_info = {
-                "computer_name": "hostname.local",
+                "computer_name": "barbaz",
                 "hardware_version": "1.0",
                 "hardware_vendor": "Apple Inc.",
                 "hardware_model": "MacBookPro11,3",
@@ -1450,38 +1450,18 @@ class TestLearning:
                 "cpu_physical_cores": "4",
                 "physical_memory": "17179869184",
         }
+        node.save()
 
         now = dt.datetime.utcnow()
         data = [
-            {
-              "name": "system_info",
-              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
-              "unixTime": now.strftime('%s'),
-              "action": "removed",
-              "columns": {
-                "physical_memory": "17179869184",
-                "hostname": "foobar",
-                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.80GHz",
-                "computer_name": "hostname.local",
-              },
-              "hostIdentifier": node.host_identifier
-            },
-
-            # give ourselves a 32gb memory upgrade, overclock 300Mhz
-            # and a cool hostname
-            {
-              "name": "system_info",
-              "calendarTime": "%s %s" % (now.ctime(), "UTC"),
-              "unixTime": now.strftime('%s'),
-              "action": "added",
-              "columns": {
-                "physical_memory": "34359738368",
-                "hostname": "zerocool",
-                "cpu_brand": "Intel(R) Core(TM) i7-4980HQ CPU @ 2.83GHz",
-                "computer_name": "zerocool.local",
-              },
-              "hostIdentifier": node.host_identifier
-            }
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 09:59:06 2016 UTC","unixTime":"1468850346","columns":{"computer_name":"foobar"},"action":"added"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 09:59:06 2016 UTC","unixTime":"1468850346","columns":{"computer_name":"barbaz"},"action":"removed"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 10:00:24 2016 UTC","unixTime":"1468850424","columns":{"computer_name":"barbaz"},"action":"added"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 10:00:24 2016 UTC","unixTime":"1468850424","columns":{"computer_name":"foobar"},"action":"removed"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 10:17:38 2016 UTC","unixTime":"1468851458","columns":{"computer_name":"kungpow"},"action":"added"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 10:12:38 2016 UTC","unixTime":"1468851458","columns":{"computer_name":"foobar"},"action":"removed"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 10:12:38 2016 UTC","unixTime":"1468851458","columns":{"computer_name":"foobar"},"action":"removed"},
+            {"name":"computer_name","hostIdentifier":"foobar.localdomain","calendarTime":"Mon Jul 18 10:17:38 2016 UTC","unixTime":"1468851458","columns":{"computer_name":"kungpow"},"action":"added"},
         ]
 
         result = {
@@ -1495,8 +1475,7 @@ class TestLearning:
         for column in self.COLUMNS:
             assert column in node.node_info
 
-        for column in ('physical_memory', 'cpu_brand', 'computer_name'):
-            assert node.node_info[column] == data[1]['columns'][column]
+        assert node.node_info['computer_name'] == 'kungpow'
 
         assert 'foobar' not in node.node_info
 

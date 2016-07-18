@@ -18,6 +18,11 @@
                             {{ form.description.label(class_="col-sm-2 control-label") }}
                             <div class="col-sm-10">
                                 {{ form.description(class_="form-control") }}
+                                <small>
+                                    Note: Rule names and descriptions may be treated as <a href="https://docs.python.org/dev/library/string.html#template-strings">Template strings</a> for <em>some</em> alerters.
+                                    Valid placeholders may include column keys returned in query results and/or node attributes (i.e., <tt>host_identifier</tt>, <tt>enrolled_on</tt>).
+                                    A missing placeholder will result in the original placeholder to appear in the resulting string intact.
+                                </small>
                             </div>
                         </div>
 

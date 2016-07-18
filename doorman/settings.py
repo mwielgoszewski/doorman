@@ -115,6 +115,10 @@ class Config(object):
         #     'message_template': '',
 
         # }),
+
+        # 'sentry': ('doorman.plugins.alerters.sentry.SentryAlerter', {
+        #     'dsn': 'https://<key>:<secret>@app.getsentry.com/<project>',
+        # })
     }
 
     # MAIL_SERVER = 'localhost'

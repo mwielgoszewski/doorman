@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from celery import Celery
 from flask_bcrypt import Bcrypt
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_ldap3_login import LDAP3LoginManager
@@ -8,6 +7,8 @@ from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CsrfProtect
+from raven import Client
+from raven.contrib.celery import register_signal, register_logger_signal
 from raven.contrib.flask import Sentry
 
 
@@ -177,6 +178,14 @@ def make_celery(app, celery):
 
     # Actually update the config
     celery.config_from_object(app.config)
+
+    # Register Sentry client
+    if 'SENTRY_DSN' in app.config and app.config['SENTRY_DSN']:
+        client = Client(app.config['SENTRY_DSN'])
+        # register a custom filter to filter out duplicate logs
+        register_logger_signal(client)
+        # hook into the Celery error handler
+        register_signal(client)
 
     TaskBase = celery.Task
 

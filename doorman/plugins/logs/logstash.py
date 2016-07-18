@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from json import dump as json_dump
-import time
 import datetime as dt
+import os
+import time
 
 from doorman.plugins import AbstractLogsPlugin
 from doorman.utils import extract_results, quote
@@ -48,6 +49,9 @@ class LogstashPlugin(AbstractLogsPlugin):
                 'created': created,
             }, fp)
             fp.write('\r\n')
+        else:
+            fp.flush()
+            os.fsync()
 
     def handle_result(self, data, **kwargs):
         if self.fp is None:
@@ -70,3 +74,6 @@ class LogstashPlugin(AbstractLogsPlugin):
                 'created': created,
             }, fp)
             fp.write('\r\n')
+        else:
+            fp.flush()
+            os.fsync()

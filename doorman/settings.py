@@ -70,11 +70,15 @@ class Config(object):
     # You can specify a set of custom logger plugins here.  These plugins will
     # be called for every status or result log that is received, and can
     # do what they wish with them.
-    # DOORMAN_LOG_PLUGINS = ['doorman.plugins.logs.file.LogPlugin']
+    DOORMAN_LOG_PLUGINS = [
+        # 'doorman.plugins.logs.file.LogPlugin',
+        # 'doorman.plugins.logs.logstash.LogstashPlugin',
+    ]
 
     # These are the configuration variables for the example logger plugin given
     # above.  Uncomment these to start logging results or status logs to the
     # given file.
+    # DOORMAN_LOG_FILE_PLUGIN_JSON_LOG = '/tmp/osquery.log'     # Default: do not log status/results to json log
     # DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG = '/tmp/status.log'     # Default: do not log status logs
     # DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG = '/tmp/result.log'     # Default: do not log results
     # DOORMAN_LOG_FILE_PLUGIN_APPEND = True                      # Default: True

@@ -12,20 +12,9 @@ class LogPlugin(AbstractLogsPlugin):
         status_path = config.get('DOORMAN_LOG_FILE_PLUGIN_STATUS_LOG')
         result_path = config.get('DOORMAN_LOG_FILE_PLUGIN_RESULT_LOG')
 
-        if append:
-            mode = 'a'
-        else:
-            mode = 'w'
-
-        if status_path:
-            self.status = open(status_path, mode)
-        else:
-            self.status = None
-
-        if result_path:
-            self.result = open(result_path, mode)
-        else:
-            self.result = None
+        mode = 'a' if append else 'w'
+        self.status = open(status_path, mode) if status_path else None
+        self.result = open(result_path, mode) if result_path else None
 
     @property
     def name(self):
@@ -53,6 +42,7 @@ class LogPlugin(AbstractLogsPlugin):
                 'message':  item.get('message', ''),
                 'severity': item.get('severity', ''),
                 'filename': item.get('filename', ''),
+                'version': item.get('version'),  # be null
             })
 
             if 'created' in item:

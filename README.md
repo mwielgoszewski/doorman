@@ -43,7 +43,7 @@ Doorman allows supports alerting via the following methods:
 
 * PagerDuty
 * Email
-* Slack (coming soon!)
+* Sentry
 * Log file (primarily for development)
 
 
@@ -115,8 +115,9 @@ Setting       | Description
 `DOORMAN_CAPTURE_NODE_INFO` |  A list of tuples, containing a pair of osquery result column and label used to determine what information is captured about a node and presented on a node's information page. In order for this information to be captured, a node must execute a query which returns a result containing these columns. By default, the following information is captured: (i.e., `select * from system_info;`) <ul><li>`computer_name`</li><li>`hardware_vendor`</li><li>`hardware_model`</li><li>`hardware_serial`</li><li>`cpu_brand`</li><li>`cpu_physical_cores`</li><li>`physical_memory`</li></ul>
 `DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL` |  The minimum osquery status log level to retain. Default is `0`, (all logs).
 `DOORMAN_AUTH_METHOD`  |  The authentication backend used to authenticate Doorman users (not osquery endpoints). May be one of: <p><ul><li>`None`</li><li>`doorman`</li><li>`ldap`</li><li>`google`</li></ul></p> Note, google and doorman must be wrapped in quotes. Default is `None`. See the [authentication] (#authentication) section above for more information.
-`DOORMAN_ALERTER_PLUGINS`  | The available `AbstractAlerterPlugin` implementations. This settings expects a dictionary of alerter names and tuples, where the first tuple item is the class name implemting `AbstractAlerterPlugin` to import, and the second value is a dictionary configuration passed to configure the Alerter class. Available Alerter plugins at time of this release are:<p><ul><li>`doorman.plugins.alerters.debug.DebugAlerter `</li><li> `doorman.plugins.alerters.emailer.EmailAlerter`</li><li> `doorman.plugins.alerters.pagerduty.PagerDutyAlerter`</li></ul></p>
-`MAIL_DEFAULT_SENDER`  | If using the `doorman.plugins.alerters.emailer.EmailAlerter` alerter above, specify the sender email address used by Doorman for the `FROM:` field.
+`DOORMAN_ALERTER_PLUGINS`  | The available `AbstractAlerterPlugin` implementations. This settings expects a dictionary of alerter names and tuples, where the first tuple item is the class name implemting `AbstractAlerterPlugin` to import, and the second value is a dictionary configuration passed to configure the Alerter class. Available Alerter plugins at time of this release are:<p><ul><li>`doorman.plugins.alerters.debug.DebugAlerter `</li><li> `doorman.plugins.alerters.emailer.EmailAlerter`</li><li> `doorman.plugins.alerters.pagerduty.PagerDutyAlerter`</li><li> `doorman.plugins.alerters.sentry.SentryAlerter`</li></ul></p>
+`MAIL_DEFAULT_SENDER`  |  If using the `doorman.plugins.alerters.emailer.EmailAlerter` alerter above, specify the sender email address used by Doorman for the `FROM:` field.
+`SENTRY_DSN` |  A Sentry project DSN (_Data Source Name_). See [Sentry docs](https://docs.getsentry.com/hosted/quickstart/#configure-the-dsn) for more information.
 
 
 

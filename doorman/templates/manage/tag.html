@@ -33,6 +33,25 @@
                 <p>No queries.</p>
                 {% endif %}
 
+                <h2>File paths tagged <strong>{{ tag.value }}</strong></h2>
+
+                {% set file_paths = tag.file_paths %}
+                {% if file_paths %}
+                {% for file_path in file_paths %}
+                <h2>
+                    <a href="{{ url_for('manage.file_path', file_path_id=file_path.id) }}">{{ file_path.category }}</a>
+                </h2>
+
+                <ul>
+                    {% for path in file_path.get_paths() %}
+                    <li>{{ path }}</li>
+                    {% endfor %}
+                </ul>
+                {% endfor %}
+                {% else %}
+                <p>No files monitored.</p>
+                {% endif %}
+
                 {% else %}
 
                 <div class="col-md-8">

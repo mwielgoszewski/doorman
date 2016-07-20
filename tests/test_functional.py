@@ -1047,6 +1047,40 @@ class TestCreateQueryPackFromUpload:
         innerText = ''.join(flashes[0].findAll(text=True, recursive=False))
         assert innerText.strip() == msg
 
+    def test_pack_upload_invalid_empty_object(self, testapp, db):
+        resp = testapp.post(url_for('manage.add_pack'), upload_files=[
+            ('pack', 'foo.conf', json.dumps({}).encode('utf-8')),
+        ])
+
+        # This won't be a redirect, since it's an error.
+        assert resp.status_int == 200
+
+        body = resp.html
+        flashes = body.select('.alert.alert-danger')
+
+        assert len(flashes) == 1
+
+        msg = 'No queries in pack'
+        innerText = ''.join(flashes[0].findAll(text=True, recursive=False))
+        assert innerText.strip() == msg
+
+    def test_pack_upload_invalid_json(self, testapp, db):
+        resp = testapp.post(url_for('manage.add_pack'), upload_files=[
+            ('pack', 'foo.conf', 'bad data'),
+        ])
+
+        # This won't be a redirect, since it's an error.
+        assert resp.status_int == 200
+
+        body = resp.html
+        flashes = body.select('.alert.alert-danger')
+
+        assert len(flashes) == 1
+
+        msg = 'Could not load pack as JSON - ensure it is JSON encoded'
+        innerText = ''.join(flashes[0].findAll(text=True, recursive=False))
+        assert innerText.strip() == msg
+
     def test_pack_does_not_exist_but_query_does(self, testapp, db):
         query = QueryFactory(name='foobar', sql='select * from osquery_info;')
 

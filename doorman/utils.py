@@ -121,9 +121,19 @@ def create_query_pack_from_upload(upload):
     if not isinstance(body, six.string_types):
         body = body.decode('utf-8')
 
-    data = json.loads(body)
-    name = splitext(basename(upload.data.filename))[0]
-    pack = Pack.query.filter(Pack.name == name).first()
+    try:
+        data = json.loads(body)
+    except ValueError:
+        flash(u"Could not load pack as JSON - ensure it is JSON encoded",
+              'danger')
+        return None
+    else:
+        if 'queries' not in data:
+            flash(u"No queries in pack", 'danger')
+            return None
+
+        name = splitext(basename(upload.data.filename))[0]
+        pack = Pack.query.filter(Pack.name == name).first()
 
     if not pack:
         current_app.logger.debug("Creating pack %s", name)

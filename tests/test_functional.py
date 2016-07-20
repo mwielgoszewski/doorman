@@ -1066,7 +1066,7 @@ class TestCreateQueryPackFromUpload:
 
     def test_pack_upload_invalid_json(self, testapp, db):
         resp = testapp.post(url_for('manage.add_pack'), upload_files=[
-            ('pack', 'foo.conf', 'bad data'),
+            ('pack', 'foo.conf', 'bad data'.encode('utf-8')),
         ])
 
         # This won't be a redirect, since it's an error.

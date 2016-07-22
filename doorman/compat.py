@@ -18,12 +18,6 @@ else:
     basestring = (str, bytes)
 
 
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-
 def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
     class metaclass(meta):

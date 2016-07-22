@@ -1542,8 +1542,7 @@ class TestLearning:
 
 class TestCSVExport:
     def test_node_csv_download(self, node, testapp):
-        from doorman.compat import StringIO
-        import csv
+        import unicodecsv as csv
 
         node.enrolled_on = dt.datetime.utcnow()
         node.last_checkin = dt.datetime.utcnow()
@@ -1553,10 +1552,10 @@ class TestCSVExport:
 
         resp = testapp.get(url_for('manage.nodes_csv'))
 
-        assert resp.headers['Content-Type'] == 'text/csv'
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
         assert resp.headers['Content-Disposition'] == 'attachment; filename=nodes.csv'
 
-        reader = csv.DictReader(StringIO(resp.body))
+        reader = csv.DictReader(io.BytesIO(resp.body))
         row = next(reader)
 
         assert row['Display Name'] == node.display_name

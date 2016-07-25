@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
+from io import BytesIO
 from operator import itemgetter
-import csv
 import json
 import datetime as dt
+import unicodecsv as csv
 
 from flask import (
-    Blueprint, current_app, flash, jsonify, make_response, redirect,
-    render_template, request, url_for
+    Blueprint, current_app, flash, jsonify, redirect, render_template,
+    request, send_file, url_for
 )
 from flask_login import login_required
 from flask_paginate import Pagination
@@ -26,7 +27,6 @@ from .forms import (
     UpdateRuleForm,
     UpdateNodeForm,
 )
-from doorman.compat import StringIO
 from doorman.database import db
 from doorman.models import (
     DistributedQuery, DistributedQueryTask, DistributedQueryResult,
@@ -112,10 +112,10 @@ def nodes_csv():
     column_names = map(itemgetter(0), current_app.config['DOORMAN_CAPTURE_NODE_INFO'])
     labels = map(itemgetter(1), current_app.config['DOORMAN_CAPTURE_NODE_INFO'])
     headers.extend(labels)
-    headers = map(str.title, headers)
+    headers = list(map(str.title, headers))
 
-    sio = StringIO()
-    writer = csv.writer(sio)
+    bio = BytesIO()
+    writer = csv.writer(bio)
     writer.writerow(headers)
 
     for node in Node.query:
@@ -130,9 +130,15 @@ def nodes_csv():
         row.extend([node.node_info.get(column, '') for column in column_names])
         writer.writerow(row)
 
-    response = make_response(sio.getvalue())
-    response.headers["Content-Disposition"] = "attachment; filename=nodes.csv"
-    response.headers["Content-Type"] = "text/csv"
+    bio.seek(0)
+
+    response = send_file(
+        bio,
+        mimetype='text/csv',
+        as_attachment=True,
+        attachment_filename='nodes.csv'
+    )
+
     return response
 
 

@@ -53,6 +53,7 @@ scales==1.0.9
 six==1.10.0
 SQLAlchemy==1.0.12
 waitress==0.9.0
+unicodecsv==0.14.1
 webassets==0.11.1
 WebOb==1.6.0
 WebTest==2.0.21

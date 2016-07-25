@@ -1538,3 +1538,30 @@ class TestLearning:
 
         learn_from_result(result, node.to_dict())
         assert 'foobar' not in node.node_info
+
+
+class TestCSVExport:
+    def test_node_csv_download(self, node, testapp):
+        import unicodecsv as csv
+
+        node.enrolled_on = dt.datetime.utcnow()
+        node.last_checkin = dt.datetime.utcnow()
+        node.last_ip = '1.1.1.1'
+        node.node_info = {'hardware_vendor': "Honest Achmed's Computer Supply"}
+        node.save()
+
+        resp = testapp.get(url_for('manage.nodes_csv'))
+
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+        assert resp.headers['Content-Disposition'] == 'attachment; filename=nodes.csv'
+
+        reader = csv.DictReader(io.BytesIO(resp.body))
+        row = next(reader)
+
+        assert row['Display Name'] == node.display_name
+        assert row['Host Identifier'] == node.host_identifier
+        assert row['Enrolled On'] == str(node.enrolled_on)
+        assert row['Last Check-In'] == str(node.last_checkin)
+        assert row['Last Ip Address'] == node.last_ip
+        assert row['Is Active'] == 'True'
+        assert row['Make'] == node.node_info['hardware_vendor']

@@ -1,7 +1,7 @@
 FROM alpine:latest
 
 # Install Python
-RUN echo "@testing http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
   && apk add --update \
               bash \
               build-base \
@@ -14,7 +14,7 @@ RUN echo "@testing http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/
               python \
               python-dev \
               redis \
-              runit@testing \
+              runit \
   && pip install --upgrade pip \
   && npm install -g bower less \
   && rm /var/cache/apk/*

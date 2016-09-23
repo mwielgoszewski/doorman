@@ -196,7 +196,7 @@ Setting       | Description
     --logger_plugin=tls
     --logger_tls_endpoint=/log
     --logger_tls_period=5
-    --tls_hostname=localhost:5000 \
+    --tls_hostname=localhost:5000
     --tls_server_certs=./certificate.crt
     --log_result_events=false
     --pack_delimiter=/

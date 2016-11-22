@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import time
 import datetime as dt
 
@@ -34,45 +35,53 @@ class LogPlugin(AbstractLogsPlugin):
             return
 
         # Write each status log on a different line
-        for item in data.get('data', []):
-            fields = {}
-            fields.update(kwargs)
-            fields.update({
-                'line':     item.get('line', ''),
-                'message':  item.get('message', ''),
-                'severity': item.get('severity', ''),
-                'filename': item.get('filename', ''),
-                'version': item.get('version'),  # be null
-            })
+        try:
+            for item in data.get('data', []):
+                fields = {}
+                fields.update(kwargs)
+                fields.update({
+                    'line':     item.get('line', ''),
+                    'message':  item.get('message', ''),
+                    'severity': item.get('severity', ''),
+                    'filename': item.get('filename', ''),
+                    'version': item.get('version'),  # be null
+                })
 
-            if 'created' in item:
-                fields['created'] = time.mktime(item['created'].timetuple())
-            else:
-                fields['created'] = time.mktime(dt.datetime.utcnow().timetuple())
+                if 'created' in item:
+                    fields['created'] = time.mktime(item['created'].timetuple())
+                else:
+                    fields['created'] = time.mktime(dt.datetime.utcnow().timetuple())
 
-            self.status.write(self.join_fields(fields) + '\n')
+                self.status.write(self.join_fields(fields) + '\n')
+        finally:
+            self.status.flush()
+            os.fsync(self.status.fileno())
 
     def handle_result(self, data, **kwargs):
         if self.result is None:
             return
 
         # Process each result individually
-        for item in extract_results(data):
-            fields = {}
-            fields.update(kwargs)
+        try:
+            for item in extract_results(data):
+                fields = {}
+                fields.update(kwargs)
 
-            if item.timestamp:
-                timestamp = time.mktime(item.timestamp.timetuple())
-            else:
-                timestamp = time.mktime(dt.datetime.utcnow.timetuple())
+                if item.timestamp:
+                    timestamp = time.mktime(item.timestamp.timetuple())
+                else:
+                    timestamp = time.mktime(dt.datetime.utcnow.timetuple())
 
-            fields.update(name=item.name, timestamp=timestamp)
+                fields.update(name=item.name, timestamp=timestamp)
 
-            base = self.join_fields(fields)
+                base = self.join_fields(fields)
 
-            # Write each added/removed entry on a different line
-            curr_fields = {'result_type': item.action}
-            for key, val in item.columns.items():
-                curr_fields['_'.join([item.action, key])] = val
+                # Write each added/removed entry on a different line
+                curr_fields = {'result_type': item.action}
+                for key, val in item.columns.items():
+                    curr_fields['_'.join([item.action, key])] = val
 
-            self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')
+                self.result.write(base + ', ' + self.join_fields(curr_fields) + '\n')
+        finally:
+            self.result.flush()
+            os.fsync(self.result.fileno())

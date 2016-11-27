@@ -64,6 +64,7 @@ POST   | /log | `--logger_tls_endpoint`
 POST   | /distributed/read | `--distributed_tls_read_endpoint`
 POST   | /distributed/write | `--distributed_tls_write_endpoint`
 
+To reach the Doorman management interface, point your browser at [https://localhost:5000/manage/](https://localhost:5000/manage/) (or the server it's running on).
 
 # authentication
 
@@ -102,7 +103,7 @@ The following settings should be configured to get up and running:
 
 Setting       | Description
 --------------|------------
-`SECRET_KEY`  |  Flask's [secret_key](http://flask.pocoo.org/docs/0.10/api/#flask.Flask.secret_key). |
+`SECRET_KEY`  |  Flask's [secret_key](http://flask.pocoo.org/docs/0.10/api/#flask.Flask.secret_key). This should be a cryptographically secure random value, unique to your environment. |
 `SERVER_NAME` |  The name and port number of the server. See Flask's [Builtin Configuration Values](http://flask.pocoo.org/docs/0.10/config/#builtin-configuration-values) for more details.
 `PREFERRED_URL_SCHEME` |  The URL scheme that should be used for URL generation if no URL scheme is available. This defaults to `https`.
 `SQLALCHEMY_DATABASE_URI` |  The database URI that should be used for the connection. Example: <p><ul><li>`postgresql://localhost:5432/doorman`</li></ul></p> See the [Flask-SQLAlchemy](http://flask-sqlalchemy.pocoo.org/2.1/config/#configuration-keys) documentation for additional configuration settings.
@@ -123,7 +124,7 @@ Setting       | Description
 
 # up and running (development mode)
 
-1. Install PostgreSQL.
+1. Install PostgreSQL (9.4 or later).
 
     a. Choose a directory to host the database. We'll use `~/doormandb` for these examples.
     b. Run `initdb ~/doormandb` to initialize the database.
@@ -211,6 +212,8 @@ Setting       | Description
     root@localhost# ENROLL_SECRET=secret osqueryd --flagfile osquery.flags
     ~~~
 
+1. Point your browser at [https://localhost:5000/manage/](https://localhost:5000/manage/) to get to the main administration page (visiting the root index from a browser will return an HTTP 204 No Content response).
+
 
 ## running in Docker
 
@@ -273,6 +276,21 @@ In order to configure authentication with Google, you need to do the following s
 ## running tests
 
 To execute tests, simply run `python manage.py test`.
+
+
+## troubleshooting
+
+Q. I started Doorman and it looks like it's running, but how do I actually use it?
+
+> A. Point your browser at [https://localhost/manage/](https://localhost:5000/manage/) (or whatever domain name/port number it's hosted on).
+
+Q. When loading /manage/ in the browser for first time, I receved some error about lessc not being installed.
+
+> `lessc` should have been installed during the `bower install` step above. If it did not install, you can install it by running `npm install -g less` or installing less via your operating system distribution's package manager.
+
+Q. I try to run the `python manage.py db upgrade` script, but I get an error along the lines of: *type "JSONB" does not exist*.
+
+> Verify you have postgresql 9.4 (or later) installed. Doorman uses the postgresql JSONB column type for storing osquery result data.
 
 
 # authors

@@ -6,6 +6,7 @@
     "font-awesome": "~4.5.0",
     "bootstrap-tagsinput": "~0.8.0",
     "bootstrap-vertical-tabs": "~1.2.1",
-    "jQuery-QueryBuilder": "^2.3.3"
+    "jQuery-QueryBuilder": "^2.3.3",
+    "interact": "^1.2.6"
   }
 }

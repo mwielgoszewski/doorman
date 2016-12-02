@@ -24,11 +24,13 @@ DUMMY_FUNCTIONS = [
     'description',
     'examples',
     'implementation',
+    'fuzz_paths',
 ]
 
 
-def table_name(name):
+def table_name(name, aliases=None):
     current_spec['name'] = name
+    current_spec['aliases'] = aliases
 
 
 def Column(name, col_type, *args, **kwargs):

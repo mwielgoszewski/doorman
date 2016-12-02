@@ -52,6 +52,13 @@ class Config(object):
         ('physical_memory', 'memory'),
     ]
 
+    # Doorman will validate queries against the expected set of tables from
+    # osquery.  If you use any custom extensions, you'll need to add the
+    # corresponding schema here so you can use them in queries.
+    DOORMAN_EXTRA_SCHEMA = [
+        #'CREATE TABLE example_extension_table(thing1 INTEGER, thing2 TEXT);',
+    ]
+
     BROKER_URL = 'redis://localhost:6379/0'
     CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 

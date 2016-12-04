@@ -3,8 +3,14 @@ import json
 import datetime as dt
 
 import pytest
+from flask import current_app
 
-from doorman.utils import quote, validate_osquery_query, DateTimeEncoder
+from doorman.utils import (
+    DateTimeEncoder,
+    osquery_mock_db,
+    quote,
+    validate_osquery_query,
+)
 
 
 class TestValidate:
@@ -25,6 +31,24 @@ class TestValidate:
     def test_bad_table(self):
         query = 'SELECT * FROM a_table_that_does_not_exist;'
         assert validate_osquery_query(query) is False
+
+    def test_custom_schema(self):
+        query = 'SELECT * FROM custom_table;'
+        assert validate_osquery_query(query) is False
+
+        try:
+            # This is a bit hacky, but it clears the mock DB so the next call
+            # will re-create it.
+            osquery_mock_db.db = None
+
+            current_app.config['DOORMAN_EXTRA_SCHEMA'].append(
+                'CREATE TABLE custom_table (id INTEGER);'
+            )
+            assert validate_osquery_query(query) is True
+        finally:
+            # Remove final entry from the config.
+            current_app.config['DOORMAN_EXTRA_SCHEMA'] = \
+                current_app.config['DOORMAN_EXTRA_SCHEMA'][:-1]
 
 
 class TestQuote:

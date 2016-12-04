@@ -64,7 +64,7 @@ def extract_ddl(specs_dir):
 
     ddl = sorted([extract_schema(f) for f in spec_files])
 
-    opath = join(dirname(__file__), 'doorman', 'osquery_schema.sql')
+    opath = join(dirname(__file__), 'doorman', 'resources', 'osquery_schema.sql')
     with open(opath, 'w') as f:
         f.write('-- This file is generated using "python manage.py extract_ddl"'
                 '- do not edit manually\n')

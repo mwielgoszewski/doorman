@@ -250,6 +250,11 @@ def create_mock_db():
     mock_db = sqlite3.connect(':memory:')
     for ddl in schema:
         mock_db.execute(ddl)
+
+    extra_schema = current_app.config.get('DOORMAN_EXTRA_SCHEMA', [])
+    for ddl in extra_schema:
+        mock_db.execute(ddl)
+
     return mock_db
 
 

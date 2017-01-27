@@ -21,6 +21,7 @@ js = Bundle(
     'libs/bootstrap-tagsinput/dist/bootstrap-tagsinput.js',
     'libs/jquery-extendext/jQuery.extendext.js',
     'libs/jQuery-QueryBuilder/dist/js/query-builder.standalone.js',
+    'libs/interact/interact.js',
     'js/plugins.js',
     filters='jsmin',
     output='public/js/common.js',

@@ -161,3 +161,10 @@ database/
 doorman/static/css/bootstrap.css
 doorman/static/libs/
 doorman/static/public/
+
+# Vagrant artifacts
+.vagrant
+
+# Avoid commiting secrets
+certificate.crt
+private.key

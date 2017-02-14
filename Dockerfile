@@ -10,7 +10,7 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repos
               musl \
               nodejs \
               postgresql-dev \
-              py-pip \
+              py2-pip \
               python \
               python-dev \
               redis \

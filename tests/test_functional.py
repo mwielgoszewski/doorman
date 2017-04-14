@@ -660,7 +660,30 @@ class TestLogging:
             {
               "calendarTime": calendarTime,
               "unixTime": unixTime,
-              "snapshot": "",
+              "action": "snapshot",
+              "snapshot": [
+                {
+                  "parent": "0",
+                  "path": "/sbin/launchd",
+                  "pid": "1"
+                },
+                {
+                  "parent": "1",
+                  "path": "/usr/sbin/syslogd",
+                  "pid": "51"
+                },
+                {
+                  "parent": "1",
+                  "path": "/usr/libexec/UserEventAgent",
+                  "pid": "52"
+                },
+                {
+                  "parent": "1",
+                  "path": "/usr/libexec/kextd",
+                  "pid": "54"
+                },
+              ],
+              "name": "process_snapshot",
               "name": "file_events",
               "hostIdentifier": "hostname.local",
             }
@@ -676,10 +699,11 @@ class TestLogging:
         extra_environ=dict(REMOTE_ADDR='127.0.0.2')
         )
 
-        assert node.result_logs.count() == 3
+        assert node.result_logs.count() == 7
         assert node.last_ip == '127.0.0.2'
 
-        r0, r1, r2 = node.result_logs.all()
+        r0, r1, r2 = node.result_logs.all()[:3]
+        r3 = node.result_logs.all()[-1]
 
         assert r0.name == data[0]['name']
         assert r0.action == data[0]['action']
@@ -696,7 +720,9 @@ class TestLogging:
         assert r2.columns == data[1]['diffResults']['removed'][0]
         assert r2.timestamp == now.replace(microsecond=0)
 
-        # TODO add assertions for snapshot logs
+        assert r3.name == data[-1]['name']
+        assert r3.action == 'snapshot'
+        assert r3.columns == data[-1]['snapshot'][-1]
 
 
 class TestDistributedRead:

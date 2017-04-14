@@ -363,9 +363,11 @@ def extract_results(result):
                                 timestamp=timestamp)
 
         elif 'snapshot' in entry:
-            # TODO
-            current_app.logger.debug("Received snapshot log: %s",
-                                     json.dumps(entry))
+            for columns in entry['snapshot']:
+                yield Field(name=name,
+                            action='snapshot',
+                            columns=columns,
+                            timestamp=timestamp)
 
         else:
             current_app.logger.error("Encountered a result entry that "

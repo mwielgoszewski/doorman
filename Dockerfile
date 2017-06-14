@@ -9,6 +9,7 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repos
               libffi-dev \
               musl \
               nodejs \
+              nodejs-npm \
               postgresql-dev \
               py2-pip \
               python \

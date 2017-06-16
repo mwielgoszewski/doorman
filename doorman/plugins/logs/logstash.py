@@ -28,30 +28,31 @@ class LogstashPlugin(AbstractLogsPlugin):
         host_identifier = kwargs.get('host_identifier')
         created = dt.datetime.utcnow().isoformat()
 
-        for item in data.get('data', []):
-            if int(item['severity']) < minimum_severity:
-                continue
+        try:
+            for item in data.get('data', []):
+                if int(item['severity']) < minimum_severity:
+                    continue
 
-            if 'created' in item:
-                item['created'] = item['created'].isoformat()
+                if 'created' in item:
+                    item['created'] = item['created'].isoformat()
 
-            json_dump({
-                '@version': 1,
-                '@host_identifier': host_identifier,
-                '@timestamp': item.get('created', created),
-                '@message': item.get('message', ''),
-                'log_type': 'status',
-                'line': item.get('line', ''),
-                'message': item.get('message', ''),
-                'severity': item.get('severity', ''),
-                'filename': item.get('filename', ''),
-                'osquery_version': item.get('version'),  # be null
-                'created': created,
-            }, fp)
-            fp.write('\r\n')
-        else:
+                json_dump({
+                    '@version': 1,
+                    '@host_identifier': host_identifier,
+                    '@timestamp': item.get('created', created),
+                    '@message': item.get('message', ''),
+                    'log_type': 'status',
+                    'line': item.get('line', ''),
+                    'message': item.get('message', ''),
+                    'severity': item.get('severity', ''),
+                    'filename': item.get('filename', ''),
+                    'osquery_version': item.get('version'),  # be null
+                    'created': created,
+                }, fp)
+                fp.write('\r\n')
+        finally:
             fp.flush()
-            os.fsync()
+            os.fsync(fp.fileno())
 
     def handle_result(self, data, **kwargs):
         if self.fp is None:
@@ -62,18 +63,19 @@ class LogstashPlugin(AbstractLogsPlugin):
         host_identifier = kwargs.get('host_identifier')
         created = dt.datetime.utcnow().isoformat()
 
-        for item in extract_results(data):
-            json_dump({
-                '@version': 1,
-                '@host_identifier': host_identifier,
-                '@timestamp': item.timestamp.isoformat(),
-                'log_type': 'result',
-                'action': item.action,
-                'columns': item.columns,
-                'name': item.name,
-                'created': created,
-            }, fp)
-            fp.write('\r\n')
-        else:
+        try:
+            for item in extract_results(data):
+                json_dump({
+                    '@version': 1,
+                    '@host_identifier': host_identifier,
+                    '@timestamp': item.timestamp.isoformat(),
+                    'log_type': 'result',
+                    'action': item.action,
+                    'columns': item.columns,
+                    'name': item.name,
+                    'created': created,
+                }, fp)
+                fp.write('\r\n')
+        finally:
             fp.flush()
-            os.fsync()
+            os.fsync(fp.fileno())

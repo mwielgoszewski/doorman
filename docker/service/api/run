@@ -2,7 +2,9 @@
 
 cd /src/
 
-export DOORMAN_ENV=prod
+if [ -z $DOORMAN_ENV ]; then
+  export DOORMAN_ENV=prod
+fi
 export DOORMAN_SETTINGS=$PWD/settings.cfg
 
 exec chpst \

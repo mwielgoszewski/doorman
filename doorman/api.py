@@ -14,7 +14,7 @@ from doorman.models import (
     DistributedQueryTask, DistributedQueryResult,
     StatusLog,
 )
-from doorman.tasks import analyze_result
+from doorman.tasks import analyze_result, notify_of_node_enrollment
 from doorman.utils import process_result
 
 
@@ -221,6 +221,8 @@ def enroll():
     current_app.logger.info("%s - Enrolled new node %s",
         request.remote_addr, node
     )
+
+    notify_of_node_enrollment.delay(node.to_dict())
 
     return jsonify(node_key=node.node_key, node_invalid=False)
 

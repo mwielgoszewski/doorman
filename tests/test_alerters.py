@@ -78,10 +78,11 @@ class TestEmailerAlerter:
         self.recipients = ['test@example.com']
         self.config = {
             'recipients': self.recipients,
-            'subject_prefix': '[Doorman Test] '
+            'subject_prefix': '[Doorman Test]',
+            'enroll_subject_prefix': '[Doorman Test]',
         }
 
-    def test_will_email(self, node, rule, testapp):
+    def test_will_email_on_rule_match(self, node, rule, testapp):
         from flask_mail import email_dispatched
 
         match = RuleMatch(
@@ -111,6 +112,22 @@ class TestEmailerAlerter:
 
         alerter = EmailAlerter(self.config)
         alerter.handle_alert(node.to_dict(), match)
+
+    def test_will_email_on_node_enrollment(self, node, testapp):
+        from flask_mail import email_dispatched
+
+        expected_subject = '[Doorman Test] New node enrolled: {display_name}'.format(
+            display_name=node.display_name,
+        )
+
+        @email_dispatched.connect
+        def verify(message, app):
+            assert message.subject == expected_subject
+            assert self.recipients == message.recipients
+            assert 'A new node was enrolled:' in message.body
+
+        alerter = EmailAlerter(self.config)
+        alerter.handle_enroll(node.to_dict())
 
 
 class TestSentryAlerter:

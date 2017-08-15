@@ -22,3 +22,6 @@ class DebugAlerter(AbstractAlerterPlugin):
     def handle_alert(self, node, match):
         # TODO(andrew-d): better message?
         current_app.logger.log(self.level, 'Triggered alert: {0!r}'.format(match))
+
+    def handle_enroll(self, node):
+        current_app.logger.log(self.level, 'Node enrolled: {0!r}'.format(node))

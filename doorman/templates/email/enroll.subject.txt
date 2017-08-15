@@ -1,0 +1,1 @@
+{{ prefix | trim }} New node enrolled: {{ node.display_name }}

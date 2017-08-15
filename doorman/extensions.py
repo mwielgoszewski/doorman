@@ -163,6 +163,10 @@ class RuleManager(object):
         for alerter, match in to_trigger:
             self.alerters[alerter].handle_alert(node, match)
 
+    def handle_enroll(self, node):
+        for alerter in self.alerters.values():
+            alerter.handle_enroll(node)
+
 
 def make_celery(app, celery):
     """ From http://flask.pocoo.org/docs/0.10/patterns/celery/ """

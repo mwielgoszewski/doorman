@@ -13,3 +13,7 @@ class AbstractAlerterPlugin(with_metaclass(ABCMeta)):
     @abstractmethod
     def handle_alert(self, node, match):
         raise NotImplementedError()
+
+    @abstractmethod
+    def handle_enroll(self, node):
+        raise NotImplementedError()

@@ -49,3 +49,6 @@ class SentryAlerter(AbstractAlerterPlugin):
                 'query': query,
             },
         )
+
+    def handle_enroll(self, node):
+        pass

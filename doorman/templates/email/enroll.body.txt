@@ -1,0 +1,9 @@
+A new node was enrolled:
+
+Host identifier: {{ node.display_name }}
+Enrolled on: {{ node.enrolled_on }}
+Remote IP address: {{ node.last_ip }}
+
+Review {{ node.display_name }} at {{ url_for('manage.get_node', node_id=node.id, _external=True) }}.
+
+---END doorman notification

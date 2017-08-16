@@ -21,6 +21,12 @@ def learn_from_result(result, node):
 
 
 @celery.task()
+def notify_of_node_enrollment(node):
+    current_app.rule_manager.handle_enroll(node)
+    return
+
+
+@celery.task()
 def example_task(one, two):
     print('Adding {0} and {1}'.format(one, two))
     return one + two

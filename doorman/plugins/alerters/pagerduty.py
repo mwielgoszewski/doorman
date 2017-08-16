@@ -69,3 +69,6 @@ class PagerDutyAlerter(AbstractAlerterPlugin):
             self.logger.warn('Could not trigger PagerDuty alert!')
 
         self.logger.debug('Response from PagerDuty: %r', resp.content)
+
+    def handle_enroll(self, node):
+        pass

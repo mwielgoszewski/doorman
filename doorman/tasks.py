@@ -66,7 +66,7 @@ def alert_when_node_goes_offline():
     now = dt.datetime.utcnow()
     calendarTime = now.strftime('%a %b %d %H:%M:%S %Y UTC')
 
-    for processed, node in enumerate(imap(_Node.make, query), 1):
+    for processed, node in enumerate(imap(_Node._make, query), 1):
         entry = {
             'name': 'doorman/tasks/node_offline_checks',
             'calendarTime': calendarTime,

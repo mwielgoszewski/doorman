@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from celery import Celery
 from flask import current_app
+import datetime as dt
 
 
 celery = Celery(__name__)
@@ -40,12 +41,26 @@ def alert_when_node_goes_offline():
     time, or have not posted results within some time of their last
     checkin. The purpose of this task is to identify nodes that go offline,
     or in some cases, nodes with corrupted osquery rocksdb databases.
+
+    A rule can be created within Doorman's rules manager to alert on
+    any of the following conditions:
+        - query name: doorman/tasks/node_offline_checks
+        - action: triggered
+        - columns:
+            - since_last_result
+            - since_last_result_days
+            - since_last_result_seconds
+            - since_last_checkin
+            - since_last_checkin_days
+            - since_last_checkin_seconds
+            - since_last_checkin_to_last_result
+            - since_last_checkin_to_last_result_days
+            - since_last_checkin_to_last_result_seconds
     '''
     from collections import namedtuple
     from itertools import imap
     from sqlalchemy import func
     from doorman.models import db, Node, ResultLog
-    import datetime as dt
 
     _Node = namedtuple('Node', [
         'id', 'host_identifier', 'node_info', 'enrolled_on', 'is_active',

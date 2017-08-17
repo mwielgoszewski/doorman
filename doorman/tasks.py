@@ -22,15 +22,38 @@ def learn_from_result(result, node):
 
 
 @celery.task()
-def notify_of_node_enrollment(node):
-    current_app.rule_manager.handle_enroll(node)
-    return
-
-
-@celery.task()
 def example_task(one, two):
     print('Adding {0} and {1}'.format(one, two))
     return one + two
+
+
+@celery.task()
+def notify_of_node_enrollment(node):
+    '''
+    Create a result that gets run through our Rule Manager whenever a new
+    node is enrolled so that we may alert on this action.
+
+    A rule can be created within Doorman's rule manager to alert on
+    any of the following conditions:
+        - query name: doorman/tasks/node_enrolled
+        - action: triggered
+        - columns:
+            - enrolled_on
+            - last_ip
+            - node_id
+    '''
+    entry = {
+        'name': 'doorman/tasks/node_enrolled',
+        'calendarTime': dt.datetime.utcnow().strftime('%a %b %d %H:%M:%S %Y UTC'),
+        'action': 'triggered',
+    }
+    columns = entry['columns'] = {}
+    columns['enrolled_on'] = node.get('enrolled_on')
+    columns['last_ip'] = node.get('last_ip')
+    columns['node_id'] = node.get('id')
+    result = {'data': [entry]}
+    current_app.rule_manager.handle_log_entry(result, node)
+    return
 
 
 @celery.task()

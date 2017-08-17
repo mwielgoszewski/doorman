@@ -1362,9 +1362,6 @@ class TestRuleEndToEnd:
             def handle_alert(self, node, match):
                 self.calls.append((node, match))
 
-            def handle_enroll(self, node):
-                self.calls.append((node, None))
-
         dummy_alerter = DummyAlerter()
 
         # This patches the appropriate config to create the 'dummy' alerter.  This is a bit ugly :-(

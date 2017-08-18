@@ -113,22 +113,6 @@ class TestEmailerAlerter:
         alerter = EmailAlerter(self.config)
         alerter.handle_alert(node.to_dict(), match)
 
-    def test_will_email_on_node_enrollment(self, node, testapp):
-        from flask_mail import email_dispatched
-
-        expected_subject = '[Doorman Test] New node enrolled: {display_name}'.format(
-            display_name=node.display_name,
-        )
-
-        @email_dispatched.connect
-        def verify(message, app):
-            assert message.subject == expected_subject
-            assert self.recipients == message.recipients
-            assert 'A new node was enrolled:' in message.body
-
-        alerter = EmailAlerter(self.config)
-        alerter.handle_enroll(node.to_dict())
-
 
 class TestSentryAlerter:
 

@@ -34,7 +34,7 @@ class Config(object):
     # will have a new node_key generated, and a different corresponding
     # node record in the database. This will result in stale node entries.
     DOORMAN_EXPECTS_UNIQUE_HOST_ID = True
-    DOORMAN_CHECKIN_INTERVAL = 3600
+    DOORMAN_CHECKIN_INTERVAL = dt.timedelta(seconds=3600)
     DOORMAN_ENROLL_OVERRIDE = 'enroll_secret'
     DOORMAN_PACK_DELIMITER = '/'
     DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL = 0
@@ -73,6 +73,13 @@ class Config(object):
     GRAPHITE_ALLOW = [
         'api.*',
     ]
+
+    CELERYBEAT_SCHEDULE = {
+        'alert-when-node-goes-offline': {
+            'task': 'doorman.tasks.alert_when_node_goes_offline',
+            'schedule': 86400,
+        },
+    }
 
     # You can specify a set of custom logger plugins here.  These plugins will
     # be called for every status or result log that is received, and can

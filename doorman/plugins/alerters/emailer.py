@@ -48,36 +48,3 @@ class EmailAlerter(AbstractAlerterPlugin):
         )
 
         return mail.send(message)
-
-    def handle_enroll(self, node):
-        subject_template = self.config.setdefault(
-            'enroll_subject_template', 'email/enroll.subject.txt'
-        )
-        message_template = self.config.setdefault(
-            'enroll_message_template', 'email/enroll.body.txt'
-        )
-        subject_prefix = self.config.setdefault(
-            'enroll_subject_prefix', '[Doorman]'
-        )
-
-        subject = render_template(
-            subject_template,
-            prefix=subject_prefix,
-            timestamp=dt.datetime.utcnow(),
-            node=node
-        )
-
-        body = render_template(
-            message_template,
-            timestamp=dt.datetime.utcnow(),
-            node=node
-        )
-
-        message = Message(
-            subject.strip(),
-            recipients=self.recipients,
-            body=body,
-            charset='utf-8',
-        )
-
-        return mail.send(message)

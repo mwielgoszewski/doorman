@@ -201,50 +201,6 @@ def make_celery(app, celery):
     return celery
 
 
-class Metrics(object):
-    def __init__(self, app=None):
-        self.app = app
-        self.config = {}
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app):
-        self.config = app.config
-
-        enabled = self.config.setdefault("GRAPHITE_ENABLED", False)
-        self.app = app
-
-        if not enabled:
-            return
-
-        from greplin import scales
-        from greplin.scales.graphite import GraphitePeriodicPusher
-        from greplin.scales.meter import MeterStat
-
-        host = self.config.setdefault("GRAPHITE_HOST", "localhost")
-        port = self.config.setdefault("GRAPHITE_PORT", 2003)
-        prefix = self.config.setdefault("GRAPHITE_PREFIX", "doorman")
-        period = self.config.setdefault("GRAPHITE_REPORTING_INTERVAL", 60)
-
-        app.metrics = {}
-        for rule in app.url_map.iter_rules():
-            app.metrics[rule.endpoint] = scales.collection(
-                rule.endpoint,
-                MeterStat('count'),
-                scales.PmfStat('latency'),
-            )
-
-        app.graphite = GraphitePeriodicPusher(
-            host, port, period=period, prefix=prefix,
-        )
-
-        for rule in self.config.setdefault("GRAPHITE_ALLOW", ['*']):
-            app.graphite.allow(rule)
-
-        app.graphite.start()
-        return
-
-
 bcrypt = Bcrypt()
 csrf = CsrfProtect()
 db = SQLAlchemy()
@@ -254,6 +210,5 @@ debug_toolbar = DebugToolbarExtension()
 log_tee = LogTee()
 ldap_manager = LDAP3LoginManager()
 login_manager = LoginManager()
-metrics = Metrics()
 rule_manager = RuleManager()
 sentry = Sentry()

@@ -5,7 +5,7 @@ import datetime as dt
 import gzip
 import json
 
-from flask import Blueprint, current_app, jsonify, request, g
+from flask import Blueprint, current_app, jsonify, request
 
 from doorman.database import db
 from doorman.extensions import log_tee
@@ -19,40 +19,6 @@ from doorman.utils import process_result
 
 
 blueprint = Blueprint('api', __name__)
-
-
-@blueprint.before_request
-def before_request():
-    if not current_app.config['GRAPHITE_ENABLED']:
-        return
-
-    metrics = current_app.metrics.get(request.endpoint)
-    if not metrics:
-        return
-
-    metrics.count.mark()
-
-    # scales.PmfStat's timer is a context manager, allowing
-    # you to wrap a block of code to be timed within a with
-    # statement. In Flask, we need to call __enter__ and
-    # __exit__ manually and attach the TimeManager returned
-    # to the Flask thread local g to achieve the same effect
-    # when using Flask's before_request and teardown_request
-    # decorators.
-
-    g.timer = metrics.latency.time().__enter__()
-
-
-@blueprint.teardown_request
-def teardown_request(*args, **kwargs):
-    if not current_app.config['GRAPHITE_ENABLED']:
-        return
-
-    try:
-        g.timer.__exit__()
-    except Exception:
-        current_app.logger.exception("Timing not available for %r",
-                                     request.endpoint)
 
 
 def node_required(f):

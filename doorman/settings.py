@@ -66,14 +66,6 @@ class Config(object):
     CELERY_EVENT_SERIALIZER = 'djson'
     CELERY_RESULT_SERIALIZER = 'djson'
     CELERY_TASK_SERIALIZER = 'djson'
-
-    GRAPHITE_ENABLED = False
-    # GRAPHITE_HOST = "localhost"
-    # GRAPHITE_PORT = 2003
-    GRAPHITE_ALLOW = [
-        'api.*',
-    ]
-
     CELERYBEAT_SCHEDULE = {
         'alert-when-node-goes-offline': {
             'task': 'doorman.tasks.alert_when_node_goes_offline',
@@ -255,7 +247,6 @@ class DevConfig(Config):
         'secret',
     ]
 
-    GRAPHITE_PREFIX = 'dev.doorman'
 
 
 class TestConfig(Config):
@@ -273,8 +264,6 @@ class TestConfig(Config):
         'secret',
     ]
     DOORMAN_UNIQUE_HOST_ID = False
-
-    GRAPHITE_ENABLED = False
 
     DOORMAN_AUTH_METHOD = None
 

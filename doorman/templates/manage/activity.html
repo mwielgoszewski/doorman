@@ -7,7 +7,8 @@
                 <h1><a href="{{ url_for('manage.get_node', node_id=node.id) }}">{{ node.display_name }}</a> / recent activity / <a href="{{ url_for('manage.node_logs', node_id=node.id) }}">logs</a></h1>
 
                 {% if node.get_recent().count() or node.distributed_queries.count() %}
-                {% set queries = node.distributed_queries.order_by(DistributedQueryTask.timestamp.desc()) %}
+                {% set queries = node.distributed_queries.order_by(DistributedQueryTask.timestamp.desc()).all() %}
+                {% set recent = node.get_recent().all() %}
                 {% include "_activity.html" %}
                 {% else %}
                 <p>No recent activity for this node.<p>

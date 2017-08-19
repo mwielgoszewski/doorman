@@ -1,16 +1,16 @@
 
             <div class="col-md-3">
                 <ul class="nav nav-tabs tabs-left" role="tablist">
-                    {% if queries.count() %}
+                    {% if queries %}
                     <li class="active">
                         <a href="#distributed_queries" aria-controls="distributed_queries" role="tab" data-toggle="tab">distributed queries
-                            <span class="badge">{{ queries.count() }}</span>
+                            <span class="badge">{{ queries | count }}</span>
                         </a>
                     </li>
                     {% endif %}
 
-                    {% for group in node.get_recent() | groupby('name') %}
-                    <li class="{% if not queries.count() and loop.first %}active{% endif %}">
+                    {% for group in recent | groupby('name') %}
+                    <li class="{% if not queries and loop.first %}active{% endif %}">
                         <a href="#{{ loop.index }}" aria-controls="{{ loop.index }}" role="tab" data-toggle="tab">{{ group.grouper }}
                             <span class="badge">{{ group.list | count }}</span>
                         </a>
@@ -22,14 +22,14 @@
             <div class="col-md-9">
                 <div class="tab-content">
 
-                    {% if queries.count() %}
+                    {% if queries %}
                     <div role="tabpanel" class="tab-pane active" id="distributed_queries">
                         {% include "tables/distributed.html" %}
                     </div>
                     {% endif %}
 
-                    {% for grouper, results in node.get_recent() | groupby('name') %}
-                    <div role="tabpanel" class="tab-pane{% if not queries.count() and loop.first %} active{% endif %}" id="{{ loop.index }}">
+                    {% for grouper, results in recent | groupby('name') %}
+                    <div role="tabpanel" class="tab-pane{% if not queries and loop.first %} active{% endif %}" id="{{ loop.index }}">
 
                         {% set columns = results | first | attr('columns') | list | sort %}
 

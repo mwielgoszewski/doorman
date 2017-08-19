@@ -9,6 +9,7 @@ from doorman.database import (
     Column,
     Table,
     ForeignKey,
+    Index,
     Model,
     SurrogatePK,
     db,
@@ -17,6 +18,7 @@ from doorman.database import (
     ARRAY,
     JSONB,
     INET,
+    declared_attr,
 )
 from doorman.extensions import bcrypt
 
@@ -30,25 +32,25 @@ querypacks = Table(
 pack_tags = Table(
     'pack_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
-    Column('pack.id', db.Integer, ForeignKey('pack.id'))
+    Column('pack.id', db.Integer, ForeignKey('pack.id'), index=True)
 )
 
 node_tags = Table(
     'node_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
-    Column('node.id', db.Integer, ForeignKey('node.id'))
+    Column('node.id', db.Integer, ForeignKey('node.id'), index=True)
 )
 
 query_tags = Table(
     'query_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
-    Column('query.id', db.Integer, ForeignKey('query.id'))
+    Column('query.id', db.Integer, ForeignKey('query.id'), index=True)
 )
 
 file_path_tags = Table(
     'file_path_tags',
     Column('tag.id', db.Integer, ForeignKey('tag.id')),
-    Column('file_path.id', db.Integer, ForeignKey('file_path.id'))
+    Column('file_path.id', db.Integer, ForeignKey('file_path.id'), index=True)
 )
 
 
@@ -263,23 +265,26 @@ class Node(SurrogatePK, Model):
     @property
     def packs(self):
         return db.session.object_session(self) \
-            .query(Pack).join((Tag, Pack.tags)) \
-            .filter(Pack.tags.any(Tag.value.in_(t.value for t in self.tags))) \
-            .distinct()
+            .query(Pack) \
+            .join(pack_tags, pack_tags.c['pack.id'] == Pack.id) \
+            .join(node_tags, node_tags.c['tag.id'] == pack_tags.c['tag.id']) \
+            .filter(node_tags.c['node.id'] == self.id)
 
     @property
     def queries(self):
         return db.session.object_session(self) \
-            .query(Query).join((Tag, Query.tags)) \
-            .filter(Query.tags.any(Tag.value.in_(t.value for t in self.tags))) \
-            .distinct()
+            .query(Query) \
+            .join(query_tags, query_tags.c['query.id'] == Query.id) \
+            .join(node_tags, node_tags.c['tag.id'] == query_tags.c['tag.id']) \
+            .filter(node_tags.c['node.id'] == self.id)
 
     @property
     def file_paths(self):
         return db.session.object_session(self) \
-            .query(FilePath).join((Tag, FilePath.tags)) \
-            .filter(FilePath.tags.any(Tag.value.in_(t.value for t in self.tags))) \
-            .distinct()
+            .query(FilePath) \
+            .join(file_path_tags, file_path_tags.c['file_path.id'] == FilePath.id) \
+            .join(node_tags, node_tags.c['tag.id'] == file_path_tags.c['tag.id']) \
+            .filter(node_tags.c['node.id'] == self.id)
 
     def get_recent(self, days=7, minutes=0, seconds=0):
         now = dt.datetime.utcnow()
@@ -359,6 +364,13 @@ class ResultLog(SurrogatePK, Model):
         elif node_id:
             self.node_id = node_id
 
+    @declared_attr
+    def __table_args__(cls):
+        return (
+            Index('idx_%s_node_id_timestamp_desc' % cls.__tablename__,
+                  'node_id', cls.timestamp.desc()),
+        )
+
 
 class StatusLog(SurrogatePK, Model):
 
@@ -385,6 +397,13 @@ class StatusLog(SurrogatePK, Model):
         self.created = created
         self.node = node
         self.version = version
+
+    @declared_attr
+    def __table_args__(cls):
+        return (
+            Index('idx_%s_node_id_created_desc' % cls.__tablename__,
+                'node_id', cls.created.desc()),
+        )
 
 
 class DistributedQuery(SurrogatePK, Model):
@@ -435,6 +454,12 @@ class DistributedQueryTask(SurrogatePK, Model):
             self.distributed_query = distributed_query
         elif distributed_query_id:
             self.distributed_query_id = distributed_query_id
+
+    @declared_attr
+    def __table_args__(cls):
+        return (
+            Index('idx_%s_node_id_status' % cls.__tablename__, 'node_id', 'status'),
+        )
 
 
 class DistributedQueryResult(SurrogatePK, Model):

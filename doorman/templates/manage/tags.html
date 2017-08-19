@@ -21,20 +21,20 @@
 
                     <tbody>
 
-                        {% for tag in tags | sort(attribute='value') %}
+                        {% for tag, t in tags | dictsort %}
                         <tr>
                             <td>
                                 <button type="button" class="btn btn-link btn-xs" aria-label="Delete Tag">
-                                    <span class="glyphicon glyphicon-trash" aria-hidden="true" data-uri="{{ url_for('manage.delete_tag', tag_value=tag.value) }}"></span>
+                                    <span class="glyphicon glyphicon-trash" aria-hidden="true" data-uri="{{ url_for('manage.delete_tag', tag_value=tag) }}"></span>
                                 </button>
                                 <span class="label">
-                                    <a href="{{ url_for('manage.get_tag', tag_value=tag.value) }}">{{ tag.value }}</a>
+                                    <a href="{{ url_for('manage.get_tag', tag_value=tag) }}">{{ tag }}</a>
                                 </span>
                             </td>
-                            <td>{{ tag.nodes_count }}</td>
-                            <td>{{ tag.packs_count }}</td>
-                            <td>{{ tag.queries_count }}</td>
-                            <td>{{ tag.file_paths_count }}</td>
+                            <td>{{ t.nodes | default(0) }}</td>
+                            <td>{{ t.packs | default(0) }}</td>
+                            <td>{{ t.queries | default(0) }}</td>
+                            <td>{{ t.file_paths | default(0) }}</td>
                         </tr>
                         {% endfor %}
 

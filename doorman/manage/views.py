@@ -564,9 +564,23 @@ def tag_file(file_path_id):
 @blueprint.route('/tags')
 @login_required
 def tags():
+    tags = dict((t.value, {}) for t in Tag.query.all())
+
     if request.is_xhr:
-        return jsonify(tags=[t.value for t in Tag.query.all()])
-    return render_template('tags.html', tags=Tag.query.all())
+        return jsonify(tags=tags.keys())
+
+    baseq = db.session.query(Tag.value, db.func.count(Tag.id))
+
+    for tag, count in baseq.join(Tag.nodes).group_by(Tag.id).all():
+        tags[tag]['nodes'] = count
+    for tag, count in baseq.join(Tag.packs).group_by(Tag.id).all():
+        tags[tag]['packs'] = count
+    for tag, count in baseq.join(Tag.queries).group_by(Tag.id).all():
+        tags[tag]['queries'] = count
+    for tag, count in baseq.join(Tag.file_paths).group_by(Tag.id).all():
+        tags[tag]['file_paths'] = count
+
+    return render_template('tags.html', tags=tags)
 
 
 @blueprint.route('/tags/add', methods=['GET', 'POST'])

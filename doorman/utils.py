@@ -13,7 +13,10 @@ import six
 from flask import current_app, flash
 
 from doorman.database import db
-from doorman.models import ResultLog
+from doorman.models import (
+    DistributedQuery, DistributedQueryTask,
+    Node, Pack, Query, ResultLog,
+)
 
 
 Field = namedtuple('Field', ['name', 'action', 'columns', 'timestamp'])
@@ -80,19 +83,23 @@ def assemble_distributed_queries(node):
     It is the responsibility of the caller to commit or rollback on the
     current database session.
     '''
-    from doorman.models import DistributedQueryTask
     now = dt.datetime.utcnow()
+    query = db.session.query(DistributedQueryTask) \
+        .join(DistributedQuery) \
+        .filter(
+            DistributedQueryTask.node == node,
+            DistributedQueryTask.status == DistributedQueryTask.NEW,
+            DistributedQuery.not_before < now,
+        ).options(
+            db.lazyload('*'),
+            db.contains_eager(DistributedQueryTask.distributed_query)
+        )
 
     queries = {}
-    for task in node.distributed_queries.filter(
-        DistributedQueryTask.status == DistributedQueryTask.NEW):
-
-        if task.distributed_query.not_before > now:
-            continue
-
+    for task in query:
         queries[task.guid] = task.distributed_query.sql
         task.update(status=DistributedQueryTask.PENDING,
-                    timestamp=dt.datetime.utcnow(),
+                    timestamp=now,
                     commit=False)
 
         # add this query to the session, but don't commit until we're
@@ -113,8 +120,6 @@ def create_query_pack_from_upload(upload):
     sql is identical, then the query will be reused.
 
     '''
-    from doorman.models import Pack, Query
-
     # The json package on Python 3 expects a `str` input, so we're going to
     # read the body and possibly convert to the right type
     body = upload.data.read()
@@ -276,8 +281,6 @@ def validate_osquery_query(query):
 
 
 def learn_from_result(result, node):
-    from doorman.models import Node
-
     if not result['data']:
         return
 

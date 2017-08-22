@@ -56,21 +56,21 @@ def assemble_options(node):
 
 def assemble_file_paths(node):
     file_paths = {}
-    for file_path in node.file_paths:
+    for file_path in node.file_paths.options(db.lazyload('*')):
         file_paths.update(file_path.to_dict())
     return file_paths
 
 
 def assemble_schedule(node):
     schedule = {}
-    for query in node.queries:
+    for query in node.queries.options(db.lazyload('*')):
         schedule[query.name] = query.to_dict()
     return schedule
 
 
 def assemble_packs(node):
     packs = {}
-    for pack in node.packs:
+    for pack in node.packs.options(db.contains_eager(Pack.queries, Query.tags)):
         packs[pack.name] = pack.to_dict()
     return packs
 

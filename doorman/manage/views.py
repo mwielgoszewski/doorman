@@ -48,7 +48,8 @@ def inject_models():
                 Rule=Rule, FilePath=FilePath,
                 DistributedQuery=DistributedQuery,
                 DistributedQueryTask=DistributedQueryTask,
-                current_app=current_app)
+                current_app=current_app,
+                db=db)
 
 
 @blueprint.route('/')
@@ -162,7 +163,7 @@ def nodes_by_tag(tags):
 @blueprint.route('/node/<int:node_id>', methods=['GET', 'POST'])
 @login_required
 def get_node(node_id):
-    node = Node.query.filter(Node.id == node_id).first_or_404()
+    node = Node.query.filter_by(id=node_id).first_or_404()
     form = UpdateNodeForm(request.form)
 
     if form.validate_on_submit():
@@ -184,7 +185,21 @@ def get_node(node_id):
 
     form = UpdateNodeForm(request.form, obj=node)
     flash_errors(form)
-    return render_template('node.html', form=form, node=node)
+
+    packs = node.packs \
+        .options(
+            db.joinedload(Pack.tags, innerjoin=True),
+            db.joinedload(Pack.queries, innerjoin=True),
+        ).order_by(Pack.name)
+
+    queries = node.queries \
+        .options(
+            db.joinedload(Query.tags, innerjoin=True),
+            db.joinedload(Query.packs)
+        ).order_by(Query.name)
+
+    return render_template('node.html', form=form, node=node,
+                           packs=packs, queries=queries)
 
 
 @blueprint.route('/node/<int:node_id>/activity')
@@ -250,7 +265,13 @@ def get_distributed_result(node_id, guid):
 @blueprint.route('/packs')
 @login_required
 def packs():
-    packs = Pack.query.options(joinedload(Pack.queries).joinedload(Query.packs)).all()
+    packs = Pack.query \
+        .options(
+            db.lazyload('*'),
+            db.joinedload(Pack.queries, innerjoin=True).joinedload(Query.packs, innerjoin=True),
+            db.joinedload(Pack.queries, Query.tags, innerjoin=True),
+            db.joinedload(Pack.tags, innerjoin=True),
+        ).all()
     return render_template('packs.html', packs=packs)
 
 
@@ -286,7 +307,12 @@ def tag_pack(pack_name):
 @blueprint.route('/queries')
 @login_required
 def queries():
-    queries = Query.query.options(joinedload(Query.packs)).all()
+    queries = Query.query \
+        .options(
+            db.lazyload('*'),
+            db.joinedload(Query.packs),
+            db.contains_eager(Query.tags),
+        ).join(Query.tags).all()
     return render_template('queries.html', queries=queries)
 
 

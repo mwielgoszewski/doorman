@@ -268,7 +268,8 @@ class Node(SurrogatePK, Model):
             .query(Pack) \
             .join(pack_tags, pack_tags.c['pack.id'] == Pack.id) \
             .join(node_tags, node_tags.c['tag.id'] == pack_tags.c['tag.id']) \
-            .filter(node_tags.c['node.id'] == self.id)
+            .filter(node_tags.c['node.id'] == self.id) \
+            .options(db.lazyload('*'))
 
     @property
     def queries(self):
@@ -276,7 +277,8 @@ class Node(SurrogatePK, Model):
             .query(Query) \
             .join(query_tags, query_tags.c['query.id'] == Query.id) \
             .join(node_tags, node_tags.c['tag.id'] == query_tags.c['tag.id']) \
-            .filter(node_tags.c['node.id'] == self.id)
+            .filter(node_tags.c['node.id'] == self.id) \
+            .options(db.lazyload('*'))
 
     @property
     def file_paths(self):
@@ -284,7 +286,8 @@ class Node(SurrogatePK, Model):
             .query(FilePath) \
             .join(file_path_tags, file_path_tags.c['file_path.id'] == FilePath.id) \
             .join(node_tags, node_tags.c['tag.id'] == file_path_tags.c['tag.id']) \
-            .filter(node_tags.c['node.id'] == self.id)
+            .filter(node_tags.c['node.id'] == self.id) \
+            .options(db.lazyload('*'))
 
     def get_recent(self, days=7, minutes=0, seconds=0):
         now = dt.datetime.utcnow()

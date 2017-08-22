@@ -44,7 +44,8 @@ def node_required(f):
             return ""
 
         node_key = request_json.get('node_key')
-        node = Node.query.filter_by(node_key=node_key).first()
+        node = Node.query.filter_by(node_key=node_key) \
+            .options(db.lazyload('*')).first()
 
         if not node:
             current_app.logger.error(

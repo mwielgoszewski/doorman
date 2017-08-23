@@ -230,13 +230,14 @@ def logger(node=None):
 
     if log_type == 'status':
         log_tee.handle_status(data, host_identifier=node.host_identifier)
+        status_logs = []
         for item in data.get('data', []):
             if int(item['severity']) < log_level:
                 continue
-            status_log = StatusLog(node=node, **item)
-            db.session.add(status_log)
+            status_logs.append(StatusLog(node_id=node.id, **item))
         else:
             db.session.add(node)
+            db.session.bulk_save_objects(status_logs)
             db.session.commit()
 
     elif log_type == 'result':

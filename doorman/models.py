@@ -391,15 +391,18 @@ class StatusLog(SurrogatePK, Model):
     )
 
     def __init__(self, line=None, message=None, severity=None,
-                 filename=None, created=None, node=None, version=None,
-                 **kwargs):
+                 filename=None, created=None, node=None, node_id=None,
+                 version=None, **kwargs):
         self.line = int(line)
         self.message = message
         self.severity = int(severity)
         self.filename = filename
         self.created = created
-        self.node = node
         self.version = version
+        if node:
+            self.node = node
+        elif node_id:
+            self.node_id = node_id
 
     @declared_attr
     def __table_args__(cls):

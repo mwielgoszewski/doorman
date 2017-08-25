@@ -124,6 +124,15 @@ class Config(object):
 
         # 'sentry': ('doorman.plugins.alerters.sentry.SentryAlerter', {
         #     'dsn': 'https://<key>:<secret>@app.getsentry.com/<project>',
+        # }),
+
+        # 'slack': ('doorman.plugins.alerters.slack.SlackAlerter', {
+        #     # Required, create webhook here: https://my.slack.com/services/new/incoming-webhook/
+        #     'slack_webhook' : 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+
+        #     # Optional
+        #     'printColumns': False,
+        #     'color': '#36a64f',
         # })
     }
 

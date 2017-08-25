@@ -430,6 +430,7 @@ class DistributedQueryTask(SurrogatePK, Model):
     NEW = 0
     PENDING = 1
     COMPLETE = 2
+    FAILED = 3
 
     guid = Column(db.String, nullable=False, unique=True)
     status = Column(db.Integer, default=0, nullable=False)

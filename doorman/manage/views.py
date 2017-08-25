@@ -342,10 +342,10 @@ def add_query():
 
 @blueprint.route('/queries/distributed')
 @blueprint.route('/queries/distributed/<int:page>')
-@blueprint.route('/queries/distributed/<any(new, pending, complete):status>')
-@blueprint.route('/queries/distributed/<any(new, pending, complete):status>/<int:page>')
-@blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>')
-@blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete):status>/<int:page>')
+@blueprint.route('/queries/distributed/<any(new, pending, complete, failed):status>')
+@blueprint.route('/queries/distributed/<any(new, pending, complete, failed):status>/<int:page>')
+@blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete, failed):status>')
+@blueprint.route('/node/<int:node_id>/distributed/<any(new, pending, complete, failed):status>/<int:page>')
 @login_required
 def distributed(node_id=None, status=None, page=1):
     tasks = DistributedQueryTask.query
@@ -356,6 +356,8 @@ def distributed(node_id=None, status=None, page=1):
         tasks = tasks.filter_by(status=DistributedQueryTask.PENDING)
     elif status == 'complete':
         tasks = tasks.filter_by(status=DistributedQueryTask.COMPLETE)
+    elif status == 'failed':
+        tasks = tasks.filter_by(status=DistributedQueryTask.FAILED)
 
     if node_id:
         node = Node.query.filter_by(id=node_id).first_or_404()
@@ -386,8 +388,8 @@ def distributed(node_id=None, status=None, page=1):
 
 @blueprint.route('/queries/distributed/results/<int:distributed_id>')
 @blueprint.route('/queries/distributed/results/<int:distributed_id>/<int:page>')
-@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>')
-@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete):status>/<int:page>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete, failed):status>')
+@blueprint.route('/queries/distributed/results/<int:distributed_id>/<any(new, pending, complete, failed):status>/<int:page>')
 @login_required
 def distributed_results(distributed_id, status=None, page=1):
     query = DistributedQuery.query.filter_by(id=distributed_id).first_or_404()
@@ -399,6 +401,8 @@ def distributed_results(distributed_id, status=None, page=1):
         tasks = tasks.filter_by(status=DistributedQueryTask.PENDING)
     elif status == 'complete':
         tasks = tasks.filter_by(status=DistributedQueryTask.COMPLETE)
+    elif status == 'failed':
+        tasks = tasks.filter_by(status=DistributedQueryTask.FAILED)
 
     tasks = get_paginate_options(
         request,

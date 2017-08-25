@@ -931,6 +931,30 @@ class TestDistributedWrite:
         assert q.results[0].columns == data[0]
         assert node.last_ip == '127.0.0.2'
 
+    def test_distributed_query_write_state_failed(self, db, node, testapp):
+        q = DistributedQuery.create(
+            sql="select name, path, pid from processes where name = 'osqueryd';")
+        t = DistributedQueryTask.create(node=node, distributed_query=q)
+        t.update(status=DistributedQueryTask.PENDING)
+
+        data = []
+
+        resp = testapp.post_json(url_for('api.distributed_write'), {
+            'node_key': node.node_key,
+            'queries': {
+                t.guid: data,
+            },
+            'statuses': {
+                t.guid: 2,
+            }
+        },
+        extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
+
+        assert t.status == DistributedQueryTask.FAILED
+        assert not q.results
+        assert node.last_ip == '127.0.0.2'
+
     def test_malicious_node_distributed_query_write(self, db, node, testapp):
         foo = NodeFactory(host_identifier='foo')
         q1 = DistributedQuery.create(

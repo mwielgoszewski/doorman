@@ -293,7 +293,10 @@ def distributed_write(node=None):
     if current_app.debug:
         current_app.logger.debug(json.dumps(data, indent=2))
 
-    for guid, results in data.get('queries', {}).items():
+    queries = data.get('queries', {})
+    statuses = data.get('statuses', {})
+
+    for guid, results in queries.items():
         task = DistributedQueryTask.query.filter(
             DistributedQueryTask.guid == guid,
             DistributedQueryTask.status == DistributedQueryTask.PENDING,
@@ -308,6 +311,17 @@ def distributed_write(node=None):
             )
             continue
 
+        # non-zero status indicates sqlite errors
+
+        if not statuses.get(guid, 0):
+            status = DistributedQueryTask.COMPLETE
+        else:
+            current_app.logger.error(
+                "%s - Got non-zero status code (%d) on distributed query %s",
+                request.remote_addr, statuses.get(guid), guid
+            )
+            status = DistributedQueryTask.FAILED
+
         for columns in results:
             result = DistributedQueryResult(
                 columns,
@@ -316,7 +330,7 @@ def distributed_write(node=None):
             )
             db.session.add(result)
         else:
-            task.status = DistributedQueryTask.COMPLETE
+            task.status = status
             db.session.add(task)
 
     else:

@@ -25,6 +25,7 @@ DUMMY_FUNCTIONS = [
     'examples',
     'implementation',
     'fuzz_paths',
+    'WINDOWS',
 ]
 
 
@@ -42,13 +43,17 @@ def schema(schema):
     real_schema = [x for x in schema if x is not None]
     current_spec['schema'] = real_schema
 
+def extended_schema(macro, schema):
+    # Filter out 'None' entries (usually from ForeignKeys)
+    real_schema = [x for x in schema if x is not None]
+    current_spec['extended_schema'] = real_schema
 
 def extract_schema(filename):
     namespace = {
         'Column': Column,
         'schema': schema,
         'table_name': table_name,
-
+        'extended_schema': extended_schema,
         'current_spec': {},
     }
 
@@ -63,4 +68,17 @@ def extract_schema(filename):
         exec(compile(tree, '<string>', 'exec'), namespace)
 
     columns = ', '.join('%s %s' % (x[0], x[1]) for x in current_spec['schema'])
-    return 'CREATE TABLE %s (%s);' % (current_spec['name'], columns)
+    statements = []
+    statements = []
+    statements.append('CREATE TABLE %s (%s);' % (current_spec['name'], columns))
+    if 'extended_schema' in current_spec:
+        statement = 'ALTER TABLE %s ADD %%s %%s' % (current_spec['name'], )
+        for column_name, column_definition in current_spec['extended_schema']:
+            statements.append(statement % (column_name, column_definition))
+        del current_spec['extended_schema']
+    return '\n'.join(statements)
+
+
+if __name__ == '__main__':
+    import sys
+    print extract_schema(sys.argv[1])

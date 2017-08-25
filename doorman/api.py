@@ -5,7 +5,7 @@ import datetime as dt
 import gzip
 import json
 
-from flask import Blueprint, current_app, jsonify, request, g
+from flask import Blueprint, current_app, jsonify, request
 
 from doorman.database import db
 from doorman.extensions import log_tee
@@ -19,40 +19,6 @@ from doorman.utils import process_result
 
 
 blueprint = Blueprint('api', __name__)
-
-
-@blueprint.before_request
-def before_request():
-    if not current_app.config['GRAPHITE_ENABLED']:
-        return
-
-    metrics = current_app.metrics.get(request.endpoint)
-    if not metrics:
-        return
-
-    metrics.count.mark()
-
-    # scales.PmfStat's timer is a context manager, allowing
-    # you to wrap a block of code to be timed within a with
-    # statement. In Flask, we need to call __enter__ and
-    # __exit__ manually and attach the TimeManager returned
-    # to the Flask thread local g to achieve the same effect
-    # when using Flask's before_request and teardown_request
-    # decorators.
-
-    g.timer = metrics.latency.time().__enter__()
-
-
-@blueprint.teardown_request
-def teardown_request(*args, **kwargs):
-    if not current_app.config['GRAPHITE_ENABLED']:
-        return
-
-    try:
-        g.timer.__exit__()
-    except Exception:
-        current_app.logger.exception("Timing not available for %r",
-                                     request.endpoint)
 
 
 def node_required(f):
@@ -78,7 +44,8 @@ def node_required(f):
             return ""
 
         node_key = request_json.get('node_key')
-        node = Node.query.filter_by(node_key=node_key).first()
+        node = Node.query.filter_by(node_key=node_key) \
+            .options(db.lazyload('*')).first()
 
         if not node:
             current_app.logger.error(
@@ -263,13 +230,14 @@ def logger(node=None):
 
     if log_type == 'status':
         log_tee.handle_status(data, host_identifier=node.host_identifier)
+        status_logs = []
         for item in data.get('data', []):
             if int(item['severity']) < log_level:
                 continue
-            status_log = StatusLog(node=node, **item)
-            db.session.add(status_log)
+            status_logs.append(StatusLog(node_id=node.id, **item))
         else:
             db.session.add(node)
+            db.session.bulk_save_objects(status_logs)
             db.session.commit()
 
     elif log_type == 'result':

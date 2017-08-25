@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Database module, including the SQLAlchemy database object and DB-related utilities."""
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, INET  # noqa
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
 
 from doorman.compat import basestring
@@ -13,6 +14,7 @@ Table = db.Table
 ForeignKey = db.ForeignKey
 UniqueConstraint = db.UniqueConstraint
 relationship = relationship
+Index = db.Index
 
 
 class CRUDMixin(object):

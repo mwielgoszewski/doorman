@@ -8,7 +8,7 @@ from doorman.assets import assets
 from doorman.manage import blueprint as backend
 from doorman.extensions import (
     bcrypt, csrf, db, debug_toolbar, ldap_manager, log_tee, login_manager,
-    mail, make_celery, metrics, migrate, rule_manager, sentry
+    mail, make_celery, migrate, rule_manager, sentry
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
@@ -55,7 +55,6 @@ def register_extensions(app):
     rule_manager.init_app(app)
     mail.init_app(app)
     make_celery(app, celery)
-    metrics.init_app(app)
     login_manager.init_app(app)
     sentry.init_app(app)
     if app.config['ENFORCE_SSL']:

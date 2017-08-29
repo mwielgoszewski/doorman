@@ -292,12 +292,6 @@ class Node(SurrogatePK, Model):
             .filter(node_tags.c['node.id'] == self.id) \
             .options(db.lazyload('*'))
 
-    def get_recent(self, days=7, minutes=0, seconds=0):
-        now = dt.datetime.utcnow()
-        when = now - dt.timedelta(days=days, minutes=minutes, seconds=seconds)
-        return self.result_logs.filter(ResultLog.timestamp > when) \
-            .order_by(ResultLog.timestamp.desc(), ResultLog.id.desc())
-
     def to_dict(self):
         # NOTE: deliberately not including any secret values in here, for now.
         return {

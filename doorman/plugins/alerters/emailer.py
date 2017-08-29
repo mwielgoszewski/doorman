@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
+import string
 
 from flask import render_template
 from flask_mail import Message
@@ -25,20 +26,29 @@ class EmailAlerter(AbstractAlerterPlugin):
             'subject_prefix', '[Doorman]'
         )
 
-        subject = render_template(
-            subject_template,
-            prefix=subject_prefix,
-            match=match,
-            timestamp=dt.datetime.utcnow(),
-            node=node
-        )
+        params = {}
+        params.update(node)
+        params.update(node.get('node_info', {}))
+        params.update(match.result['columns'])
 
-        body = render_template(
-            message_template,
-            match=match,
-            timestamp=dt.datetime.utcnow(),
-            node=node
-        )
+        subject = string.Template(
+            render_template(
+                subject_template,
+                prefix=subject_prefix,
+                match=match,
+                timestamp=dt.datetime.utcnow(),
+                node=node
+            )
+        ).safe_substitute(**params)
+
+        body = string.Template(
+            render_template(
+                message_template,
+                match=match,
+                timestamp=dt.datetime.utcnow(),
+                node=node
+            )
+        ).safe_substitute(**params)
 
         message = Message(
             subject.strip(),

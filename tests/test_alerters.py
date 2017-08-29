@@ -9,6 +9,7 @@ from doorman.rules import RuleMatch
 from doorman.plugins.alerters.emailer import EmailAlerter
 from doorman.plugins.alerters.pagerduty import PagerDutyAlerter
 from doorman.plugins.alerters.sentry import SentryAlerter
+from doorman.plugins.alerters.slack import SlackAlerter
 
 
 MockResponse = namedtuple('MockResponse', ['ok', 'content'])
@@ -144,3 +145,38 @@ class TestSentryAlerter:
             match.result['columns'],
             **node.to_dict()
         ).rstrip()
+
+class TestSlackAlerter:
+
+    def setup_method(self, _method):
+        self.config = {
+            'slack_webhook' : 'https://hooks.slack.com/services/foo',
+            'printColumns' : True,
+        }
+
+    def test_will_make_request(self, node, rule):
+        """ Simple test to ensure that there's no serialization or syntax errors. """
+        match = RuleMatch(
+            rule=rule,
+            node=node.to_dict(),
+            result={
+                'name': 'foo',
+                'action': 'added',
+                'timestamp': 'bar',
+                'columns': {'boo': 'baz', 'kung': 'bloo'},
+            }
+        )
+
+        resp = MockResponse(ok=True, content='blah')
+        with mock.patch('requests.post', return_value=resp) as pmock:
+            alerter = SlackAlerter(self.config)
+            alerter.handle_alert(node.to_dict(), match)
+
+        assert pmock.called
+
+        args, kwargs = pmock.call_args
+        assert args[0] == 'https://hooks.slack.com/services/foo'
+
+        assert rule.name in kwargs['data']
+        assert 'boo' in kwargs['data']
+        assert 'baz' in kwargs['data']

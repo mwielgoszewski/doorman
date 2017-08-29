@@ -110,6 +110,7 @@ class TestEmailerAlerter:
             assert rule.name in message.body
             assert 'boo' in message.body
             assert 'baz' in message.body
+            assert 'kung = bloo' in message.body
 
         alerter = EmailAlerter(self.config)
         alerter.handle_alert(node.to_dict(), match)

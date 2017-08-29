@@ -514,6 +514,7 @@ class Rule(SurrogatePK, Model):
             name=self.name, description=self.description or '')
         )
 
+
 class User(UserMixin, SurrogatePK, Model):
 
     username = Column(db.String(80), unique=True, nullable=False)

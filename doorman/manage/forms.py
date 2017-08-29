@@ -63,8 +63,9 @@ class QueryForm(Form):
         ('all', 'All'),
         ('darwin', 'Darwin'),
         ('linux', 'Linux'),
-        ('redhat/centos', 'Red Hat/CentOS'),
-        ('ubuntu', 'Ubuntu'),
+        ('freebsd', 'FreeBSD'),
+        ('posix', 'POSIX Compatible'),
+        ('windows', 'Windows'),
     ])
     version = StringField('Version')
     description = TextAreaField('Description')
@@ -73,6 +74,7 @@ class QueryForm(Form):
     packs = SelectMultipleField('Packs', default=None, choices=[
     ])
     tags = TextAreaField("Tags")
+    shard = IntegerField('Shard')
 
     def set_choices(self):
         from doorman.models import Pack

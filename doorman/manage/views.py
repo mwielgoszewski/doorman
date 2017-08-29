@@ -30,7 +30,7 @@ from .forms import (
 from doorman.database import db
 from doorman.models import (
     DistributedQuery, DistributedQueryTask, DistributedQueryResult,
-    FilePath, Node, Pack, Query, Tag, Rule, StatusLog
+    FilePath, Node, Pack, Query, Tag, Rule, ResultLog, StatusLog
 )
 from doorman.utils import (
     create_query_pack_from_upload, flash_errors, get_paginate_options
@@ -205,8 +205,35 @@ def get_node(node_id):
 @blueprint.route('/node/<int:node_id>/activity')
 @login_required
 def node_activity(node_id):
-    node = Node.query.filter(Node.id == node_id).first_or_404()
-    return render_template('activity.html', node=node)
+    node = Node.query.filter_by(id=node_id) \
+        .options(db.lazyload('*')).first()
+
+    try:
+        timestamp = request.args.get('timestamp')
+        timestamp = dt.datetime.fromtimestamp(float(timestamp))
+    except Exception:
+        timestamp = dt.datetime.utcnow()
+        timestamp -= dt.timedelta(days=7)
+
+    recent = node.result_logs.filter(ResultLog.timestamp > timestamp).all()
+    queries = db.session.query(DistributedQueryTask) \
+        .join(DistributedQuery) \
+        .join(DistributedQueryResult) \
+        .join(Node) \
+        .options(
+            db.lazyload('*'),
+            db.contains_eager(DistributedQueryTask.results),
+            db.contains_eager(DistributedQueryTask.distributed_query),
+            db.contains_eager(DistributedQueryTask.node)
+        ) \
+        .filter(
+            DistributedQueryTask.node == node,
+            db.or_(
+                DistributedQuery.timestamp >= timestamp,
+                DistributedQueryTask.timestamp >= timestamp,
+            )
+        ).all()
+    return render_template('activity.html', node=node, recent=recent, queries=queries)
 
 
 @blueprint.route('/node/<int:node_id>/logs')

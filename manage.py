@@ -62,7 +62,7 @@ def extract_ddl(specs_dir):
     spec_files.extend(glob.glob(join(specs_dir, '*.table')))
     spec_files.extend(glob.glob(join(specs_dir, '**', '*.table')))
 
-    ddl = sorted([extract_schema(f) for f in spec_files])
+    ddl = sorted([extract_schema(f) for f in spec_files], key=lambda x:x.split()[2])
 
     opath = join(dirname(__file__), 'doorman', 'resources', 'osquery_schema.sql')
     with open(opath, 'w') as f:

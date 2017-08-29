@@ -36,6 +36,13 @@
                         </tr>
                         {% endif %}
 
+                        {% if query.shard %}
+                        <tr>
+                            <th width="15%">Shard</th>
+                            <td width="85%">{{ query.shard or '' }}</td>
+                        </tr>
+                        {% endif %}
+
                         <tr>
                             <th width="15%">Show Removed?</th>
                             <td width="85%">{{ query.removed }}</td>

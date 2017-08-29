@@ -119,6 +119,7 @@ class Query(SurrogatePK, Model):
     description = Column(db.String)
     value = Column(db.String)
     removed = Column(db.Boolean, nullable=False, default=True)
+    shard = Column(db.Integer)
 
     packs = relationship(
         'Pack',
@@ -135,7 +136,7 @@ class Query(SurrogatePK, Model):
 
     def __init__(self, name, query=None, sql=None, interval=3600, platform=None,
                  version=None, description=None, value=None, removed=True,
-                 **kwargs):
+                 shard=None, **kwargs):
         self.name = name
         self.sql = query or sql
         self.interval = int(interval)
@@ -144,6 +145,7 @@ class Query(SurrogatePK, Model):
         self.description = description
         self.value = value
         self.removed = removed
+        self.shard = shard
 
     def __repr__(self):
         return '<Query: {0.name}>'.format(self)
@@ -157,6 +159,7 @@ class Query(SurrogatePK, Model):
             'description': self.description,
             'value': self.value,
             'removed': self.removed,
+            'shard': self.shard,
         }
 
 
@@ -288,12 +291,6 @@ class Node(SurrogatePK, Model):
             .join(node_tags, node_tags.c['tag.id'] == file_path_tags.c['tag.id']) \
             .filter(node_tags.c['node.id'] == self.id) \
             .options(db.lazyload('*'))
-
-    def get_recent(self, days=7, minutes=0, seconds=0):
-        now = dt.datetime.utcnow()
-        when = now - dt.timedelta(days=days, minutes=minutes, seconds=seconds)
-        return self.result_logs.filter(ResultLog.timestamp > when) \
-            .order_by(ResultLog.timestamp.desc(), ResultLog.id.desc())
 
     def to_dict(self):
         # NOTE: deliberately not including any secret values in here, for now.

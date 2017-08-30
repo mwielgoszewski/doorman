@@ -275,6 +275,7 @@ def validate_osquery_query(query):
     try:
         db.execute(query)
     except sqlite3.Error:
+        current_app.logger.exception("Invalid query: %s", query)
         return False
 
     return True

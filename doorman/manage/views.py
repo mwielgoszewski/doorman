@@ -294,10 +294,9 @@ def get_distributed_result(node_id, guid):
 def packs():
     packs = Pack.query \
         .options(
-            db.lazyload('*'),
-            db.joinedload(Pack.queries, innerjoin=True).joinedload(Query.packs, innerjoin=True),
-            db.joinedload(Pack.queries, Query.tags, innerjoin=True),
-            db.joinedload(Pack.tags, innerjoin=True),
+            db.joinedload(Pack.tags),
+            db.joinedload(Pack.queries),
+            db.joinedload(Pack.queries, Query.packs, innerjoin=True)
         ).all()
     return render_template('packs.html', packs=packs)
 
@@ -336,10 +335,10 @@ def tag_pack(pack_name):
 def queries():
     queries = Query.query \
         .options(
-            db.lazyload('*'),
+            db.joinedload(Query.tags),
             db.joinedload(Query.packs),
-            db.contains_eager(Query.tags),
-        ).join(Query.tags).all()
+            db.joinedload(Query.packs, Pack.queries, innerjoin=True)
+        ).all()
     return render_template('queries.html', queries=queries)
 
 
@@ -357,7 +356,8 @@ def add_query():
                       version=form.version.data,
                       description=form.description.data,
                       value=form.value.data,
-                      removed=form.removed.data)
+                      removed=form.removed.data,
+                      shard=form.shard.data)
         query.tags = create_tags(*form.tags.data.splitlines())
         query.save()
 
@@ -538,7 +538,8 @@ def query(query_id):
                              version=form.version.data,
                              description=form.description.data,
                              value=form.value.data,
-                             removed=form.removed.data)
+                             removed=form.removed.data,
+                             shard=form.shard.data)
         return redirect(url_for('manage.query', query_id=query.id))
 
     form = UpdateQueryForm(request.form, obj=query)

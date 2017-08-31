@@ -251,15 +251,28 @@ class TestConfiguration:
 
     def test_configuration_has_all_required_values(self, node, testapp):
         tag = TagFactory(value='foobar')
+        tag2 = TagFactory(value='barbaz')
         pack = PackFactory(name='foobar')
         pack.tags.append(tag)
 
         sql = 'select * from foobar;'
         query = QueryFactory(name='foobar', sql=sql)
+        query2 = QueryFactory(name='barbaz', sql=sql)
+        query3 = QueryFactory(name='barfoo', sql=sql)
+        query.tags.append(tag)
+        query.save()
+
         pack.queries.append(query)
         pack.save()
+
         node.tags.append(tag)
         node.save()
+
+        pack2 = PackFactory(name='barbaz')
+        pack2.tags.append(tag2)
+        pack2.queries.append(query)
+        pack2.queries.append(query2)
+        pack2.save()
 
         resp = testapp.post_json(url_for('api.configuration'), {
             'node_key': node.node_key})

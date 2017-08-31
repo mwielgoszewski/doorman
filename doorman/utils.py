@@ -15,7 +15,7 @@ from flask import current_app, flash
 from doorman.database import db
 from doorman.models import (
     DistributedQuery, DistributedQueryTask,
-    Node, Pack, Query, ResultLog,
+    Node, Pack, Query, ResultLog, querypacks,
 )
 
 
@@ -70,7 +70,7 @@ def assemble_schedule(node):
 
 def assemble_packs(node):
     packs = {}
-    for pack in node.packs.options(db.contains_eager(Pack.queries, Query.tags)):
+    for pack in node.packs.join(querypacks):
         packs[pack.name] = pack.to_dict()
     return packs
 

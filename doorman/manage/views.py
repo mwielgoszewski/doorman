@@ -12,7 +12,7 @@ from flask import (
 from flask_login import login_required
 from flask_paginate import Pagination
 
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
 from .forms import (
@@ -228,7 +228,7 @@ def node_activity(node_id):
         ) \
         .filter(
             DistributedQueryTask.node == node,
-            db.or_(
+            or_(
                 DistributedQuery.timestamp >= timestamp,
                 DistributedQueryTask.timestamp >= timestamp,
             )
@@ -734,3 +734,65 @@ def rule(rule_id):
     form = UpdateRuleForm(request.form, obj=rule)
     flash_errors(form)
     return render_template('rule.html', form=form, rule=rule)
+
+
+@blueprint.route('/search', methods=['GET', 'POST'])
+@blueprint.route('/search/<int:page>', methods=['GET', 'POST'])
+@login_required
+def search(page=1):
+    try:
+        per_page = int(request.args.pop('pp', max_pp))
+    except Exception:
+        per_page = 20
+
+    per_page = max(0, min(500, per_page))
+
+    results = ResultLog.query
+
+    tbl_columns = ResultLog.__table__.columns.keys()
+
+    if not request.args:
+        return render_template('results.html', results=[])
+
+    for key in request.args:
+        if key in ('pp', 'order_by', 'sort'):
+            continue
+
+        values = request.args.getlist(key)
+        ors = []
+
+        for value in values:
+            if key.startswith('columns.') or key not in tbl_columns:
+                column = ResultLog.columns[key.replace('columns.', '')].astext
+                ors.append(column == value)
+            else:
+                ors.append(getattr(ResultLog, key) == value)
+        else:
+            results = results.filter(or_(*ors))
+
+    sort = request.args.get('sort', 'asc')
+    if sort not in ('asc', 'desc'):
+        sort = 'asc'
+
+    for order_by in request.args.get('order_by', '').split(','):
+        if order_by.startswith('columns.') or order_by not in tbl_columns:
+            column = ResultLog.columns[order_by.replace('columns.', '')].astext
+        else:
+            column = getattr(ResultLog, order_by)
+        order_by = getattr(column, sort)()
+        results = results.order_by(order_by)
+
+    results = results.paginate(page=page, per_page=per_page)
+
+    pagination = Pagination(page=page,
+                            per_page=results.per_page,
+                            total=results.total,
+                            alignment='center',
+                            show_single_page=False,
+                            search=True,
+                            found=results.total,
+                            bs_version=3)
+
+    return render_template('results.html',
+                           pagination=pagination,
+                           results=results.items)

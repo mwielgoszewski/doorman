@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="body-content">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>search results</h1>
+
+                {% if results | list %}
+                {% include "tables/results.html" %}
+                <div class="text-center">
+                    <small>{{ pagination.info }}</small>
+                    {{ pagination.links }}
+                </div>
+                {% else %}
+                <p>No results for this search.<p>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

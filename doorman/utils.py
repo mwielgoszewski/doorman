@@ -70,7 +70,8 @@ def assemble_schedule(node):
 
 def assemble_packs(node):
     packs = {}
-    for pack in node.packs.join(querypacks):
+    for pack in node.packs.join(querypacks).join(Query) \
+        .options(db.contains_eager(Pack.queries)).all():
         packs[pack.name] = pack.to_dict()
     return packs
 

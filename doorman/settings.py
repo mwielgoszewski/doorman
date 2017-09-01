@@ -39,6 +39,7 @@ class Config(object):
     DOORMAN_PACK_DELIMITER = '/'
     DOORMAN_MINIMUM_OSQUERY_LOG_LEVEL = 0
 
+    DOORMAN_ENROLL_SECRET_TAG_DELIMITER = None
     DOORMAN_ENROLL_DEFAULT_TAGS = [
     ]
 
@@ -272,7 +273,7 @@ class TestConfig(Config):
     DOORMAN_ENROLL_SECRET = [
         'secret',
     ]
-    DOORMAN_UNIQUE_HOST_ID = False
+    DOORMAN_EXPECTS_UNIQUE_HOST_ID = False
 
     DOORMAN_AUTH_METHOD = None
 

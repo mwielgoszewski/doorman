@@ -109,6 +109,13 @@ def enroll():
     # If we pre-populate node table with a per-node enroll_secret,
     # let's query it now.
 
+    if current_app.config.get('DOORMAN_ENROLL_SECRET_TAG_DELIMITER'):
+        delimiter = current_app.config.get('DOORMAN_ENROLL_SECRET_TAG_DELIMITER')
+        enroll_secret, _, enroll_tags = enroll_secret.partition(delimiter)
+        enroll_tags = set([tag.strip() for tag in enroll_tags.split(delimiter)[:10]])
+    else:
+        enroll_secret, enroll_tags = enroll_secret, set()
+
     node = Node.query.filter(Node.enroll_secret == enroll_secret).first()
 
     if not node and enroll_secret not in current_app.config['DOORMAN_ENROLL_SECRET']:
@@ -176,7 +183,9 @@ def enroll():
                     enrolled_on=now,
                     last_ip=request.remote_addr)
 
-        for value in current_app.config.get('DOORMAN_ENROLL_DEFAULT_TAGS', []):
+        enroll_tags.update(current_app.config.get('DOORMAN_ENROLL_DEFAULT_TAGS', []))
+
+        for value in sorted((t.strip() for t in enroll_tags if t)):
             tag = Tag.query.filter_by(value=value).first()
             if tag and tag not in node.tags:
                 node.tags.append(tag)

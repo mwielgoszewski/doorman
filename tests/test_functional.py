@@ -218,6 +218,90 @@ class TestEnrolling:
         assert node.is_active
         assert node.last_ip == '127.0.0.1'
 
+    def test_enroll_secret_tags(self, db, node, testapp):
+        testapp.app.config['DOORMAN_ENROLL_SECRET_TAG_DELIMITER'] = ':'
+        testapp.app.config['DOORMAN_EXPECTS_UNIQUE_HOST_ID'] = True
+        enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': enroll_secret,
+            'host_identifier': 'foobaz'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
+
+        assert resp.json['node_invalid'] is False
+        assert resp.json['node_key'] != node.node_key
+
+        n = Node.query.filter_by(node_key=resp.json['node_key']).one()
+        assert n.is_active
+        assert n.last_ip == '127.0.0.2'
+        assert not n.tags
+
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': ':'.join([enroll_secret, 'foo', 'bar']),
+            'host_identifier': 'barbaz'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
+
+        assert resp.json['node_invalid'] is False
+        assert resp.json['node_key'] != node.node_key
+
+        n = Node.query.filter_by(node_key=resp.json['node_key']).one()
+        assert n.is_active
+        assert n.last_ip == '127.0.0.2'
+        assert len(n.tags) == 2
+        assert 'foo' in (t.value for t in n.tags)
+        assert 'bar' in (t.value for t in n.tags)
+
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': ':'.join([enroll_secret, 'foo', 'bar', 'baz']),
+            'host_identifier': 'barbaz'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
+        assert resp.json['node_key'] != node.node_key
+        assert resp.json['node_key'] == n.node_key
+
+        n = Node.query.filter_by(node_key=resp.json['node_key']).one()
+        assert n.is_active
+        assert n.last_ip == '127.0.0.2'
+        assert len(n.tags) == 2
+        assert 'foo' in (t.value for t in n.tags)
+        assert 'bar' in (t.value for t in n.tags)
+
+        testapp.app.config['DOORMAN_ENROLL_SECRET'].append(':'.join(enroll_secret))
+        testapp.app.config['DOORMAN_ENROLL_SECRET_TAG_DELIMITER'] = ','
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': ':'.join(enroll_secret),
+            'host_identifier': 'bartab'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
+
+        assert resp.json['node_invalid'] is False
+        assert resp.json['node_key'] != node.node_key
+
+        n = Node.query.filter_by(node_key=resp.json['node_key']).one()
+        assert n.is_active
+        assert n.last_ip == '127.0.0.2'
+        assert not n.tags
+
+    def test_enroll_max_secret_tags(self, db, node, testapp):
+        testapp.app.config['DOORMAN_ENROLL_SECRET_TAG_DELIMITER'] = ':'
+        testapp.app.config['DOORMAN_EXPECTS_UNIQUE_HOST_ID'] = True
+        enroll_secret = testapp.app.config['DOORMAN_ENROLL_SECRET'][0]
+        enroll_secret = ':'.join([enroll_secret] + list('abcdef1234567890'))
+        resp = testapp.post_json(url_for('api.enroll'), {
+            'enroll_secret': ':'.join([enroll_secret, 'foo', ]),
+            'host_identifier': 'barbaz'},
+            extra_environ=dict(REMOTE_ADDR='127.0.0.2')
+        )
+
+        assert resp.json['node_invalid'] is False
+        assert resp.json['node_key'] != node.node_key
+
+        n = Node.query.filter_by(node_key=resp.json['node_key']).one()
+        assert n.is_active
+        assert n.last_ip == '127.0.0.2'
+        assert len(n.tags) == 10  # max 10 tags when passing tags w/enroll secret
+
 
 class TestConfiguration:
 

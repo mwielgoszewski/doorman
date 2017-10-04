@@ -28,7 +28,8 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repos
 
   # clean up
   && apk del --purge build-dependencies \
-  && rm /var/cache/apk/*
+  && rm /var/cache/apk/* \
+  && rm -rf /tmp/*
 
 # Make some useful symlinks that are expected to exist
 RUN cd /usr/bin \

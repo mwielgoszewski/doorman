@@ -126,6 +126,12 @@ def enroll():
 
     host_identifier = request_json.get('host_identifier')
 
+    # introduced in osquery 2.8
+    host_details = {}
+    for key, subkeys in request_json.get('host_details', {}).items():
+        for subkey, value in subkeys.items():
+            host_details["{0}.{1}".format(key, subkey)] = value
+
     if node and node.enrolled_on:
         current_app.logger.warn(
             "%s - %s already enrolled on %s, returning existing node_key",
@@ -141,7 +147,8 @@ def enroll():
 
         node.update(
             last_checkin=dt.datetime.utcnow(),
-            last_ip=request.remote_addr
+            last_ip=request.remote_addr,
+            node_info=host_details if host_details else node.node_info.copy()
         )
 
         return jsonify(node_key=node.node_key, node_invalid=False)
@@ -166,7 +173,8 @@ def enroll():
             )
             existing_node.update(
                 last_checkin=dt.datetime.utcnow(),
-                last_ip=request.remote_addr
+                last_ip=request.remote_addr,
+                node_info=host_details if host_details else existing_node.node_info.copy()
             )
             return jsonify(node_key=existing_node.node_key, node_invalid=False)
 
@@ -176,12 +184,14 @@ def enroll():
         node.update(host_identifier=host_identifier,
                     last_checkin=now,
                     enrolled_on=now,
-                    last_ip=request.remote_addr)
+                    last_ip=request.remote_addr,
+                    node_info=host_details if host_details else node.node_info.copy())
     else:
         node = Node(host_identifier=host_identifier,
                     last_checkin=now,
                     enrolled_on=now,
-                    last_ip=request.remote_addr)
+                    last_ip=request.remote_addr,
+                    node_info=host_details)
 
         enroll_tags.update(current_app.config.get('DOORMAN_ENROLL_DEFAULT_TAGS', []))
 

@@ -43,7 +43,57 @@ class Config(object):
     DOORMAN_ENROLL_DEFAULT_TAGS = [
     ]
 
+    # Beginning in osquery 2.8, the os_version, platform_info, system_info,
+    # and osquery_info tables are included during the node's enrollment
+    # request. Uncomment the fields you want to capture and display on a
+    # node's info page.
+
     DOORMAN_CAPTURE_NODE_INFO = [
+        # ('os_version.name', 'os_version.name'),
+        # ('os_version.version', 'os_version.version'),
+        # ('os_version.major', 'os_version.major'),
+        # ('os_version.minor', 'os_version.minor'),
+        # ('os_version.patch', 'os_version.patch'),
+        # ('os_version.platform', 'os_version.platform'),
+        # ('os_version.platform_like', 'os_version.platform_like'),
+        # ('os_version.codename', 'os_version.codename'),
+
+        # ('platform_info.vendor', 'platform_info.vendor'),
+        # ('platform_info.version', 'platform_info.version'),
+        # ('platform_info.date', 'platform_info.date'),
+        # ('platform_info.revision', 'platform_info.revision'),
+        # ('platform_info.address', 'platform_info.address'),
+        # ('platform_info.size', 'platform_info.size'),
+        # ('platform_info.volume_size', 'platform_info.volume_size'),
+        # ('platform_info.extra', 'platform_info.extra'),
+
+        # ('system_info.hostname', 'system_info.hostname'),
+        # ('system_info.uuid', 'system_info.uuid'),
+        # ('system_info.cpu_type', 'system_info.cpu_type'),
+        # ('system_info.cpu_subtype', 'system_info.cpu_subtype'),
+        # ('system_info.cpu_brand', 'system_info.cpu_brand'),
+        # ('system_info.cpu_physical_cores', 'system_info.cpu_physical_cores'),
+        # ('system_info.cpu_logical_cores', 'system_info.cpu_logical_cores'),
+        # ('system_info.physical_memory', 'system_info.physical_memory'),
+        # ('system_info.hardware_vendor', 'system_info.hardware_vendor'),
+        # ('system_info.hardware_model', 'system_info.hardware_model'),
+        # ('system_info.hardware_version', 'system_info.hardware_version'),
+        # ('system_info.hardware_serial', 'system_info.hardware_serial'),
+        # ('system_info.computer_name', 'system_info.computer_name'),
+        # ('system_info.local_hostname', 'system_info.local_hostname'),
+
+        # ('osquery_info.pid', 'osquery_info.pid'),
+        # ('osquery_info.uuid', 'osquery_info.uuid'),
+        # ('osquery_info.instance_id', 'osquery_info.instance_id'),
+        # ('osquery_info.version', 'osquery_info.version'),
+        # ('osquery_info.config_hash', 'osquery_info.config_hash'),
+        # ('osquery_info.config_valid', 'osquery_info.config_valid'),
+        # ('osquery_info.extensions', 'osquery_info.extensions'),
+        # ('osquery_info.build_platform', 'osquery_info.build_platform'),
+        # ('osquery_info.build_distro', 'osquery_info.build_distro'),
+        # ('osquery_info.start_time', 'osquery_info.start_time'),
+        # ('osquery_info.watcher', 'osquery_info.watcher'),
+
         ('computer_name', 'name'),
         ('hardware_vendor', 'make'),
         ('hardware_model', 'model'),

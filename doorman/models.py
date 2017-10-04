@@ -233,7 +233,7 @@ class Node(SurrogatePK, Model):
 
     def __init__(self, host_identifier, node_key=None,
                  enroll_secret=None, enrolled_on=None, last_checkin=None,
-                 is_active=True, last_ip=None,
+                 is_active=True, last_ip=None, node_info=None,
                  **kwargs):
         self.node_key = node_key or str(uuid.uuid4())
         self.host_identifier = host_identifier
@@ -242,6 +242,7 @@ class Node(SurrogatePK, Model):
         self.last_checkin = last_checkin
         self.is_active = is_active
         self.last_ip = last_ip
+        self.node_info = node_info
 
     def __repr__(self):
         return '<Node-{0.id}: node_key={0.node_key}, host_identifier={0.host_identifier}>'.format(self)

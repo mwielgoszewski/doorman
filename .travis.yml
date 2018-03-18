@@ -2,14 +2,14 @@ sudo: false
 language: python
 cache: pip
 python:
-  - "2.6"
   - "2.7"
-  - "3.3"
   - "3.4"
-  - "3.5"
-  - "3.5-dev" # 3.5 development branch
+  - "3.6"
+  - "nightly" # 3.7 development branch
 
-install: "pip install -r requirements/dev.txt"
+install:
+  - "pip install -r requirements/dev.txt"
+  - "pip install flake8"
 
 services:
   - postgresql
@@ -19,6 +19,11 @@ addons:
   postgresql: "9.4"
 
 before_script:
+  # stop the build if there are Python syntax errors or undefined names
+  - flake8 . --count --select=E901,E999,F821,F822,F823 --show-source --statistics
+  # exit-zero treats all errors as warnings.  The GitHub editor is 127 chars wide
+  - flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
   # Install JS dependencies
   - npm install -g bower less
   - bower install

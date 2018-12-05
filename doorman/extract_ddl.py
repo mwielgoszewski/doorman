@@ -26,6 +26,9 @@ DUMMY_FUNCTIONS = [
     'implementation',
     'fuzz_paths',
     'WINDOWS',
+    'POSIX',
+    'LINUX',
+    'DARWIN',
 ]
 
 

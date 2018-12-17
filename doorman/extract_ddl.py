@@ -32,12 +32,20 @@ DUMMY_FUNCTIONS = [
 ]
 
 
+RESERVED_KEYWORDS = [
+    'table',
+    'set',
+]
+
+
 def table_name(name, aliases=None):
     current_spec['name'] = name
     current_spec['aliases'] = aliases
 
 
 def Column(name, col_type, *args, **kwargs):
+    if name in RESERVED_KEYWORDS:
+        name = '"%s"' % name
     return (name, col_type)
 
 
@@ -49,7 +57,7 @@ def schema(schema):
 def extended_schema(macro, schema):
     # Filter out 'None' entries (usually from ForeignKeys)
     real_schema = [x for x in schema if x is not None]
-    current_spec['extended_schema'] = real_schema
+    current_spec.setdefault('extended_schema', []).extend(real_schema)
 
 def extract_schema(filename):
     namespace = {
@@ -75,7 +83,7 @@ def extract_schema(filename):
     statements = []
     statements.append('CREATE TABLE %s (%s);' % (current_spec['name'], columns))
     if 'extended_schema' in current_spec:
-        statement = 'ALTER TABLE %s ADD %%s %%s' % (current_spec['name'], )
+        statement = 'ALTER TABLE %s ADD %%s %%s;' % (current_spec['name'], )
         for column_name, column_definition in current_spec['extended_schema']:
             statements.append(statement % (column_name, column_definition))
         del current_spec['extended_schema']

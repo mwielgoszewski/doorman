@@ -12,7 +12,7 @@ from doorman.extensions import (
 )
 from doorman.settings import ProdConfig
 from doorman.tasks import celery
-from doorman.utils import get_node_health, pretty_field, pretty_operator
+from doorman.utils import get_node_health, pretty_field, pretty_operator, render_column
 
 
 def create_app(config=ProdConfig):
@@ -107,6 +107,7 @@ def register_filters(app):
     app.jinja_env.filters['health'] = get_node_health
     app.jinja_env.filters['pretty_field'] = pretty_field
     app.jinja_env.filters['pretty_operator'] = pretty_operator
+    app.jinja_env.filters['render'] = render_column
 
 
 def register_auth_method(app):

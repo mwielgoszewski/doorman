@@ -3,9 +3,8 @@ language: python
 cache: pip
 python:
   - "2.7"
-  - "3.4"
   - "3.6"
-  - "nightly" # 3.7 development branch
+  - "3.7"
 
 install:
   - "pip install -r requirements/dev.txt"

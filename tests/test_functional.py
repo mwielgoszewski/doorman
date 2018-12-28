@@ -1611,6 +1611,8 @@ class TestLearning:
             'log_type': 'result',
         }
 
+        node.update(last_checkin=now)
+
         learn_from_result(result, node.to_dict())
 
         for column in self.COLUMNS:
@@ -1618,6 +1620,9 @@ class TestLearning:
             assert node.node_info[column] == data[0]['columns'][column]
 
         assert 'foobar' not in node.node_info
+
+        resp = testapp.get(url_for('manage.nodes'))
+        assert '<a href="https://hostname.local/">hostname.local</a>' in resp
 
     def test_node_info_updated_on_removed_data(self, node, testapp):
         assert not node.node_info

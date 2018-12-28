@@ -277,6 +277,10 @@ class TestConfig(Config):
 
     DOORMAN_AUTH_METHOD = None
 
+    DOORMAN_COLUMN_RENDER = {
+        'computer_name': '<a href="https://{{ value | urlencode }}/">{{ value }}</a>'
+    }
+
 
 if os.environ.get('DYNO'):
     # we don't want to even define this class elsewhere,

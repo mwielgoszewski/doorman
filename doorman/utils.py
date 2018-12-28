@@ -11,6 +11,7 @@ import threading
 
 import six
 from flask import current_app, flash
+from jinja2 import Markup, Template
 
 from doorman.database import db
 from doorman.models import (
@@ -428,3 +429,29 @@ class DateTimeEncoder(json.JSONEncoder):
             return o.isoformat()
 
         return json.JSONEncoder.default(self, o)
+
+
+def render_column(value, column):
+    renders = current_app.config.get('DOORMAN_COLUMN_RENDER', {})
+    if column not in renders:
+        return value
+
+    template = renders[column]
+
+    try:
+        if callable(template):
+            return template(value)
+        else:
+            template = Template(template, autoescape=True)
+            rendered = template.render(value=value)
+
+            # return a markup object so that the template where this is
+            # rendered is not escaped again
+
+            return Markup(rendered)
+    except Exception:
+        current_app.logger.exception(
+            "Failed to render %s, returning original value",
+            column
+        )
+        return value

@@ -92,4 +92,4 @@ def extract_schema(filename):
 
 if __name__ == '__main__':
     import sys
-    print extract_schema(sys.argv[1])
+    print(extract_schema(sys.argv[1]))

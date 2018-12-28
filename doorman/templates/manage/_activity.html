@@ -49,7 +49,7 @@
                                         <td>{{ result.action }}</td>
                                         <td>{{ result.timestamp }}</td>
                                         {% for column in columns %}
-                                        <td>{{ result.columns[column] }}</td>
+                                        <td>{{ result.columns[column] | render(column) }}</td>
                                         {% endfor %}
                                     </tr>
                                     {% endfor %}

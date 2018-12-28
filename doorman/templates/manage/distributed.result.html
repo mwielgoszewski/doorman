@@ -29,7 +29,7 @@
 
                         <tr>
                             {% for column in columns %}
-                            <td>{{ result.columns[column] }}</td>
+                            <td>{{ result.columns[column] | render(column) }}</td>
                             {% endfor %}
                         </tr>
 

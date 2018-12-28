@@ -25,7 +25,7 @@
                             <td>{{ node.node_key }}</td>
                             {% if current_app.config.DOORMAN_CAPTURE_NODE_INFO %}
                             {% for column, label in current_app.config.DOORMAN_CAPTURE_NODE_INFO %}
-                            <td>{{ node.node_info[column] }}</td>
+                            <td>{{ node.node_info[column] | render(column) }}</td>
                             {% endfor %}
                             {% endif %}
                             <td>{{ node.last_ip | default('', true) }}</td>

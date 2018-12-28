@@ -17,7 +17,7 @@
                             {% if column in node.node_info %}
                             <tr>
                                 <th class="text-right">{{ label | lower }}</th>
-                                <td>{{ node.node_info[column] }}</td>
+                                <td>{{ node.node_info[column] | render(column) }}</td>
                             </tr>
                             {% endif %}
                             {% endfor %}

@@ -249,7 +249,7 @@ def node_logs(node_id, page=1):
         ('line', 'message', 'severity', 'filename'),
         existing_query=status_logs,
         page=page,
-        max_pp=50,
+        max_pp=500,
         default_sort='desc'
     )
 
@@ -740,6 +740,7 @@ def rule(rule_id):
 @blueprint.route('/search/<int:page>', methods=['GET', 'POST'])
 @login_required
 def search(page=1):
+    max_pp = 500
     try:
         per_page = int(request.args.pop('pp', max_pp))
     except Exception:

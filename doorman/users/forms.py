@@ -3,7 +3,7 @@
 from flask import current_app
 from flask_ldap3_login import AuthenticationResponseStatus
 
-from flask_wtf import Form
+from flask_wtf import FlaskForm as Form
 from wtforms import BooleanField, PasswordField, StringField
 from wtforms.validators import DataRequired, Optional
 

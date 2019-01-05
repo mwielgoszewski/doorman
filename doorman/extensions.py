@@ -6,7 +6,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CsrfProtect
+from flask_wtf.csrf import CSRFProtect
 from raven import Client
 from raven.contrib.celery import register_signal, register_logger_signal
 from raven.contrib.flask import Sentry
@@ -202,7 +202,7 @@ def make_celery(app, celery):
 
 
 bcrypt = Bcrypt()
-csrf = CsrfProtect()
+csrf = CSRFProtect()
 db = SQLAlchemy()
 mail = Mail()
 migrate = Migrate()

@@ -221,7 +221,7 @@ def configuration(node=None):
     # write last_checkin, last_ip
     db.session.add(node)
     db.session.commit()
-    return jsonify(config, node_invalid=False)
+    return jsonify(node_invalid=False, **config)
 
 
 @blueprint.route('/log', methods=['POST', 'PUT'])

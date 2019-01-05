@@ -160,7 +160,7 @@ database/
 # Downloaded or generated assets
 doorman/static/css/bootstrap.css
 doorman/static/libs/
-doorman/static/public/
+#doorman/static/public/
 
 # Vagrant artifacts
 .vagrant

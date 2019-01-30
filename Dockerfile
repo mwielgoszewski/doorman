@@ -1,24 +1,35 @@
-FROM alpine:latest
+FROM alpine:3.6
+
+WORKDIR /tmp
+COPY ./requirements/prod.txt requirements.txt
 
 # Install Python
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-  && apk add --update \
-              bash \
+  && apk add --update --no-cache --virtual=build-dependencies \
               build-base \
-              git \
               libffi-dev \
               musl \
+              python-dev \
+              postgresql-dev \
+  && apk add --update \
+              bash \
+              git \
               nodejs \
               nodejs-npm \
-              postgresql-dev \
               py2-pip \
               python \
-              python-dev \
               redis \
               runit \
+
   && pip install --upgrade pip \
   && npm install -g bower less \
-  && rm /var/cache/apk/*
+  && pip install -r /tmp/requirements.txt \
+  && pip install 'gunicorn==19.6.0' \
+
+  # clean up
+  && apk del --purge build-dependencies \
+  && rm /var/cache/apk/* \
+  && rm -rf /tmp/*
 
 # Make some useful symlinks that are expected to exist
 RUN cd /usr/bin \
@@ -26,11 +37,6 @@ RUN cd /usr/bin \
   && ln -sf python2.7 python \
   && ln -sf python2.7-config python-config \
   && ln -sf pip2.7 pip
-
-# Copy and install our requirements first, so they can be cached
-COPY ./requirements/prod.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt \
-  && pip install 'gunicorn==19.6.0'
 
 # Add our application to the container
 COPY . /src/

@@ -234,8 +234,8 @@ $ docker run \
     -e DOORMAN_SECRET_KEY=secret-key \
     -e POSTGRES_USER=doorman \
     -e POSTGRES_PASSWORD=pass \
-    -e POSTGRES_ENV_POSTGRES_PORT=your-host-here \
-    -p host-port:5000 \
+    -e POSTGRES_PORT=5432 \
+    -p 5000:5000 \
     doorman
 ```
 

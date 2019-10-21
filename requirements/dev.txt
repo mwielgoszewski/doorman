@@ -69,5 +69,5 @@ waitress==1.1.0
 webassets==0.12.1
 WebOb==1.8.5
 WebTest==2.0.32
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 WTForms==2.2.1

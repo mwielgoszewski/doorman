@@ -43,7 +43,7 @@ setup(
         'Flask-WTF==0.14.2',
         'idna==2.8',
         'itsdangerous==1.1.0',
-        'Jinja2==2.10',
+        'Jinja2==2.11.3',
         'jsmin==2.2.2',
         'kombu==4.2.2.post1',
         'ldap3==2.5.2',

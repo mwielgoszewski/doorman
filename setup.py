@@ -47,7 +47,7 @@ setup(
         'jsmin==2.2.2',
         'kombu==4.2.2.post1',
         'ldap3==2.5.2',
-        'Mako==1.0.7',
+        'Mako==1.2.2',
         'MarkupSafe==1.1.0',
         'oauthlib==2.1.0',
         'psycopg2-binary==2.7.6.1',
